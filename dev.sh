@@ -2,34 +2,42 @@
 set -euo pipefail
 
 # =============================================================================
-# Fendtastic Development Launcher
-# Cleans up old instances, checks dependencies, verifies port availability,
-# and starts all services for local development on Ubuntu Linux.
+# Fendtastic Development Launcher (Interactive)
 # =============================================================================
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 BOLD='\033[1m'
+DIM='\033[2m'
+UNDERLINE='\033[4m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Required ports
+# Ports
 PORT_ZENOH_TCP=7447
 PORT_ZENOH_WS=8000
 PORT_API=8080
 PORT_FRONTEND=3000
 
+# Set after IP selection
+BIND_IP=""
+DISPLAY_IP=""
+
 # Tracking PIDs for cleanup
 PIDS=()
 
-log_info()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
-log_ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
-log_err()   { echo -e "${RED}[ERROR]${NC} $*"; }
-log_step()  { echo -e "\n${BOLD}${CYAN}── $* ──${NC}"; }
+# ─── Logging ──────────────────────────────────────────────────────────────────
+
+log_info()  { echo -e "  ${CYAN}ℹ${NC}  $*"; }
+log_ok()    { echo -e "  ${GREEN}✔${NC}  $*"; }
+log_warn()  { echo -e "  ${YELLOW}⚠${NC}  $*"; }
+log_err()   { echo -e "  ${RED}✘${NC}  $*"; }
+log_step()  { echo -e "\n${BOLD}${CYAN}━━ $* ━━${NC}"; }
+
+# ─── Cleanup on exit ─────────────────────────────────────────────────────────
 
 cleanup() {
     echo ""
@@ -42,7 +50,6 @@ cleanup() {
         fi
     done
 
-    # Stop zenoh container if we started it
     if docker ps -q --filter "name=fendtastic-zenoh-dev" 2>/dev/null | grep -q .; then
         log_info "Stopping Zenoh router container"
         docker stop fendtastic-zenoh-dev >/dev/null 2>&1 || true
@@ -55,9 +62,20 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
+# ─── Banner ───────────────────────────────────────────────────────────────────
+
+clear
+echo ""
+echo -e "${BOLD}${GREEN}  ╔═══════════════════════════════════════════════╗${NC}"
+echo -e "${BOLD}${GREEN}  ║         FENDTASTIC  DEV  LAUNCHER             ║${NC}"
+echo -e "${BOLD}${GREEN}  ║     Industrial Monitoring Control System       ║${NC}"
+echo -e "${BOLD}${GREEN}  ╚═══════════════════════════════════════════════╝${NC}"
+
 # =============================================================================
-# Dependency checks
+# 1. Dependency checks
 # =============================================================================
+
+log_step "Checking dependencies"
 
 check_command() {
     local cmd="$1"
@@ -73,7 +91,7 @@ check_command() {
             docker)  version="$(docker --version 2>/dev/null | awk '{print $3}' | tr -d ',')" ;;
             *)       version="found" ;;
         esac
-        log_ok "$cmd ($version)"
+        log_ok "${cmd} ${DIM}(${version})${NC}"
         return 0
     else
         log_err "$cmd not found"
@@ -81,8 +99,6 @@ check_command() {
         return 1
     fi
 }
-
-log_step "Checking dependencies"
 
 MISSING=0
 
@@ -92,89 +108,62 @@ check_command node   "sudo apt install -y nodejs  OR  use nvm: https://github.co
 check_command npm    "Installed with nodejs"                                             || MISSING=1
 check_command docker "sudo apt install -y docker.io && sudo usermod -aG docker \$USER"   || MISSING=1
 
-# Optional but helpful
+# cargo-watch: auto-install if missing
 if command -v cargo-watch &>/dev/null; then
-    log_ok "cargo-watch (installed)"
+    log_ok "cargo-watch ${DIM}(installed)${NC}"
 else
-    log_warn "cargo-watch not installed (optional, enables hot-reload for backend)"
-    log_info "Install: cargo install cargo-watch"
+    log_info "Installing cargo-watch (enables backend hot-reload)..."
+    cargo install cargo-watch 2>&1 | tail -1
+    if command -v cargo-watch &>/dev/null; then
+        log_ok "cargo-watch installed"
+    else
+        log_warn "cargo-watch install failed — continuing without hot-reload"
+    fi
 fi
 
 if [ "$MISSING" -ne 0 ]; then
     echo ""
-    log_err "Missing required dependencies. Install them and re-run this script."
+    log_err "Missing required dependencies. Install them and re-run."
     exit 1
 fi
 
-# Check Node.js version >= 18
 NODE_MAJOR=$(node --version | sed 's/v\([0-9]*\).*/\1/')
 if [ "$NODE_MAJOR" -lt 18 ]; then
     log_err "Node.js 18+ required (found v${NODE_MAJOR})"
-    log_info "Update: nvm install 18 && nvm use 18"
     exit 1
 fi
 
 # =============================================================================
-# Clean up previous Fendtastic instances
+# 2. Clean up old instances
 # =============================================================================
 
-log_step "Cleaning up old Fendtastic instances"
+log_step "Cleaning up old instances"
 
 CLEANED=0
 
-# --- Docker containers ---
-
-# Dev container from this script
-if docker ps -a -q --filter "name=fendtastic-zenoh-dev" 2>/dev/null | grep -q .; then
-    log_info "Removing old fendtastic-zenoh-dev container"
-    docker stop fendtastic-zenoh-dev >/dev/null 2>&1 || true
-    docker rm   fendtastic-zenoh-dev >/dev/null 2>&1 || true
-    CLEANED=1
-fi
-
-# Docker Compose containers (fendtastic-zenoh-router, fendtastic-backend, fendtastic-frontend)
-for cname in fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
+for cname in fendtastic-zenoh-dev fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
     if docker ps -a -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
-        log_info "Removing old ${cname} container"
+        log_info "Removing container: ${cname}"
         docker stop "$cname" >/dev/null 2>&1 || true
         docker rm   "$cname" >/dev/null 2>&1 || true
         CLEANED=1
     fi
 done
 
-# --- Fendtastic backend processes ---
+for proc in api-server zenoh-bridge eva-ics-connector; do
+    if pgrep -f "target/.*/${proc}" >/dev/null 2>&1; then
+        log_info "Killing old ${proc}"
+        pkill -f "target/.*/${proc}" 2>/dev/null || true
+        CLEANED=1
+    fi
+done
 
-# Kill api-server instances
-if pgrep -f "target/.*/api-server" >/dev/null 2>&1; then
-    log_info "Killing old api-server processes"
-    pkill -f "target/.*/api-server" 2>/dev/null || true
-    CLEANED=1
-fi
-
-# Kill zenoh-bridge instances
-if pgrep -f "target/.*/zenoh-bridge" >/dev/null 2>&1; then
-    log_info "Killing old zenoh-bridge processes"
-    pkill -f "target/.*/zenoh-bridge" 2>/dev/null || true
-    CLEANED=1
-fi
-
-# Kill eva-ics-connector instances
-if pgrep -f "target/.*/eva-ics-connector" >/dev/null 2>&1; then
-    log_info "Killing old eva-ics-connector processes"
-    pkill -f "target/.*/eva-ics-connector" 2>/dev/null || true
-    CLEANED=1
-fi
-
-# --- Vite dev servers started from this project ---
-
-# Match vite processes whose cwd is within this project's frontend dir
 if pgrep -f "node.*vite.*${SCRIPT_DIR}/frontend" >/dev/null 2>&1; then
     log_info "Killing old Vite dev server"
     pkill -f "node.*vite.*${SCRIPT_DIR}/frontend" 2>/dev/null || true
     CLEANED=1
 fi
 
-# Give processes a moment to release ports
 if [ "$CLEANED" -ne 0 ]; then
     sleep 2
     log_ok "Old instances cleaned up"
@@ -183,10 +172,90 @@ else
 fi
 
 # =============================================================================
-# Port availability (after cleanup)
+# 3. Network interface selection (interactive)
 # =============================================================================
 
-log_step "Checking port availability"
+log_step "Network configuration"
+
+declare -a IP_LIST=()
+declare -a IP_LABELS=()
+
+# Always offer localhost and all-interfaces
+IP_LIST+=("127.0.0.1")
+IP_LABELS+=("127.0.0.1  ${DIM}— localhost only (this machine)${NC}")
+
+IP_LIST+=("0.0.0.0")
+IP_LABELS+=("0.0.0.0    ${DIM}— all interfaces (LAN accessible)${NC}")
+
+# Discover real network interfaces
+while IFS= read -r line; do
+    iface=$(echo "$line" | awk '{print $1}')
+    ip=$(echo "$line" | awk '{print $2}' | cut -d/ -f1)
+
+    # Skip loopback and virtual interfaces
+    case "$iface" in
+        lo|docker*|veth*|br-*|virbr*) continue ;;
+    esac
+
+    [[ " ${IP_LIST[*]} " == *" ${ip} "* ]] && continue
+
+    IP_LIST+=("$ip")
+    IP_LABELS+=("${ip}  ${DIM}— ${iface}${NC}")
+done < <(ip -4 -o addr show 2>/dev/null | awk '{print $2, $4}')
+
+echo ""
+echo -e "  ${BOLD}Which address should services bind to?${NC}"
+echo ""
+
+for i in "${!IP_LABELS[@]}"; do
+    if [ "$i" -eq 0 ]; then
+        printf "    ${CYAN}%d)${NC}  %b  ${YELLOW}(default)${NC}\n" $((i + 1)) "${IP_LABELS[$i]}"
+    else
+        printf "    ${CYAN}%d)${NC}  %b\n" $((i + 1)) "${IP_LABELS[$i]}"
+    fi
+done
+
+echo ""
+while true; do
+    echo -ne "  ${BOLD}${YELLOW}▸${NC} Choice ${DIM}[1-${#IP_LIST[@]}]${NC}: "
+    read -r choice </dev/tty
+
+    if [ -z "$choice" ]; then
+        choice=1
+    fi
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#IP_LIST[@]}" ]; then
+        BIND_IP="${IP_LIST[$((choice - 1))]}"
+        break
+    else
+        log_err "Enter a number between 1 and ${#IP_LIST[@]}"
+    fi
+done
+
+# Determine display IP (what goes in browser URLs)
+if [ "$BIND_IP" = "0.0.0.0" ]; then
+    # Pick first real IP for display
+    DISPLAY_IP="localhost"
+    for ip in "${IP_LIST[@]}"; do
+        if [ "$ip" != "127.0.0.1" ] && [ "$ip" != "0.0.0.0" ]; then
+            DISPLAY_IP="$ip"
+            break
+        fi
+    done
+elif [ "$BIND_IP" = "127.0.0.1" ]; then
+    DISPLAY_IP="localhost"
+else
+    DISPLAY_IP="$BIND_IP"
+fi
+
+echo ""
+log_ok "Binding to ${BOLD}${BIND_IP}${NC}  →  URLs will use ${BOLD}${DISPLAY_IP}${NC}"
+
+# =============================================================================
+# 4. Port availability
+# =============================================================================
+
+log_step "Checking ports on ${BIND_IP}"
 
 check_port() {
     local port="$1"
@@ -195,7 +264,6 @@ check_port() {
     if ss -tlnp 2>/dev/null | grep -q ":${port} " || \
        lsof -i ":${port}" -sTCP:LISTEN >/dev/null 2>&1; then
 
-        # Try to identify what's holding the port
         local holder
         holder=$(ss -tlnp 2>/dev/null | grep ":${port} " | awk '{print $NF}' | head -1)
         if [ -z "$holder" ]; then
@@ -205,11 +273,11 @@ check_port() {
             fi
         fi
 
-        log_err "Port $port ($service) is still in use by: ${holder:-unknown}"
-        log_info "Free it with:  sudo kill \$(lsof -t -i :${port})  or  sudo fuser -k ${port}/tcp"
+        log_err "Port ${port} (${service}) in use by: ${holder:-unknown}"
+        log_info "Free it:  sudo fuser -k ${port}/tcp"
         return 1
     else
-        log_ok "Port $port ($service) is available"
+        log_ok "Port ${port} ${DIM}(${service})${NC}"
         return 0
     fi
 }
@@ -222,16 +290,15 @@ check_port $PORT_FRONTEND  "Frontend Dev"     || PORT_CONFLICT=1
 
 if [ "$PORT_CONFLICT" -ne 0 ]; then
     echo ""
-    log_err "Port conflicts detected. A non-Fendtastic process is using one of the required ports."
-    log_info "Free the ports listed above and re-run this script."
+    log_err "Port conflicts detected. Free the ports above and re-run."
     exit 1
 fi
 
 # =============================================================================
-# Environment setup
+# 5. Environment
 # =============================================================================
 
-log_step "Checking environment"
+log_step "Environment"
 
 cd "$SCRIPT_DIR"
 
@@ -240,13 +307,12 @@ if [ ! -f .env ]; then
         cp .env.example .env
         log_ok "Created .env from .env.example"
     else
-        log_warn "No .env or .env.example found — using defaults"
+        log_warn "No .env.example found — using defaults"
     fi
 else
     log_ok ".env file exists"
 fi
 
-# Source .env if present
 if [ -f .env ]; then
     set -a
     source .env
@@ -254,80 +320,104 @@ if [ -f .env ]; then
 fi
 
 # =============================================================================
-# Install frontend dependencies if needed
+# 6. Frontend dependencies
 # =============================================================================
 
-log_step "Checking frontend dependencies"
+log_step "Frontend dependencies"
 
 if [ ! -d frontend/node_modules ]; then
-    log_info "Installing npm packages..."
-    (cd frontend && npm install)
-    log_ok "npm packages installed"
+    log_info "Running npm install (first time may take a minute)..."
+    (cd frontend && npm install --loglevel=warn 2>&1)
+    log_ok "Packages installed"
 else
-    log_ok "node_modules exists (run 'cd frontend && npm install' to update)"
+    log_ok "node_modules present"
 fi
 
 # =============================================================================
-# Start services
+# 7. Launch services
 # =============================================================================
 
-log_step "Starting Zenoh router (Docker)"
+# --- Zenoh Router ---
+
+log_step "Starting Zenoh router"
 
 docker run -d \
     --name fendtastic-zenoh-dev \
-    -p ${PORT_ZENOH_TCP}:7447 \
-    -p ${PORT_ZENOH_WS}:8000 \
+    -p "${BIND_IP}:${PORT_ZENOH_TCP}:7447" \
+    -p "${BIND_IP}:${PORT_ZENOH_WS}:8000" \
     -v "${SCRIPT_DIR}/config/zenoh-router.json5:/etc/zenoh/config.json5:ro" \
     eclipse/zenoh:latest \
     -c /etc/zenoh/config.json5 \
     >/dev/null
 
-log_ok "Zenoh router running (TCP :${PORT_ZENOH_TCP}, WS :${PORT_ZENOH_WS})"
-
-# Wait briefly for zenoh to initialise
+log_ok "Zenoh router ${DIM}(${BIND_IP}:${PORT_ZENOH_TCP}, :${PORT_ZENOH_WS})${NC}"
 sleep 2
 
-# ---------------------------------------------------------------------------
+# --- Backend build ---
 
-log_step "Building backend (first run may take a while)"
+log_step "Building backend"
+echo -e "  ${DIM}(first build may take several minutes)${NC}"
 
-(cd backend && cargo build 2>&1 | tail -1)
+(cd backend && cargo build 2>&1 | tail -3)
 log_ok "Backend compiled"
 
-# ---------------------------------------------------------------------------
+# --- API Server ---
 
 log_step "Starting API server"
+
+export API_HOST="${BIND_IP}"
+export API_PORT="${PORT_API}"
 
 (cd backend && cargo run --bin api-server 2>&1 &)
 PIDS+=($!)
 sleep 2
-log_ok "API server starting on :${PORT_API}"
+log_ok "API server ${DIM}(${BIND_IP}:${PORT_API})${NC}"
 
-# ---------------------------------------------------------------------------
+# --- Frontend Vite ---
 
-log_step "Starting frontend dev server"
+log_step "Starting frontend"
 
-(cd frontend && npm run dev 2>&1 &)
+(cd frontend && npx vite --host "${BIND_IP}" --port "${PORT_FRONTEND}" 2>&1 &)
 PIDS+=($!)
-sleep 2
-log_ok "Frontend dev server starting on :${PORT_FRONTEND}"
+sleep 3
+log_ok "Frontend dev server ${DIM}(${BIND_IP}:${PORT_FRONTEND})${NC}"
 
 # =============================================================================
-# Summary
+# 8. Final summary with clickable links
 # =============================================================================
 
+URL_DASH="http://${DISPLAY_IP}:${PORT_FRONTEND}"
+URL_API="http://${DISPLAY_IP}:${PORT_API}"
+URL_HEALTH="http://${DISPLAY_IP}:${PORT_API}/health"
+URL_WS="ws://${DISPLAY_IP}:${PORT_ZENOH_WS}"
+
 echo ""
-echo -e "${BOLD}${GREEN}════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}${GREEN}  Fendtastic is running!${NC}"
-echo -e "${BOLD}${GREEN}════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  Dashboard:     ${CYAN}http://localhost:${PORT_FRONTEND}${NC}"
-echo -e "  API Server:    ${CYAN}http://localhost:${PORT_API}${NC}"
-echo -e "  API Health:    ${CYAN}http://localhost:${PORT_API}/health${NC}"
-echo -e "  Zenoh WS:      ${CYAN}ws://localhost:${PORT_ZENOH_WS}${NC}"
+echo -e "${BOLD}${GREEN}  ╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BOLD}${GREEN}  ║              FENDTASTIC IS RUNNING                        ║${NC}"
+echo -e "${BOLD}${GREEN}  ╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "  ${BOLD}Bound to:${NC}        ${CYAN}${BIND_IP}${NC}"
+echo ""
+echo -e "  ${BOLD}Dashboard:${NC}       ${UNDERLINE}${CYAN}${URL_DASH}${NC}"
+echo -e "  ${BOLD}API Server:${NC}      ${UNDERLINE}${CYAN}${URL_API}${NC}"
+echo -e "  ${BOLD}Health Check:${NC}    ${UNDERLINE}${CYAN}${URL_HEALTH}${NC}"
+echo -e "  ${BOLD}Zenoh WS:${NC}        ${UNDERLINE}${CYAN}${URL_WS}${NC}"
+
+# If bound to all interfaces, show every reachable address
+if [ "$BIND_IP" = "0.0.0.0" ]; then
+    echo ""
+    echo -e "  ${BOLD}Reachable from any of these addresses:${NC}"
+    for ip in "${IP_LIST[@]}"; do
+        if [ "$ip" != "0.0.0.0" ]; then
+            echo -e "    ${DIM}•${NC} ${UNDERLINE}${CYAN}http://${ip}:${PORT_FRONTEND}${NC}"
+        fi
+    done
+fi
+
 echo ""
 echo -e "  Press ${BOLD}Ctrl+C${NC} to stop all services."
 echo ""
 
-# Keep script alive until interrupted
+# Keep script alive
 wait

@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Grid, Box as ThreeBox } from '@react-three/drei'
 import * as THREE from 'three'
@@ -6,7 +6,6 @@ import * as THREE from 'three'
 const MachineModel: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null)
 
-  // Slowly rotate the machine
   useFrame(() => {
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.002
@@ -75,7 +74,6 @@ const IsometricView: React.FC = () => {
 
         {/* Grid */}
         <Grid
-          args={[20, 20]}
           cellSize={1}
           cellThickness={0.5}
           cellColor="#6EC72D"
@@ -85,7 +83,7 @@ const IsometricView: React.FC = () => {
           fadeDistance={30}
           fadeStrength={1}
           followCamera={false}
-          infiniteGrid={false}
+          infiniteGrid
         />
 
         {/* Machine */}

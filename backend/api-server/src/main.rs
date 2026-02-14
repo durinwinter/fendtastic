@@ -27,7 +27,13 @@ async fn main() -> std::io::Result<()> {
         connections: Arc::new(RwLock::new(0)),
     });
 
-    info!("Starting HTTP server on 0.0.0.0:8080");
+    let host = std::env::var("API_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port: u16 = std::env::var("API_PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse()
+        .expect("API_PORT must be a valid port number");
+
+    info!("Starting HTTP server on {}:{}", host, port);
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -50,7 +56,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/ws", web::get().to(websocket::ws_handler))
             )
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind((&*host, port))?
     .run()
     .await
 }
