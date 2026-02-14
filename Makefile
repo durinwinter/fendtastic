@@ -24,13 +24,16 @@ install-frontend:
 
 # Docker commands
 docker-up:
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
-	docker-compose down
+	docker compose down
 
 docker-build:
-	docker-compose build
+	docker compose build
+
+docker-logs:
+	docker compose logs -f
 
 # Development
 dev:

@@ -1,11 +1,9 @@
-use zenoh::prelude::*;
+use tracing::info;
 use zenoh::Session;
-use tracing::{info, error};
 
 pub async fn run(session: Session) {
     info!("Starting Zenoh subscriber");
 
-    // Subscribe to all fendtastic topics
     let subscriber = session
         .declare_subscriber("fendtastic/**")
         .await
@@ -14,25 +12,30 @@ pub async fn run(session: Session) {
     info!("Subscribed to fendtastic/**");
 
     loop {
-        let sample = subscriber.recv_async().await.expect("Subscriber error");
+        match subscriber.recv_async().await {
+            Ok(sample) => {
+                let key = sample.key_expr().as_str().to_string();
+                let payload = sample
+                    .payload()
+                    .try_to_string()
+                    .unwrap_or_else(|e| e.to_string().into())
+                    .to_string();
 
-        let key = sample.key_expr().as_str();
-        let payload = sample.payload().to_string();
-
-        info!("Received [{}]: {}", key, payload);
-
-        // Process received data
-        process_sample(key, &payload).await;
+                info!("Received [{}]: {}", key, payload);
+                process_sample(&key, &payload).await;
+            }
+            Err(e) => {
+                tracing::error!("Subscriber error: {}", e);
+                break;
+            }
+        }
     }
 }
 
 async fn process_sample(key: &str, payload: &str) {
-    // Route messages to appropriate handlers based on key expression
     if key.starts_with("fendtastic/eva-ics/") {
-        // Handle EVA-ICS data
         info!("Processing EVA-ICS data: {}", key);
     } else if key.starts_with("fendtastic/commands/") {
-        // Handle commands
         info!("Processing command: {}", key);
     }
 }

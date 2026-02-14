@@ -1,4 +1,4 @@
-use tracing::{info, error, Level};
+use tracing::{error, info, Level};
 use std::time::Duration;
 use tokio::time;
 
@@ -15,23 +15,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting EVA-ICS Connector");
 
-    // Get EVA-ICS configuration from environment
     let eva_url = std::env::var("EVA_ICS_URL")
         .unwrap_or_else(|_| "http://localhost:7727".to_string());
     let eva_api_key = std::env::var("EVA_ICS_API_KEY")
         .unwrap_or_else(|_| "default-key".to_string());
 
-    // Initialize EVA-ICS client
     let eva_client = EvaIcsClient::new(eva_url, eva_api_key);
 
-    // Initialize Zenoh session
+    // Configure Zenoh session with router endpoint
     let mut zenoh_config = zenoh::Config::default();
-    zenoh_config.connect.endpoints.set(vec!["tcp/127.0.0.1:7447".parse().unwrap()])?;
+    zenoh_config
+        .insert_json5("connect/endpoints", r#"["tcp/127.0.0.1:7447"]"#)
+        .expect("Failed to configure Zenoh endpoints");
     let zenoh_session = zenoh::open(zenoh_config).await?;
 
     info!("EVA-ICS Connector initialized");
 
-    // Start bridge loop
     loop {
         if let Err(e) = bridge::sync_sensors(&eva_client, &zenoh_session).await {
             error!("Error syncing sensors: {}", e);

@@ -1,19 +1,14 @@
 {
   /// The identifier (as hex-string) that zenoh runtime will use.
   /// If not set, a random UUIDv4 will be used.
-  /// WARNING: this id must be unique in the system and must be 16 bytes maximum (32 hex chars)!
   //id: "A00001",
 
   mode: "router",
 
-  /// The locator of a peer to connect to.
   connect: {
-    endpoints: [
-      // "tcp/localhost:7447",
-    ],
+    endpoints: [],
   },
 
-  /// The locator to listen on.
   listen: {
     endpoints: [
       "tcp/0.0.0.0:7447",
@@ -33,13 +28,7 @@
     enabled: true,
   },
 
-  /// Plugins configurations
   plugins: {
-    /// REST API plugin
-    rest: {
-      http_port: 8080,
-    },
-
     /// Storage manager plugin
     storage_manager: {
       volumes: {

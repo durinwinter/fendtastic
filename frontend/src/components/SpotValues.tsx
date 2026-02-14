@@ -23,7 +23,7 @@ const SpotValues: React.FC = () => {
     { label: 'Vibration', value: 48, unit: 'Hz', status: 'normal', trend: 'stable' },
   ]
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: SpotValue['status']) => {
     switch (status) {
       case 'critical': return '#E74C3C'
       case 'warning': return '#F39C12'
@@ -63,7 +63,7 @@ const SpotValues: React.FC = () => {
         },
       }}>
         {spotValues.map((item, index) => (
-          <React.Fragment key={index}>
+          <React.Fragment key={item.label}>
             <Box sx={{
               py: 1.5,
               display: 'flex',

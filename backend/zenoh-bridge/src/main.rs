@@ -1,7 +1,4 @@
-use tracing::{info, error, Level};
-use zenoh::prelude::*;
-use std::time::Duration;
-use tokio::time;
+use tracing::{info, Level};
 
 mod publisher;
 mod subscriber;
@@ -14,10 +11,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting Zenoh Bridge");
 
-    // Configure Zenoh session
+    // Configure Zenoh session with router endpoint
     let mut config = zenoh::Config::default();
-    // Connect to Zenoh router
-    config.connect.endpoints.set(vec!["tcp/127.0.0.1:7447".parse().unwrap()])?;
+    config
+        .insert_json5("connect/endpoints", r#"["tcp/127.0.0.1:7447"]"#)
+        .expect("Failed to configure Zenoh endpoints");
 
     let session = zenoh::open(config).await?;
     info!("Zenoh session opened");
@@ -34,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         subscriber::run(subscriber_session).await
     });
 
-    // Wait for tasks
+    // Wait for tasks or shutdown signal
     tokio::select! {
         _ = publisher_handle => info!("Publisher task ended"),
         _ = subscriber_handle => info!("Subscriber task ended"),

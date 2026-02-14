@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.18",
     "@mui/material": "^5.14.18",
     "@react-three/drei": "^9.88.17",
     "@react-three/fiber": "^8.15.11",
@@ -14,10 +15,7 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
-    "recharts": "^2.10.3",
-    "three": "^0.159.0",
-    "zenoh": "^0.11.0",
-    "zustand": "^4.4.7"
+    "three": "^0.159.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
@@ -31,13 +29,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+    "preview": "vite preview"
   },
   "browserslist": {
     "production": [

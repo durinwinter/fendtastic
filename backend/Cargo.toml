@@ -22,15 +22,15 @@ async-trait = "0.1"
 actix-web = "4.4"
 actix-cors = "0.7"
 actix-rt = "2.9"
+actix = "0.13"
+actix-web-actors = "4.3"
 
 # Zenoh
-zenoh = { version = "0.11", features = ["unstable"] }
-zenoh-ext = "0.11"
+zenoh = "1.1"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9"
 
 # Error handling
 anyhow = "1.0"
@@ -44,7 +44,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 config = "0.14"
 
 # HTTP client (for EVA-ICS)
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 
 # Time
 chrono = { version = "0.4", features = ["serde"] }

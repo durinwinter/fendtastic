@@ -1,14 +1,14 @@
-use zenoh::Session;
-use tracing::{info, error};
+use chrono::Utc;
+use serde_json::json;
 use std::time::Duration;
 use tokio::time;
-use serde_json::json;
+use tracing::{error, info};
+use zenoh::Session;
 
 pub async fn run(session: Session) {
     info!("Starting Zenoh publisher");
 
     loop {
-        // Publish machine telemetry
         if let Err(e) = publish_telemetry(&session).await {
             error!("Failed to publish telemetry: {}", e);
         }
@@ -18,9 +18,8 @@ pub async fn run(session: Session) {
 }
 
 async fn publish_telemetry(session: &Session) -> Result<(), Box<dyn std::error::Error>> {
-    let timestamp = chrono::Utc::now().to_rfc3339();
+    let timestamp = Utc::now().to_rfc3339();
 
-    // Publish machine state
     let machine_state = json!({
         "machine_id": "machine-001",
         "state": "operational",
@@ -31,7 +30,6 @@ async fn publish_telemetry(session: &Session) -> Result<(), Box<dyn std::error::
         .put("fendtastic/machines/machine-001/state", machine_state.to_string())
         .await?;
 
-    // Publish sensor data
     let sensor_data = json!({
         "machine_id": "machine-001",
         "sensor_id": "temp-001",

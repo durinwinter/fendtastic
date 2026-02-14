@@ -1,7 +1,6 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
 use tracing::{info, Level};
-use tracing_subscriber;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -13,16 +12,13 @@ use state::AppState;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Initialize logging
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
         .init();
 
     info!("Starting Fendtastic API Server");
 
-    // Initialize Zenoh session
-    let zenoh_config = zenoh::config::Config::default();
-    let zenoh_session = zenoh::open(zenoh_config)
+    let zenoh_session = zenoh::open(zenoh::Config::default())
         .await
         .expect("Failed to open Zenoh session");
 
