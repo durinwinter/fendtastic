@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    "api-server",
+    "zenoh-bridge",
+    "eva-ics-connector",
+    "shared",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Web framework
+actix-web = "4.4"
+actix-cors = "0.7"
+actix-rt = "2.9"
+
+# Zenoh
+zenoh = { version = "0.11", features = ["unstable"] }
+zenoh-ext = "0.11"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Config
+config = "0.14"
+
+# HTTP client (for EVA-ICS)
+reqwest = { version = "0.11", features = ["json"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID
+uuid = { version = "1.6", features = ["v4", "serde"] }

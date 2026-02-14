@@ -1,0 +1,54 @@
+{
+  "name": "fendtastic-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.14.18",
+    "@react-three/drei": "^9.88.17",
+    "@react-three/fiber": "^8.15.11",
+    "axios": "^1.6.2",
+    "chart.js": "^4.4.0",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "recharts": "^2.10.3",
+    "three": "^0.159.0",
+    "zenoh": "^0.11.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "@types/three": "^0.159.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.7"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

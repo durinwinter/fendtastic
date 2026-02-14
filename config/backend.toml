@@ -1,0 +1,16 @@
+[server]
+host = "0.0.0.0"
+port = 8080
+
+[zenoh]
+router_endpoint = "tcp/127.0.0.1:7447"
+key_prefix = "fendtastic"
+
+[eva_ics]
+url = "http://localhost:7727"
+api_key = "your-api-key-here"
+poll_interval_ms = 500
+
+[logging]
+level = "info"
+format = "json"

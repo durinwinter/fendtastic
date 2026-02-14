@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  zenoh-router:
+    image: eclipse/zenoh:latest
+    container_name: fendtastic-zenoh-router
+    ports:
+      - "7447:7447"
+      - "8000:8000"
+    volumes:
+      - ./config/zenoh-router.json5:/etc/zenoh/config.json5
+    command: -c /etc/zenoh/config.json5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fendtastic-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - ZENOH_ROUTER=zenoh-router:7447
+      - EVA_ICS_URL=${EVA_ICS_URL}
+      - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
+    depends_on:
+      - zenoh-router
+    volumes:
+      - ./config:/app/config
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fendtastic-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+      - REACT_APP_ZENOH_WS=ws://localhost:8000

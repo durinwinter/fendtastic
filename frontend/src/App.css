@@ -1,0 +1,50 @@
+.App {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+.dashboard-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+/* Fendt Green Theme Colors */
+:root {
+  --fendt-green: #6EC72D;
+  --fendt-green-dark: #4E9020;
+  --fendt-green-light: #8FD84F;
+  --mars-red: #E74C3C;
+  --mars-orange: #E67E22;
+  --mars-blue: #3498DB;
+  --background-dark: #0a0a0a;
+  --background-medium: #1a1a1a;
+  --background-light: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-medium);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fendt-green-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fendt-green);
+}
