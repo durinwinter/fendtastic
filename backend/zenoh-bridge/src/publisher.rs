@@ -17,7 +17,7 @@ pub async fn run(session: Session) {
     }
 }
 
-async fn publish_telemetry(session: &Session) -> Result<(), Box<dyn std::error::Error>> {
+async fn publish_telemetry(session: &Session) -> anyhow::Result<()> {
     let timestamp = Utc::now().to_rfc3339();
 
     let machine_state = json!({
@@ -28,7 +28,8 @@ async fn publish_telemetry(session: &Session) -> Result<(), Box<dyn std::error::
 
     session
         .put("fendtastic/machines/machine-001/state", machine_state.to_string())
-        .await?;
+        .await
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     let sensor_data = json!({
         "machine_id": "machine-001",
@@ -40,7 +41,8 @@ async fn publish_telemetry(session: &Session) -> Result<(), Box<dyn std::error::
 
     session
         .put("fendtastic/sensors/machine-001/temp-001", sensor_data.to_string())
-        .await?;
+        .await
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     Ok(())
 }

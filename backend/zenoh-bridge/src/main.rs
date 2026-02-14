@@ -4,7 +4,7 @@ mod publisher;
 mod subscriber;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
         .init();
@@ -17,7 +17,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .insert_json5("connect/endpoints", r#"["tcp/127.0.0.1:7447"]"#)
         .expect("Failed to configure Zenoh endpoints");
 
-    let session = zenoh::open(config).await?;
+    let session = zenoh::open(config)
+        .await
+        .map_err(|e| anyhow::anyhow!(e))?;
     info!("Zenoh session opened");
 
     // Start publisher task
@@ -41,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    session.close().await?;
+    session.close().await.map_err(|e| anyhow::anyhow!(e))?;
     info!("Zenoh Bridge shut down");
 
     Ok(())

@@ -32,7 +32,7 @@ pub async fn run(session: Session) {
     }
 }
 
-async fn process_sample(key: &str, payload: &str) {
+async fn process_sample(key: &str, _payload: &str) {
     if key.starts_with("fendtastic/eva-ics/") {
         info!("Processing EVA-ICS data: {}", key);
     } else if key.starts_with("fendtastic/commands/") {
