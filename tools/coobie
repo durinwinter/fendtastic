@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+import os
+import stat
+import random
+import time
+
+VERSION = "1.0.0"
+
+LABRADOR_ASCII = r"""
+      / \__
+     (    @\___
+     /         O
+    /   (_____/
+   /_____/   U
+"""
+
+PHRASES = [
+    "Woof! Ready to help!",
+    "Tail wagging at full speed!",
+    "Did someone say 'launch'?! *ears perk up*",
+    "Formatting disk... just kidding! *play bow*",
+    "I'm a good boy! Bringing you the codes!",
+    "Zoomies engaged!",
+    "Happy to serve! *pant pant*"
+]
+
+def print_labrador_message(msg):
+    prefix = random.choice(["*woof*", "*bark*", "*wag wag*", "*happy pant*"])
+    print(f"\033[1;33m{prefix} {msg}\033[0m")
+
+def make_executable(path):
+    st = os.stat(path)
+    os.chmod(path, st.st_mode | stat.S_IEXEC)
+
+def main():
+    print(f"\033[1;36m{LABRADOR_ASCII}\033[0m")
+    print_labrador_message(random.choice(PHRASES))
+    print()
+
+    parser = argparse.ArgumentParser(description="Coobie: The Loyal Labrador CLI Tool")
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
+    
+    subparsers = parser.add_subparsers(dest='category', help='Command category')
+    
+    # cornchips subcommand
+    cornchips_parser = subparsers.add_parser('cornchips', help='Keyphrase for treats/commands')
+    cornchips_subparsers = cornchips_parser.add_subparsers(dest='action', help='Cornchips actions')
+    
+    # launch subcommand
+    launch_parser = cornchips_subparsers.add_parser('launch', help='Fetch and run a script')
+    launch_parser.add_argument('script', help='The script to fetch!')
+
+    args = parser.parse_args()
+
+    if args.category == 'cornchips':
+        if args.action == 'launch':
+            original_script = args.script
+            script_path = original_script
+            
+            # Resolve script path
+            if not os.path.isabs(script_path):
+                 script_path = os.path.abspath(script_path)
+
+            if not os.path.exists(script_path):
+                print_labrador_message(f"*whine* I can't find the ball... I mean, script '{original_script}'!")
+                sys.exit(1)
+            
+            # Ensure it is executable if it's a file
+            if os.path.isfile(script_path) and not os.access(script_path, os.X_OK):
+                try:
+                    make_executable(script_path)
+                    print_labrador_message("I made it executable for you! *lick*")
+                except PermissionError:
+                    print_labrador_message(f"*growl* I'm not allowed to touch {script_path}. Permission denied.")
+
+            print_labrador_message(f"Fetching {script_path}... Go go go!")
+            try:
+                # Use absolute path to ensure execution
+                subprocess.run([script_path], check=True)
+                print_labrador_message("Values returned! Who's a good script? You are!")
+            except subprocess.CalledProcessError as e:
+                print_labrador_message(f"*sad whine* The command failed with code {e.returncode}. Did I do something wrong?")
+                sys.exit(e.returncode)
+            except OSError as e:
+                 print_labrador_message(f"*confused tilt* Error executing script: {e}")
+                 sys.exit(1)
+            except Exception as e:
+                print_labrador_message(f"*scared* Unexpected error: {e}")
+                sys.exit(1)
+        else:
+             print_labrador_message("I'm ready for cornchips commands! Try 'launch'!")
+             cornchips_parser.print_help()
+    else:
+        print_labrador_message("I'm listening! What should we do?")
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
+
