@@ -4,9 +4,15 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { fendtTheme } from './themes/fendtTheme'
 import Dashboard from './pages/Dashboard'
+import { useEffect } from 'react'
+import zenohService from './services/zenohService'
 import './App.css'
 
 function App() {
+  useEffect(() => {
+    zenohService.connect().catch(console.error)
+  }, [])
+
   return (
     <ThemeProvider theme={fendtTheme}>
       <CssBaseline />

@@ -5,6 +5,8 @@
 export class ZenohService {
   private ws: WebSocket | null = null
   private subscribers: Map<string, Set<(data: any) => void>> = new Map()
+  private connectionListeners: Set<(connected: boolean) => void> = new Set()
+  public isConnected: boolean = false
 
   constructor(private url: string) {}
 
@@ -15,12 +17,16 @@ export class ZenohService {
 
         this.ws.onopen = () => {
           console.log('Zenoh WebSocket connected')
+          this.isConnected = true
+          this.notifyConnectionListeners(true)
           resolve()
         }
 
         this.ws.onerror = (error) => {
           console.error('Zenoh WebSocket error:', error)
-          reject(error)
+          // Don't reject here if we want auto-reconnect logic to persist?
+          // For now, simple reject is fine for initial connection.
+          if (!this.isConnected) reject(error)
         }
 
         this.ws.onmessage = (event) => {
@@ -29,12 +35,25 @@ export class ZenohService {
 
         this.ws.onclose = () => {
           console.log('Zenoh WebSocket disconnected')
+          this.isConnected = false
+          this.notifyConnectionListeners(false)
           setTimeout(() => this.connect(), 5000) // Auto-reconnect
         }
       } catch (error) {
         reject(error)
       }
     })
+  }
+
+  onConnectionChange(callback: (connected: boolean) => void): () => void {
+    this.connectionListeners.add(callback)
+    // Notify immediately of current state
+    callback(this.isConnected)
+    return () => this.connectionListeners.delete(callback)
+  }
+
+  private notifyConnectionListeners(connected: boolean) {
+    this.connectionListeners.forEach(listener => listener(connected))
   }
 
   private handleMessage(data: string) {

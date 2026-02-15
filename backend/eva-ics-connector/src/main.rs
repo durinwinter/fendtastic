@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     zenoh_config
         .insert_json5("connect/endpoints", r#"["tcp/127.0.0.1:7447"]"#)
         .expect("Failed to configure Zenoh endpoints");
-    let zenoh_session = zenoh::open(zenoh_config).await?;
+    let zenoh_session = zenoh::open(zenoh_config).await.map_err(|e| anyhow::anyhow!(e))?;
 
     info!("EVA-ICS Connector initialized");
 
