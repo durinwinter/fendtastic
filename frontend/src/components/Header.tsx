@@ -3,7 +3,11 @@ import { AppBar, Toolbar, Typography, Box, Chip } from '@mui/material'
 import { Circle as CircleIcon } from '@mui/icons-material'
 import zenohService from '../services/zenohService'
 
+import { useNavigate, useLocation } from 'react-router-dom'
+
 const Header: React.FC = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [zenohConnected, setZenohConnected] = useState(false)
   const [evaIcsOnline, setEvaIcsOnline] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -51,14 +55,41 @@ const Header: React.FC = () => {
           variant="h5"
           component="div"
           sx={{
-            flexGrow: 1,
+            flexGrow: 0,
             fontWeight: 700,
             color: 'primary.main',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.05em',
+            mr: 4,
+            cursor: 'pointer'
           }}
+          onClick={() => navigate('/')}
         >
           FENDTASTIC CONTROL SYSTEM
         </Typography>
+
+        <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
+          <Chip
+            label="DASHBOARD"
+            onClick={() => navigate('/')}
+            color={location.pathname === '/' ? 'primary' : 'default'}
+            variant={location.pathname === '/' ? 'filled' : 'outlined'}
+            clickable
+          />
+          <Chip
+            label="HEPTAPOD"
+            onClick={() => navigate('/heptapod')}
+            color={location.pathname === '/heptapod' ? 'primary' : 'default'}
+            variant={location.pathname === '/heptapod' ? 'filled' : 'outlined'}
+            clickable
+          />
+          <Chip
+            label="PEA LAUNCHER"
+            onClick={() => navigate('/pea-launcher')}
+            color={location.pathname === '/pea-launcher' ? 'primary' : 'default'}
+            variant={location.pathname === '/pea-launcher' ? 'filled' : 'outlined'}
+            clickable
+          />
+        </Box>
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Chip

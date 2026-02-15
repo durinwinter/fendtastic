@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Read(//tmp/MTPPy/src/mtppy/**)",
+      "WebFetch(domain:info.bma.ai)"
     ]
   }
 }
