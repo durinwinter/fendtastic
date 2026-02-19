@@ -3,8 +3,10 @@ use actix_cors::Cors;
 use tracing::{info, Level};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use std::collections::HashMap;
 
 mod handlers;
+mod pea_handlers;
 mod state;
 mod websocket;
 
@@ -22,9 +24,17 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to open Zenoh session");
 
+    let pea_config_dir = std::env::var("PEA_CONFIG_DIR")
+        .unwrap_or_else(|_| "./data/pea-configs".to_string());
+
+    let pea_configs = pea_handlers::load_pea_configs(&pea_config_dir);
+
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
         connections: Arc::new(RwLock::new(0)),
+        pea_configs: Arc::new(RwLock::new(pea_configs)),
+        recipes: Arc::new(RwLock::new(HashMap::new())),
+        pea_config_dir,
     });
 
     let host = std::env::var("API_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
@@ -48,11 +58,27 @@ async fn main() -> std::io::Result<()> {
             .route("/health", web::get().to(health_check))
             .service(
                 web::scope("/api/v1")
+                    // Dashboard endpoints
                     .route("/metrics", web::get().to(handlers::get_metrics))
                     .route("/machines", web::get().to(handlers::get_machines))
                     .route("/machines/{id}", web::get().to(handlers::get_machine_by_id))
                     .route("/alarms", web::get().to(handlers::get_alarms))
                     .route("/timeseries/{machine_id}", web::get().to(handlers::get_timeseries))
+                    // PEA CRUD
+                    .route("/pea", web::get().to(pea_handlers::list_peas))
+                    .route("/pea", web::post().to(pea_handlers::create_pea))
+                    .route("/pea/{id}", web::get().to(pea_handlers::get_pea))
+                    .route("/pea/{id}", web::put().to(pea_handlers::update_pea))
+                    .route("/pea/{id}", web::delete().to(pea_handlers::delete_pea))
+                    // PEA Lifecycle
+                    .route("/pea/{id}/deploy", web::post().to(pea_handlers::deploy_pea))
+                    .route("/pea/{id}/start", web::post().to(pea_handlers::start_pea))
+                    .route("/pea/{id}/stop", web::post().to(pea_handlers::stop_pea))
+                    // Recipes
+                    .route("/recipes", web::get().to(pea_handlers::list_recipes))
+                    .route("/recipes", web::post().to(pea_handlers::create_recipe))
+                    .route("/recipes/{id}/execute", web::post().to(pea_handlers::execute_recipe))
+                    // WebSocket
                     .route("/ws", web::get().to(websocket::ws_handler))
             )
     })

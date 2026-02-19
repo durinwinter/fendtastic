@@ -1,4 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
+import { PeaConfig } from '../types/mtp'
+import { Recipe } from '../types/recipe'
 
 class ApiService {
   private client: AxiosInstance
@@ -12,6 +14,8 @@ class ApiService {
       },
     })
   }
+
+  // ─── Dashboard ───────────────────────────────────────────────────────────
 
   async getMetrics() {
     const response = await this.client.get('/metrics')
@@ -38,6 +42,62 @@ class ApiService {
       params: { startTime, endTime },
     })
     return response.data
+  }
+
+  // ─── PEA CRUD ────────────────────────────────────────────────────────────
+
+  async listPeas(): Promise<PeaConfig[]> {
+    const response = await this.client.get('/pea')
+    return response.data
+  }
+
+  async getPea(id: string): Promise<PeaConfig> {
+    const response = await this.client.get(`/pea/${id}`)
+    return response.data
+  }
+
+  async createPea(config: Partial<PeaConfig>): Promise<PeaConfig> {
+    const response = await this.client.post('/pea', config)
+    return response.data
+  }
+
+  async updatePea(id: string, config: PeaConfig): Promise<PeaConfig> {
+    const response = await this.client.put(`/pea/${id}`, config)
+    return response.data
+  }
+
+  async deletePea(id: string): Promise<void> {
+    await this.client.delete(`/pea/${id}`)
+  }
+
+  // ─── PEA Lifecycle ───────────────────────────────────────────────────────
+
+  async deployPea(id: string): Promise<void> {
+    await this.client.post(`/pea/${id}/deploy`)
+  }
+
+  async startPea(id: string): Promise<void> {
+    await this.client.post(`/pea/${id}/start`)
+  }
+
+  async stopPea(id: string): Promise<void> {
+    await this.client.post(`/pea/${id}/stop`)
+  }
+
+  // ─── Recipes ─────────────────────────────────────────────────────────────
+
+  async listRecipes(): Promise<Recipe[]> {
+    const response = await this.client.get('/recipes')
+    return response.data
+  }
+
+  async createRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
+    const response = await this.client.post('/recipes', recipe)
+    return response.data
+  }
+
+  async executeRecipe(id: string): Promise<void> {
+    await this.client.post(`/recipes/${id}/execute`)
   }
 }
 

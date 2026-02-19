@@ -9,6 +9,18 @@ services:
       - ./config/zenoh-router.json5:/etc/zenoh/config.json5
     command: -c /etc/zenoh/config.json5
 
+  eva-ics:
+    image: altertech/eva4:latest
+    container_name: fendtastic-eva-ics
+    ports:
+      - "7727:7727"
+      - "4840:4840"
+    volumes:
+      - eva-ics-data:/opt/eva4/runtime
+    environment:
+      - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -18,12 +30,15 @@ services:
       - "8080:8080"
     environment:
       - ZENOH_ROUTER=tcp/zenoh-router:7447
-      - EVA_ICS_URL=${EVA_ICS_URL}
+      - EVA_ICS_URL=http://eva-ics:7727
       - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
+      - PEA_CONFIG_DIR=/app/data/pea-configs
     depends_on:
       - zenoh-router
+      - eva-ics
     volumes:
       - ./config:/app/config
+      - pea-configs:/app/data/pea-configs
 
   frontend:
     build:
@@ -34,3 +49,7 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+volumes:
+  eva-ics-data:
+  pea-configs:
