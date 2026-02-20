@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Box, ToggleButtonGroup, ToggleButton, Typography, Chip, CircularProgress } from '@mui/material'
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -10,8 +11,11 @@ import {
   Tooltip,
   Legend,
   Filler,
+  TimeScale,
   ChartOptions,
 } from 'chart.js'
+import 'chartjs-adapter-date-fns'
+import apiService from '../services/apiService'
 
 ChartJS.register(
   CategoryScale,
@@ -21,59 +25,134 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  TimeScale
 )
 
-const TimeSeriesChart: React.FC = () => {
-  const data = useMemo(() => {
-    // Generate mock data - in production this comes from Zenoh
-    const labels = Array.from({ length: 50 }, (_, i) => `${i}s`)
-    const generateData = (base: number, variance: number) =>
-      Array.from({ length: 50 }, () => base + Math.random() * variance - variance / 2)
+const TIME_RANGES = [
+  { label: '1m', ms: 60_000 },
+  { label: '5m', ms: 300_000 },
+  { label: '15m', ms: 900_000 },
+  { label: '1h', ms: 3_600_000 },
+  { label: '6h', ms: 21_600_000 },
+  { label: '24h', ms: 86_400_000 },
+] as const
 
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Temperature (°C)',
-          data: generateData(72, 10),
-          borderColor: '#6EC72D',
-          backgroundColor: 'rgba(110, 199, 45, 0.1)',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        },
-        {
-          label: 'Pressure (PSI)',
-          data: generateData(1000, 100),
-          borderColor: '#3498DB',
-          backgroundColor: 'rgba(52, 152, 219, 0.1)',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        },
-        {
-          label: 'Vibration (Hz)',
-          data: generateData(50, 20),
-          borderColor: '#E67E22',
-          backgroundColor: 'rgba(230, 126, 34, 0.1)',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        },
-      ],
+const COLOR_PALETTE = [
+  { border: '#6EC72D', bg: 'rgba(110, 199, 45, 0.1)' },
+  { border: '#3498DB', bg: 'rgba(52, 152, 219, 0.1)' },
+  { border: '#E67E22', bg: 'rgba(230, 126, 34, 0.1)' },
+  { border: '#E74C3C', bg: 'rgba(231, 76, 60, 0.1)' },
+  { border: '#9B59B6', bg: 'rgba(155, 89, 182, 0.1)' },
+  { border: '#1ABC9C', bg: 'rgba(26, 188, 156, 0.1)' },
+]
+
+/** Extract a short display label from a Zenoh key like "fendtastic/sensor/temperature" */
+function keyToLabel(key: string): string {
+  const parts = key.split('/')
+  return parts.slice(-2).join('/')
+}
+
+/** Try to extract a numeric value from a Zenoh payload */
+function extractNumeric(v: unknown): number | null {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const n = parseFloat(v)
+    return isNaN(n) ? null : n
+  }
+  if (v && typeof v === 'object') {
+    const obj = v as Record<string, unknown>
+    for (const field of ['value', 'v', 'data', 'val']) {
+      if (field in obj) return extractNumeric(obj[field])
     }
+  }
+  return null
+}
+
+const POLL_INTERVAL = 3000
+
+const TimeSeriesChart: React.FC = () => {
+  const [rangeMs, setRangeMs] = useState(300_000) // default 5m
+  const [keys, setKeys] = useState<string[]>([])
+  const [chartData, setChartData] = useState<{
+    datasets: Array<{
+      label: string
+      data: Array<{ x: number; y: number }>
+      borderColor: string
+      backgroundColor: string
+      fill: boolean
+      tension: number
+      borderWidth: number
+      pointRadius: number
+      pointHoverRadius: number
+    }>
+  }>({ datasets: [] })
+  const [loading, setLoading] = useState(true)
+
+  // Discover available keys on mount
+  useEffect(() => {
+    apiService.getTsKeys()
+      .then(res => setKeys(res.keys || []))
+      .catch(() => {})
   }, [])
+
+  const fetchData = useCallback(async () => {
+    if (keys.length === 0) {
+      setLoading(false)
+      return
+    }
+
+    const endMs = Date.now()
+    const startMs = endMs - rangeMs
+
+    try {
+      const results = await Promise.all(
+        keys.map(key => apiService.queryTimeSeries(key, startMs, endMs))
+      )
+
+      const datasets = results
+        .map((res, i) => {
+          const color = COLOR_PALETTE[i % COLOR_PALETTE.length]
+          const data = res.points
+            .map(p => {
+              const y = extractNumeric(p.v)
+              return y !== null ? { x: p.t, y } : null
+            })
+            .filter((p): p is { x: number; y: number } => p !== null)
+
+          return {
+            label: keyToLabel(res.key),
+            data,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+          }
+        })
+        .filter(ds => ds.data.length > 0)
+
+      setChartData({ datasets })
+    } catch {
+      // keep showing previous data
+    } finally {
+      setLoading(false)
+    }
+  }, [keys, rangeMs])
+
+  // Poll for new data
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: 300 },
     interaction: {
       mode: 'index' as const,
       intersect: false,
@@ -84,10 +163,7 @@ const TimeSeriesChart: React.FC = () => {
         position: 'top' as const,
         labels: {
           color: '#ffffff',
-          font: {
-            size: 11,
-            weight: 600,
-          },
+          font: { size: 11, weight: 600 },
           padding: 15,
         },
       },
@@ -99,20 +175,33 @@ const TimeSeriesChart: React.FC = () => {
         borderWidth: 1,
         padding: 12,
         displayColors: true,
+        callbacks: {
+          title: (items) => {
+            if (items.length > 0) {
+              return new Date(items[0].parsed.x).toLocaleTimeString()
+            }
+            return ''
+          },
+        },
       },
     },
     scales: {
       x: {
-        display: true,
+        type: 'time',
+        time: {
+          displayFormats: {
+            second: 'HH:mm:ss',
+            minute: 'HH:mm',
+            hour: 'HH:mm',
+          },
+        },
         grid: {
           color: 'rgba(255, 255, 255, 0.05)',
           drawTicks: false,
         },
         ticks: {
           color: '#b0b0b0',
-          font: {
-            size: 10,
-          },
+          font: { size: 10 },
           maxTicksLimit: 10,
         },
       },
@@ -124,15 +213,68 @@ const TimeSeriesChart: React.FC = () => {
         },
         ticks: {
           color: '#b0b0b0',
-          font: {
-            size: 10,
-          },
+          font: { size: 10 },
         },
       },
     },
   }
 
-  return <Line data={data} options={options} />
+  const hasData = chartData.datasets.length > 0
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Time range controls */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <ToggleButtonGroup
+          value={rangeMs}
+          exclusive
+          onChange={(_, val) => { if (val !== null) setRangeMs(val) }}
+          size="small"
+        >
+          {TIME_RANGES.map(r => (
+            <ToggleButton
+              key={r.label}
+              value={r.ms}
+              sx={{
+                px: 1.5, py: 0.25,
+                fontSize: 11,
+                color: 'text.secondary',
+                '&.Mui-selected': {
+                  color: '#6EC72D',
+                  backgroundColor: 'rgba(110, 199, 45, 0.15)',
+                },
+              }}
+            >
+              {r.label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <Chip
+          label={`${keys.length} key${keys.length !== 1 ? 's' : ''}`}
+          size="small"
+          variant="outlined"
+          sx={{ fontSize: 10 }}
+        />
+      </Box>
+
+      {/* Chart area */}
+      <Box sx={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <CircularProgress color="primary" size={24} />
+          </Box>
+        ) : hasData ? (
+          <Line data={chartData} options={options} />
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Typography variant="body2" color="text.secondary">
+              No time-series data yet. Data appears as Zenoh values are published to fendtastic/**.
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  )
 }
 
 export default TimeSeriesChart

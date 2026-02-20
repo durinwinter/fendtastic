@@ -1,10 +1,12 @@
-import React from 'react'
-import { Box, Grid, Paper, Typography } from '@mui/material'
+import React, { Suspense } from 'react'
+import { Box, Paper, Typography, CircularProgress } from '@mui/material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
 import TimeSeriesChart from '../components/TimeSeriesChart'
 import SpotValues from '../components/SpotValues'
-import IsometricView from '../components/IsometricView'
 import Header from '../components/Header'
+
+// Lazy-load Three.js heavy component to avoid blocking initial render
+const IsometricView = React.lazy(() => import('../components/IsometricView'))
 
 const Dashboard: React.FC = () => {
   return (
@@ -77,7 +79,13 @@ const Dashboard: React.FC = () => {
               Machine View
             </Typography>
             <Box sx={{ flex: 1, position: 'relative' }}>
-              <IsometricView />
+              <Suspense fallback={
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <CircularProgress color="primary" size={32} />
+                </Box>
+              }>
+                <IsometricView />
+              </Suspense>
             </Box>
           </Paper>
         </Box>

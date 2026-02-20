@@ -138,6 +138,26 @@ class ApiService {
     const response = await this.client.post('/mesh/generate-config', config)
     return response.data
   }
+
+  // ─── Time-Series Historical Data ──────────────────────────────────────────
+
+  async getTsKeys(): Promise<{ keys: string[] }> {
+    const response = await this.client.get('/ts/keys')
+    return response.data
+  }
+
+  async queryTimeSeries(key: string, startMs: number, endMs: number): Promise<{
+    key: string
+    start_ms: number
+    end_ms: number
+    count: number
+    points: Array<{ t: number; v: unknown }>
+  }> {
+    const response = await this.client.get('/ts/query', {
+      params: { key, start_ms: startMs, end_ms: endMs },
+    })
+    return response.data
+  }
 }
 
 export default new ApiService()

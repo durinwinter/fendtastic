@@ -1,6 +1,6 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
-use tracing::{info, Level};
+use tracing::{info, error, Level};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -8,9 +8,10 @@ mod handlers;
 mod mesh_handlers;
 mod pea_handlers;
 mod state;
+mod timeseries_handlers;
 mod websocket;
 
-use state::AppState;
+use state::{AppState, TimeSeriesStore};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -43,13 +44,53 @@ async fn main() -> std::io::Result<()> {
     let pea_configs = pea_handlers::load_pea_configs(&pea_config_dir);
     let recipes = pea_handlers::load_recipes(&recipe_dir);
 
+    // Time-series ring buffer: keep up to 86400 points per key (~24h at 1 sample/sec)
+    let timeseries = Arc::new(RwLock::new(TimeSeriesStore::new(86400)));
+
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
         pea_configs: Arc::new(RwLock::new(pea_configs)),
         recipes: Arc::new(RwLock::new(recipes)),
         pea_config_dir,
         recipe_dir,
+        timeseries: timeseries.clone(),
     });
+
+    // Spawn background Zenoh subscriber to collect time-series data
+    {
+        let session = app_state.zenoh_session.clone();
+        let ts_store = timeseries.clone();
+        tokio::spawn(async move {
+            let subscriber = match session.declare_subscriber("fendtastic/**").await {
+                Ok(sub) => sub,
+                Err(e) => {
+                    error!("Failed to subscribe to fendtastic/** for time-series: {}", e);
+                    return;
+                }
+            };
+            info!("Time-series collector: subscribed to fendtastic/**");
+
+            loop {
+                match subscriber.recv_async().await {
+                    Ok(sample) => {
+                        let key = sample.key_expr().as_str().to_string();
+                        let payload_str = sample
+                            .payload()
+                            .try_to_string()
+                            .unwrap_or_else(|e| e.to_string().into())
+                            .to_string();
+                        let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                            .unwrap_or(serde_json::Value::String(payload_str));
+                        let now_ms = chrono::Utc::now().timestamp_millis();
+
+                        let mut store = ts_store.write().await;
+                        store.insert(key, value, now_ms);
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+    }
 
     let host = std::env::var("API_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port: u16 = std::env::var("API_PORT")
@@ -78,6 +119,9 @@ async fn main() -> std::io::Result<()> {
                     .route("/machines/{id}", web::get().to(handlers::get_machine_by_id))
                     .route("/alarms", web::get().to(handlers::get_alarms))
                     .route("/timeseries/{machine_id}", web::get().to(handlers::get_timeseries))
+                    // Time-series historical data
+                    .route("/ts/keys", web::get().to(timeseries_handlers::get_ts_keys))
+                    .route("/ts/query", web::get().to(timeseries_handlers::query_timeseries))
                     // PEA CRUD
                     .route("/pea", web::get().to(pea_handlers::list_peas))
                     .route("/pea", web::post().to(pea_handlers::create_pea))
