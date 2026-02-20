@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 mod handlers;
 mod mesh_handlers;
 mod pea_handlers;
+mod scenario_handlers;
 mod simulator;
 mod state;
 mod timeseries_handlers;
@@ -64,33 +65,79 @@ async fn main() -> std::io::Result<()> {
         let session = app_state.zenoh_session.clone();
         let ts_store = timeseries.clone();
         tokio::spawn(async move {
-            let subscriber = match session.declare_subscriber("fendtastic/**").await {
-                Ok(sub) => sub,
+            // Subscribe to both fendtastic and durins-forge PEA telemetry
+            // Note: We need two separate subscriptions since Zenoh doesn't support OR patterns
+            let subscriber1 = match session.declare_subscriber("fendtastic/**").await {
+                Ok(sub) => Some(sub),
                 Err(e) => {
                     error!("Failed to subscribe to fendtastic/** for time-series: {}", e);
-                    return;
+                    None
                 }
             };
-            info!("Time-series collector: subscribed to fendtastic/**");
+            
+            let subscriber2 = match session.declare_subscriber("pea/**").await {
+                Ok(sub) => Some(sub),
+                Err(e) => {
+                    error!("Failed to subscribe to pea/** for time-series: {}", e);
+                    None
+                }
+            };
+            
+            if subscriber1.is_none() && subscriber2.is_none() {
+                error!("Failed to subscribe to any telemetry topics");
+                return;
+            }
+            
+            info!("Time-series collector: subscribed to fendtastic/** and pea/**");
 
             loop {
-                match subscriber.recv_async().await {
-                    Ok(sample) => {
-                        let key = sample.key_expr().as_str().to_string();
-                        let payload_str = sample
-                            .payload()
-                            .try_to_string()
-                            .unwrap_or_else(|e| e.to_string().into())
-                            .to_string();
-                        let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                            .unwrap_or(serde_json::Value::String(payload_str));
-                        let now_ms = chrono::Utc::now().timestamp_millis();
-
-                        let mut store = ts_store.write().await;
-                        store.insert(key, value, now_ms);
+                // Try to receive from either subscriber
+                let received = if let Some(ref sub1) = subscriber1 {
+                    match sub1.recv_async().await {
+                        Ok(sample) => Some(sample),
+                        Err(_) => None,
                     }
-                    Err(_) => break,
+                } else {
+                    None
+                };
+                
+                if let Some(sample) = received {
+                    let key = sample.key_expr().as_str().to_string();
+                    let payload_str = sample
+                        .payload()
+                        .try_to_string()
+                        .unwrap_or_else(|e| e.to_string().into())
+                        .to_string();
+                    let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                        .unwrap_or(serde_json::Value::String(payload_str));
+                    let now_ms = chrono::Utc::now().timestamp_millis();
+
+                    let mut store = ts_store.write().await;
+                    store.insert(key, value, now_ms);
                 }
+                
+                // Also check second subscriber if available
+                if let Some(ref sub2) = subscriber2 {
+                    match sub2.try_recv() {
+                        Ok(sample) => {
+                            let key = sample.key_expr().as_str().to_string();
+                            let payload_str = sample
+                                .payload()
+                                .try_to_string()
+                                .unwrap_or_else(|e| e.to_string().into())
+                                .to_string();
+                            let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                                .unwrap_or(serde_json::Value::String(payload_str));
+                            let now_ms = chrono::Utc::now().timestamp_millis();
+
+                            let mut store = ts_store.write().await;
+                            store.insert(key, value, now_ms);
+                        }
+                        Err(_) => {} // No message available, continue
+                    }
+                }
+                
+                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
             }
         });
     }
@@ -152,6 +199,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/simulator/start", web::post().to(simulator::start_standalone))
                     .route("/simulator/stop", web::post().to(simulator::stop_standalone))
                     .route("/simulator/status", web::get().to(simulator::get_status))
+                    // Durins-Forge Scenario Launcher
+                    .route("/scenarios", web::get().to(scenario_handlers::list_scenarios))
+                    .route("/scenarios/launch", web::post().to(scenario_handlers::launch_scenario))
+                    .route("/scenarios/{run_id}/status", web::get().to(scenario_handlers::get_scenario_status))
+                    .route("/scenarios/running", web::get().to(scenario_handlers::list_running_scenarios))
                     // WebSocket
                     .route("/ws", web::get().to(websocket::ws_handler))
             )

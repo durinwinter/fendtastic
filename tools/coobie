@@ -53,7 +53,8 @@ PHRASES = [
 # Command aliases mapping
 ALIAS_MAP = {
     "local": "dev.sh",
-    "prod": "prod.sh" # Placeholder
+    "prod": "prod.sh",  # Placeholder
+    "integrated": "../integrated-dev.sh"  # Run with durins-forge
 }
 
 def print_labrador_message(msg):
@@ -97,9 +98,21 @@ def main():
             
             original_script = script_path
             
-            # Resolve script path
+            # Resolve script path — handle both relative and absolute
+            # If the script_path is relative, try to find it from the tools directory first
             if not os.path.isabs(script_path):
-                 script_path = os.path.abspath(script_path)
+                # Try from tools directory (where coobie lives)
+                tools_path = os.path.dirname(os.path.abspath(__file__))
+                candidate = os.path.join(tools_path, script_path)
+                
+                # Normalize the path (handles ../)
+                candidate = os.path.abspath(candidate)
+                
+                if os.path.exists(candidate):
+                    script_path = candidate
+                else:
+                    # Fall back to current working directory
+                    script_path = os.path.abspath(script_path)
 
             if not os.path.exists(script_path):
                 print_labrador_message(f"*whine* I can't find the ball... I mean, script '{original_script}'!")

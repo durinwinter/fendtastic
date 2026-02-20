@@ -4,6 +4,7 @@ import Header from '../components/Header'
 import EngineeringView from '../components/pea-launcher/EngineeringView'
 import RuntimeControl from '../components/pea-launcher/RuntimeControl'
 import SettingsView from '../components/pea-launcher/SettingsView'
+import DurinsForgeLauncher from '../components/pea-launcher/DurinsForgeLauncher'
 
 interface TabPanelProps {
     children?: React.ReactNode
@@ -56,6 +57,7 @@ const PEALauncher: React.FC = () => {
                         PEA Launcher App
                     </Typography>
                     <Tabs value={tabValue} onChange={handleChange} aria-label="pea launcher tabs">
+                        <Tab label="Durins-Forge Launcher" />
                         <Tab label="Engineering MTP" />
                         <Tab label="Runtime Control" />
                         <Tab label="Settings" />
@@ -64,12 +66,15 @@ const PEALauncher: React.FC = () => {
 
                 <Box sx={{ flex: 1, overflow: 'hidden' }}>
                     <CustomTabPanel value={tabValue} index={0}>
-                        <EngineeringView />
+                        <DurinsForgeLauncher />
                     </CustomTabPanel>
                     <CustomTabPanel value={tabValue} index={1}>
-                        <RuntimeControl />
+                        <EngineeringView />
                     </CustomTabPanel>
                     <CustomTabPanel value={tabValue} index={2}>
+                        <RuntimeControl />
+                    </CustomTabPanel>
+                    <CustomTabPanel value={tabValue} index={3}>
                         <SettingsView />
                     </CustomTabPanel>
                 </Box>
