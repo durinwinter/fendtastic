@@ -89,6 +89,13 @@ const Header: React.FC = () => {
             variant={location.pathname === '/pea-launcher' ? 'filled' : 'outlined'}
             clickable
           />
+          <Chip
+            label="HEPTAPOD MESH"
+            onClick={() => navigate('/heptapod-mesh')}
+            color={location.pathname === '/heptapod-mesh' ? 'primary' : 'default'}
+            variant={location.pathname === '/heptapod-mesh' ? 'filled' : 'outlined'}
+            clickable
+          />
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

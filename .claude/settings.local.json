@@ -8,7 +8,8 @@
       "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
       "Bash(curl:*)",
       "Bash(gh api:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

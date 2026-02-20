@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 mod handlers;
+mod mesh_handlers;
 mod pea_handlers;
 mod state;
 mod websocket;
@@ -91,6 +92,14 @@ async fn main() -> std::io::Result<()> {
                     .route("/recipes", web::get().to(pea_handlers::list_recipes))
                     .route("/recipes", web::post().to(pea_handlers::create_recipe))
                     .route("/recipes/{id}/execute", web::post().to(pea_handlers::execute_recipe))
+                    // Mesh / Zenoh Admin
+                    .route("/mesh/nodes", web::get().to(mesh_handlers::get_nodes))
+                    .route("/mesh/router", web::get().to(mesh_handlers::get_router_info))
+                    .route("/mesh/links", web::get().to(mesh_handlers::get_links))
+                    .route("/mesh/keys", web::get().to(mesh_handlers::get_keys))
+                    .route("/mesh/keys/{key_expr:.*}", web::get().to(mesh_handlers::get_key_value))
+                    .route("/mesh/config", web::post().to(mesh_handlers::update_config))
+                    .route("/mesh/generate-config", web::post().to(mesh_handlers::generate_node_config))
                     // WebSocket
                     .route("/ws", web::get().to(websocket::ws_handler))
             )

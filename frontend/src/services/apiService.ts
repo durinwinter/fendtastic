@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { PeaConfig } from '../types/mtp'
 import { Recipe } from '../types/recipe'
+import { ZenohNode, RouterInfo, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
 
 class ApiService {
   private client: AxiosInstance
@@ -98,6 +99,44 @@ class ApiService {
 
   async executeRecipe(id: string): Promise<void> {
     await this.client.post(`/recipes/${id}/execute`)
+  }
+
+  // ─── Mesh / Zenoh Admin ──────────────────────────────────────────────────
+
+  async getMeshNodes(): Promise<{ local_zid: string; nodes: ZenohNode[]; raw_entries: unknown[] }> {
+    const response = await this.client.get('/mesh/nodes')
+    return response.data
+  }
+
+  async getMeshRouter(): Promise<{ local_zid: string; entries: unknown[] }> {
+    const response = await this.client.get('/mesh/router')
+    return response.data
+  }
+
+  async getMeshLinks(): Promise<unknown[]> {
+    const response = await this.client.get('/mesh/links')
+    return response.data
+  }
+
+  async getMeshKeys(prefix?: string): Promise<KeyEntry[]> {
+    const response = await this.client.get('/mesh/keys', {
+      params: prefix ? { prefix } : {},
+    })
+    return response.data
+  }
+
+  async getMeshKeyValue(keyExpr: string): Promise<{ key_expr: string; results: unknown[] }> {
+    const response = await this.client.get(`/mesh/keys/${keyExpr}`)
+    return response.data
+  }
+
+  async updateMeshConfig(update: ConfigUpdateRequest): Promise<void> {
+    await this.client.post('/mesh/config', update)
+  }
+
+  async generateNodeConfig(config: NodeConfigRequest): Promise<object> {
+    const response = await this.client.post('/mesh/generate-config', config)
+    return response.data
   }
 }
 

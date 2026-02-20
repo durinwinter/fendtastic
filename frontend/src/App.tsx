@@ -6,6 +6,7 @@ import { fendtTheme } from './themes/fendtTheme'
 import Dashboard from './pages/Dashboard'
 import Heptapod from './pages/Heptapod'
 import PEALauncher from './pages/PEALauncher'
+import HeptapodMesh from './pages/HeptapodMesh'
 import zenohService from './services/zenohService'
 import './App.css'
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/heptapod" element={<Heptapod />} />
           <Route path="/pea-launcher" element={<PEALauncher />} />
+          <Route path="/heptapod-mesh" element={<HeptapodMesh />} />
         </Routes>
       </Router>
     </ThemeProvider>
