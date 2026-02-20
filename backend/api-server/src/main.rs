@@ -16,7 +16,7 @@ mod websocket;
 
 use state::{AppState, TimeSeriesStore};
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
@@ -90,36 +90,45 @@ async fn main() -> std::io::Result<()> {
             
             info!("Time-series collector: subscribed to fendtastic/** and pea/**");
 
-            loop {
-                // Try to receive from either subscriber
-                let received = if let Some(ref sub1) = subscriber1 {
-                    match sub1.recv_async().await {
-                        Ok(sample) => Some(sample),
-                        Err(_) => None,
-                    }
-                } else {
-                    None
-                };
-                
-                if let Some(sample) = received {
-                    let key = sample.key_expr().as_str().to_string();
-                    let payload_str = sample
-                        .payload()
-                        .try_to_string()
-                        .unwrap_or_else(|e| e.to_string().into())
-                        .to_string();
-                    let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                        .unwrap_or(serde_json::Value::String(payload_str));
-                    let now_ms = chrono::Utc::now().timestamp_millis();
+            // Use tokio::select! to handle multiple async subscribers
+            match (subscriber1, subscriber2) {
+                (Some(mut sub1), Some(mut sub2)) => {
+                    loop {
+                        tokio::select! {
+                            Ok(sample) = sub1.recv_async() => {
+                                let key = sample.key_expr().as_str().to_string();
+                                let payload_str = sample
+                                    .payload()
+                                    .try_to_string()
+                                    .unwrap_or_else(|e| e.to_string().into())
+                                    .to_string();
+                                let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                                    .unwrap_or(serde_json::Value::String(payload_str));
+                                let now_ms = chrono::Utc::now().timestamp_millis();
 
-                    let mut store = ts_store.write().await;
-                    store.insert(key, value, now_ms);
+                                let mut store = ts_store.write().await;
+                                store.insert(key, value, now_ms);
+                            }
+                            Ok(sample) = sub2.recv_async() => {
+                                let key = sample.key_expr().as_str().to_string();
+                                let payload_str = sample
+                                    .payload()
+                                    .try_to_string()
+                                    .unwrap_or_else(|e| e.to_string().into())
+                                    .to_string();
+                                let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                                    .unwrap_or(serde_json::Value::String(payload_str));
+                                let now_ms = chrono::Utc::now().timestamp_millis();
+
+                                let mut store = ts_store.write().await;
+                                store.insert(key, value, now_ms);
+                            }
+                        }
+                    }
                 }
-                
-                // Also check second subscriber if available
-                if let Some(ref sub2) = subscriber2 {
-                    match sub2.try_recv() {
-                        Ok(sample) => {
+                (Some(mut sub1), None) => {
+                    loop {
+                        if let Ok(sample) = sub1.recv_async().await {
                             let key = sample.key_expr().as_str().to_string();
                             let payload_str = sample
                                 .payload()
@@ -133,11 +142,30 @@ async fn main() -> std::io::Result<()> {
                             let mut store = ts_store.write().await;
                             store.insert(key, value, now_ms);
                         }
-                        Err(_) => {} // No message available, continue
                     }
                 }
-                
-                tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                (None, Some(mut sub2)) => {
+                    loop {
+                        if let Ok(sample) = sub2.recv_async().await {
+                            let key = sample.key_expr().as_str().to_string();
+                            let payload_str = sample
+                                .payload()
+                                .try_to_string()
+                                .unwrap_or_else(|e| e.to_string().into())
+                                .to_string();
+                            let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+                                .unwrap_or(serde_json::Value::String(payload_str));
+                            let now_ms = chrono::Utc::now().timestamp_millis();
+
+                            let mut store = ts_store.write().await;
+                            store.insert(key, value, now_ms);
+                        }
+                    }
+                }
+                (None, None) => {
+                    // Should not reach here due to earlier check, but just in case
+                    return;
+                }
             }
         });
     }

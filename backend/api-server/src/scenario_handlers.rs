@@ -102,7 +102,7 @@ pub async fn list_scenarios(
 
 /// Launch a scenario
 pub async fn launch_scenario(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     req: web::Json<LaunchScenarioRequest>,
 ) -> impl Responder {
     let scenario_id = &req.scenario_id;
@@ -115,16 +115,31 @@ pub async fn launch_scenario(
 
     info!("Launching scenario: {} (run_id: {})", scenario_id, run_id);
 
-    // Determine the durins-forge root directory
-    // This assumes durins-forge is a sibling directory to fendtastic
+    // Try DURINS_FORGE_ROOT env var, then fall back to relative path
     let durins_forge_root = std::env::var("DURINS_FORGE_ROOT")
-        .unwrap_or_else(|_| "../durins-forge".to_string());
+        .unwrap_or_else(|_| {
+            // Try to find durins-forge as sibling directory
+            if std::path::Path::new("../durins-forge").exists() {
+                "../durins-forge".to_string()
+            } else if std::path::Path::new("/home/earthling/Documents/durins-forge").exists() {
+                "/home/earthling/Documents/durins-forge".to_string()
+            } else {
+                "./durins-forge".to_string()
+            }
+        });
 
-    // Build the command to run the scenario
-    let shell_cmd = format!(
-        "cd {} && PUT_CMD=\"{}\" PUT_SITE=\"{}\" ./harness/runner/run_one.sh {}",
-        durins_forge_root, put_cmd, site, scenario_id
-    );
+    // For now, construct a command to launch durins-forge scenario or Factorio directly
+    // The command can be customized based on scenario type
+    let shell_cmd = if scenario_id.starts_with("S") {
+        // Standard scenario: use durins-forge runner
+        format!(
+            "cd {} && PUT_CMD=\"{}\" PUT_SITE=\"{}\" ./harness/runner/run_one.sh {}",
+            durins_forge_root, put_cmd, site, scenario_id
+        )
+    } else {
+        // Direct Factorio launch
+        format!("SCENARIO_ID=\"{}\" ./factorio_linux_2.0.73/factorio/bin/x64/factorio", scenario_id)
+    };
 
     let mut cmd = Command::new("sh");
     cmd.arg("-c")

@@ -47,13 +47,23 @@ const DurinsForgeLauncher: React.FC = () => {
     const loadScenarios = useCallback(async () => {
         try {
             setLoading(true)
-            const response = await axios.get(`${API_URL}/scenarios`)
+            console.log(`Fetching scenarios from: ${API_URL}/scenarios`)
+            const response = await axios.get(`${API_URL}/scenarios`, { timeout: 5000 })
+            console.log('Scenarios response:', response.data)
             setScenarios(response.data.scenarios || [])
-        } catch (error) {
+            if (!response.data.scenarios || response.data.scenarios.length === 0) {
+                setStatusMessage({
+                    type: 'info',
+                    text: 'No scenarios found. Ensure durins-forge is running.'
+                })
+            }
+        } catch (error: any) {
             console.error('Failed to load scenarios:', error)
+            console.error('Error response:', error.response?.data)
+            console.error('Error status:', error.response?.status)
             setStatusMessage({
                 type: 'error',
-                text: 'Failed to load scenarios. Make sure durins-forge integration is set up.'
+                text: `Failed to load scenarios: ${error.response?.status || error.message || 'Unknown error'}. Check that API is running at ${API_URL}`
             })
         } finally {
             setLoading(false)
