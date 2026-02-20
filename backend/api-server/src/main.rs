@@ -11,7 +11,7 @@ mod websocket;
 
 use state::AppState;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
@@ -44,7 +44,6 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
-        connections: Arc::new(RwLock::new(0)),
         pea_configs: Arc::new(RwLock::new(pea_configs)),
         recipes: Arc::new(RwLock::new(recipes)),
         pea_config_dir,

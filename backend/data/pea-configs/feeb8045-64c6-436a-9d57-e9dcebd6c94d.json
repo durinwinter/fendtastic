@@ -1,0 +1,63 @@
+{
+  "id": "feeb8045-64c6-436a-9d57-e9dcebd6c94d",
+  "name": "Test",
+  "version": "1.0.0",
+  "description": "Fendt Tractor",
+  "writer": {
+    "name": "Vario",
+    "version": "1.0.0",
+    "vendor": "Fendt"
+  },
+  "services": [
+    {
+      "tag": "Plow",
+      "name": "Plow",
+      "description": "plow",
+      "config_parameters": [
+        {
+          "type": "Analog",
+          "tag": "rpm",
+          "name": "rpm",
+          "unit": "",
+          "v_scl_min": 0.0,
+          "v_scl_max": 100.0,
+          "v_min": 0.0,
+          "v_max": 100.0,
+          "v_default": 0.0,
+          "tag_mapping": null
+        }
+      ],
+      "procedures": [
+        {
+          "id": 1,
+          "name": "Default",
+          "is_self_completing": false,
+          "is_default": true,
+          "parameters": [],
+          "process_value_outs": [],
+          "report_values": []
+        }
+      ]
+    }
+  ],
+  "active_elements": [
+    {
+      "element_type": "BinDrv",
+      "tag": "",
+      "name": "",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    }
+  ],
+  "opcua_config": {
+    "endpoint": "opc.tcp://0.0.0.0:4842",
+    "namespace_uri": "urn:fendtastic:pea:tractor-1",
+    "security_policy": "None"
+  },
+  "created_at": "2026-02-20T01:27:16.280061162Z",
+  "updated_at": "2026-02-20T01:27:16.280061892Z"
+}

@@ -212,6 +212,10 @@ pub async fn execute_recipe(
 // ─── Persistence Helpers ─────────────────────────────────────────────────────
 
 fn persist_pea_config(dir: &str, config: &PeaConfig) {
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        error!("Failed to create PEA config dir {}: {}", dir, e);
+        return;
+    }
     let path = format!("{}/{}.json", dir, config.id);
     match serde_json::to_string_pretty(config) {
         Ok(json) => {

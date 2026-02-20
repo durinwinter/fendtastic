@@ -359,18 +359,18 @@ sleep 2
 
 log_step "Starting EVA-ICS v4"
 
-if docker image inspect bmauto/eva-ics4:latest >/dev/null 2>&1; then
+if docker image inspect altertech/eva-ics:latest >/dev/null 2>&1; then
     docker run -d \
         --name fendtastic-eva-ics-dev \
         -p "${BIND_IP}:7727:7727" \
         -p "${BIND_IP}:4840:4840" \
-        -e EVA_ICS_API_KEY="${EVA_ICS_API_KEY:-default-key}" \
-        bmauto/eva-ics4:latest \
+        -v eva-ics-runtime:/opt/eva4/runtime \
+        altertech/eva-ics:latest \
         >/dev/null 2>&1 && {
         log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840)${NC}"
     } || log_warn "EVA-ICS container failed to start — PEA deploy will not work"
 else
-    log_warn "EVA-ICS image not found — run: docker pull bmauto/eva-ics4:latest"
+    log_warn "EVA-ICS image not found — run: docker pull altertech/eva-ics:latest"
     log_info "PEA deployment and OPC UA will be unavailable without EVA-ICS"
 fi
 sleep 1

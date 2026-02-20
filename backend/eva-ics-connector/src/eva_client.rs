@@ -32,6 +32,7 @@ struct JrpcResponse {
     error: Option<serde_json::Value>,
 }
 
+#[allow(dead_code)]
 impl EvaIcsClient {
     pub fn new(base_url: String, api_key: String) -> Self {
         Self {
