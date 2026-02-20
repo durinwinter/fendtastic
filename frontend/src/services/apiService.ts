@@ -14,6 +14,18 @@ class ApiService {
         'Content-Type': 'application/json',
       },
     })
+
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (!error.response || error.code === 'ERR_NETWORK') {
+          window.dispatchEvent(new CustomEvent('api-network-error', {
+            detail: { message: `Network Error: ${error.message}. Check if backend is running on port 8080.` }
+          }))
+        }
+        return Promise.reject(error)
+      }
+    )
   }
 
   // ─── Dashboard ───────────────────────────────────────────────────────────

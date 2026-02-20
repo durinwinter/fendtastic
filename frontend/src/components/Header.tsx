@@ -101,24 +101,28 @@ const Header: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Chip
             icon={<CircleIcon sx={{ fontSize: 12, color: zenohConnected ? 'success.main' : 'error.main' }} />}
-            label="ZENOH CONNECTED"
+            label={zenohConnected ? 'ZENOH CONNECTED' : 'ZENOH DISCONNECTED'}
             size="small"
             sx={{
               backgroundColor: 'background.default',
               color: 'text.primary',
               fontWeight: 600,
-              opacity: zenohConnected ? 1 : 0.7
+              opacity: zenohConnected ? 1 : 1,
+              border: '1px solid',
+              borderColor: zenohConnected ? 'success.main' : 'error.main'
             }}
           />
           <Chip
             icon={<CircleIcon sx={{ fontSize: 12, color: evaIcsOnline ? 'success.main' : 'error.main' }} />}
-            label="EVA-ICS ONLINE"
+            label={evaIcsOnline ? 'EVA-ICS ONLINE' : 'EVA-ICS OFFLINE'}
             size="small"
             sx={{
               backgroundColor: 'background.default',
               color: 'text.primary',
               fontWeight: 600,
-              opacity: evaIcsOnline ? 1 : 0.7
+              opacity: evaIcsOnline ? 1 : 1,
+              border: '1px solid',
+              borderColor: evaIcsOnline ? 'success.main' : 'error.main'
             }}
           />
           <Typography variant="body2" sx={{ color: 'text.secondary', ml: 2 }}>

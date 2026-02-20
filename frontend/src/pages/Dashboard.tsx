@@ -35,8 +35,10 @@ const Dashboard: React.FC = () => {
         await apiService.startSimulator()
         setSimRunning(true)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Simulator toggle failed:', e)
+      // The global interceptor will handle the network error, 
+      // but we can add specific logic here if needed.
     } finally {
       setSimLoading(false)
     }
@@ -151,6 +153,25 @@ const Dashboard: React.FC = () => {
               }>
                 <IsometricView />
               </Suspense>
+              {!simRunning && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10,
+                  borderRadius: 1
+                }}>
+                  <Typography variant="h6" color="white" sx={{ fontWeight: 'bold' }}>
+                    SIMULATOR OFFLINE
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Paper>
         </Box>

@@ -126,7 +126,7 @@ async fn main() -> std::io::Result<()> {
                         }
                     }
                 }
-                (Some(mut sub1), None) => {
+                (Some(sub1), None) => {
                     loop {
                         if let Ok(sample) = sub1.recv_async().await {
                             let key = sample.key_expr().as_str().to_string();
@@ -144,7 +144,7 @@ async fn main() -> std::io::Result<()> {
                         }
                     }
                 }
-                (None, Some(mut sub2)) => {
+                (None, Some(sub2)) => {
                     loop {
                         if let Ok(sample) = sub2.recv_async().await {
                             let key = sample.key_expr().as_str().to_string();
