@@ -100,7 +100,7 @@ impl PeaDeployer {
                 if let Some(m) = mapping {
                     if m.protocol == ProtocolType::OpcUa {
                         node_mappings.push(OpcUaNodeMapping {
-                            oid: oid.clone(),
+                            oid: oid.to_string(),
                             node_id: m.address.clone(),
                             interval_ms: 100,
                         });
@@ -210,7 +210,7 @@ fn extract_indicator_tag_and_mapping(ind: &IndicatorElement) -> (String, Option<
     }
 }
 
-fn create_active_element_items(pea_id: &str, element: &ActiveElement) -> Vec<(String, Option<&TagMapping>)> {
+fn create_active_element_items<'a>(pea_id: &str, element: &'a ActiveElement) -> Vec<(String, Option<&'a TagMapping>)> {
     let prefix = format!("unit:pea/{}/active", pea_id);
     match element {
         ActiveElement::BinVlv(v) => vec![

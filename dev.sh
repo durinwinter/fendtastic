@@ -50,11 +50,13 @@ cleanup() {
         fi
     done
 
-    if docker ps -q --filter "name=fendtastic-zenoh-dev" 2>/dev/null | grep -q .; then
-        log_info "Stopping Zenoh router container"
-        docker stop fendtastic-zenoh-dev >/dev/null 2>&1 || true
-        docker rm fendtastic-zenoh-dev >/dev/null 2>&1 || true
-    fi
+    for cname in fendtastic-zenoh-dev fendtastic-eva-ics-dev; do
+        if docker ps -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
+            log_info "Stopping container: ${cname}"
+            docker stop "$cname" >/dev/null 2>&1 || true
+            docker rm "$cname" >/dev/null 2>&1 || true
+        fi
+    done
 
     log_ok "All services stopped"
     exit 0
@@ -141,7 +143,7 @@ log_step "Cleaning up old instances"
 
 CLEANED=0
 
-for cname in fendtastic-zenoh-dev fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
+for cname in fendtastic-zenoh-dev fendtastic-eva-ics-dev fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
     if docker ps -a -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
         log_info "Removing container: ${cname}"
         docker stop "$cname" >/dev/null 2>&1 || true
@@ -353,6 +355,26 @@ docker run -d \
 log_ok "Zenoh router ${DIM}(${BIND_IP}:${PORT_ZENOH_TCP}, :${PORT_ZENOH_WS})${NC}"
 sleep 2
 
+# --- EVA-ICS (optional — start if image available) ---
+
+log_step "Starting EVA-ICS v4"
+
+if docker image inspect bmauto/eva-ics4:latest >/dev/null 2>&1; then
+    docker run -d \
+        --name fendtastic-eva-ics-dev \
+        -p "${BIND_IP}:7727:7727" \
+        -p "${BIND_IP}:4840:4840" \
+        -e EVA_ICS_API_KEY="${EVA_ICS_API_KEY:-default-key}" \
+        bmauto/eva-ics4:latest \
+        >/dev/null 2>&1 && {
+        log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840)${NC}"
+    } || log_warn "EVA-ICS container failed to start — PEA deploy will not work"
+else
+    log_warn "EVA-ICS image not found — run: docker pull bmauto/eva-ics4:latest"
+    log_info "PEA deployment and OPC UA will be unavailable without EVA-ICS"
+fi
+sleep 1
+
 # --- Backend build ---
 
 log_step "Building backend"
@@ -367,15 +389,31 @@ log_step "Starting API server"
 
 export API_HOST="${BIND_IP}"
 export API_PORT="${PORT_API}"
+export ZENOH_ROUTER="tcp/${BIND_IP}:${PORT_ZENOH_TCP}"
+export EVA_ICS_URL="http://${BIND_IP}:7727"
+export EVA_ICS_API_KEY="${EVA_ICS_API_KEY:-default-key}"
+export PEA_CONFIG_DIR="${SCRIPT_DIR}/data/pea-configs"
+export RECIPE_DIR="${SCRIPT_DIR}/data/recipes"
 
 (cd backend && cargo run --bin api-server 2>&1 &)
 PIDS+=($!)
 sleep 2
 log_ok "API server ${DIM}(${BIND_IP}:${PORT_API})${NC}"
 
+# --- EVA-ICS Connector ---
+
+log_step "Starting EVA-ICS connector"
+
+(cd backend && cargo run --bin eva-ics-connector 2>&1 &)
+PIDS+=($!)
+sleep 1
+log_ok "EVA-ICS connector ${DIM}(bridges Zenoh ↔ EVA-ICS)${NC}"
+
 # --- Frontend Vite ---
 
 log_step "Starting frontend"
+
+export VITE_API_URL="http://${DISPLAY_IP}:${PORT_API}/api/v1"
 
 (cd frontend && npx vite --host "${BIND_IP}" --port "${PORT_FRONTEND}" 2>&1 &)
 PIDS+=($!)
@@ -389,7 +427,8 @@ log_ok "Frontend dev server ${DIM}(${BIND_IP}:${PORT_FRONTEND})${NC}"
 URL_DASH="http://${DISPLAY_IP}:${PORT_FRONTEND}"
 URL_API="http://${DISPLAY_IP}:${PORT_API}"
 URL_HEALTH="http://${DISPLAY_IP}:${PORT_API}/health"
-URL_WS="ws://${DISPLAY_IP}:${PORT_ZENOH_WS}"
+URL_WS_API="ws://${DISPLAY_IP}:${PORT_API}/api/v1/ws"
+URL_OPCUA="opc.tcp://${DISPLAY_IP}:4840"
 
 echo ""
 echo ""
@@ -402,7 +441,8 @@ echo ""
 echo -e "  ${BOLD}Dashboard:${NC}       ${UNDERLINE}${CYAN}${URL_DASH}${NC}"
 echo -e "  ${BOLD}API Server:${NC}      ${UNDERLINE}${CYAN}${URL_API}${NC}"
 echo -e "  ${BOLD}Health Check:${NC}    ${UNDERLINE}${CYAN}${URL_HEALTH}${NC}"
-echo -e "  ${BOLD}Zenoh WS:${NC}        ${UNDERLINE}${CYAN}${URL_WS}${NC}"
+echo -e "  ${BOLD}WebSocket:${NC}       ${UNDERLINE}${CYAN}${URL_WS_API}${NC}"
+echo -e "  ${BOLD}OPC UA:${NC}          ${UNDERLINE}${CYAN}${URL_OPCUA}${NC}"
 
 # If bound to all interfaces, show every reachable address
 if [ "$BIND_IP" = "0.0.0.0" ]; then

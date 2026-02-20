@@ -1,12 +1,12 @@
-// Zenoh WebSocket service for real-time data streaming
-// Note: This is a placeholder for Zenoh WebSocket integration
-// The actual Zenoh WebSocket client would need to be implemented based on your specific setup
+// Zenoh WebSocket bridge — connects to the API server's /api/v1/ws endpoint
+// which relays subscribe/publish/unsubscribe messages to/from the Zenoh bus.
 
 export class ZenohService {
   private ws: WebSocket | null = null
   private subscribers: Map<string, Set<(data: any) => void>> = new Map()
   private connectionListeners: Set<(connected: boolean) => void> = new Set()
   public isConnected: boolean = false
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(private url: string) {}
 
@@ -16,16 +16,20 @@ export class ZenohService {
         this.ws = new WebSocket(this.url)
 
         this.ws.onopen = () => {
-          console.log('Zenoh WebSocket connected')
+          console.log('Zenoh WebSocket connected to', this.url)
           this.isConnected = true
           this.notifyConnectionListeners(true)
+
+          // Re-subscribe to all active subscriptions after reconnect
+          for (const key of this.subscribers.keys()) {
+            this.send({ type: 'subscribe', key })
+          }
+
           resolve()
         }
 
         this.ws.onerror = (error) => {
           console.error('Zenoh WebSocket error:', error)
-          // Don't reject here if we want auto-reconnect logic to persist?
-          // For now, simple reject is fine for initial connection.
           if (!this.isConnected) reject(error)
         }
 
@@ -37,7 +41,7 @@ export class ZenohService {
           console.log('Zenoh WebSocket disconnected')
           this.isConnected = false
           this.notifyConnectionListeners(false)
-          setTimeout(() => this.connect(), 5000) // Auto-reconnect
+          this.reconnectTimer = setTimeout(() => this.connect().catch(() => {}), 3000)
         }
       } catch (error) {
         reject(error)
@@ -47,7 +51,6 @@ export class ZenohService {
 
   onConnectionChange(callback: (connected: boolean) => void): () => void {
     this.connectionListeners.add(callback)
-    // Notify immediately of current state
     callback(this.isConnected)
     return () => this.connectionListeners.delete(callback)
   }
@@ -61,53 +64,42 @@ export class ZenohService {
       const message = JSON.parse(data)
       const { key, payload } = message
 
-      // Notify subscribers
+      if (!key) return
+
+      // Notify exact-match subscribers
       if (this.subscribers.has(key)) {
         this.subscribers.get(key)?.forEach(callback => callback(payload))
       }
 
-      // Notify wildcard subscribers
+      // Notify wildcard/pattern subscribers
       this.subscribers.forEach((callbacks, pattern) => {
-        if (this.matchPattern(key, pattern)) {
-          callbacks.forEach(callback => callback(payload))
+        if (pattern !== key && this.matchPattern(key, pattern)) {
+          callbacks.forEach(callback => callback({ ...payload, _key: key }))
         }
       })
     } catch (error) {
-      console.error('Error handling message:', error)
+      console.error('Error handling Zenoh message:', error)
     }
   }
 
   subscribe(key: string, callback: (data: any) => void): () => void {
     if (!this.subscribers.has(key)) {
       this.subscribers.set(key, new Set())
+      this.send({ type: 'subscribe', key })
     }
     this.subscribers.get(key)!.add(callback)
 
-    // Send subscription request to Zenoh
-    this.send({
-      type: 'subscribe',
-      key,
-    })
-
-    // Return unsubscribe function
     return () => {
       this.subscribers.get(key)?.delete(callback)
       if (this.subscribers.get(key)?.size === 0) {
         this.subscribers.delete(key)
-        this.send({
-          type: 'unsubscribe',
-          key,
-        })
+        this.send({ type: 'unsubscribe', key })
       }
     }
   }
 
   publish(key: string, payload: any): void {
-    this.send({
-      type: 'publish',
-      key,
-      payload,
-    })
+    this.send({ type: 'publish', key, payload })
   }
 
   private send(data: any): void {
@@ -117,22 +109,26 @@ export class ZenohService {
   }
 
   private matchPattern(key: string, pattern: string): boolean {
-    // Simple pattern matching for wildcards
     const regexPattern = pattern
       .replace(/\*\*/g, '.*')
       .replace(/\*/g, '[^/]*')
+      .replace(/\+/g, '[^/]*')
     const regex = new RegExp(`^${regexPattern}$`)
     return regex.test(key)
   }
 
   disconnect(): void {
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.ws?.close()
   }
 }
 
-// Singleton instance
-const zenohService = new ZenohService(
-  import.meta.env.VITE_ZENOH_WS || 'ws://localhost:8000'
-)
+// Build the WebSocket URL from the API URL
+function buildWsUrl(): string {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
+  return apiUrl.replace(/^http/, 'ws') + '/ws'
+}
+
+const zenohService = new ZenohService(buildWsUrl())
 
 export default zenohService

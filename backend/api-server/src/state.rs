@@ -10,4 +10,5 @@ pub struct AppState {
     pub pea_configs: Arc<RwLock<HashMap<String, PeaConfig>>>,
     pub recipes: Arc<RwLock<HashMap<String, Recipe>>>,
     pub pea_config_dir: String,
+    pub recipe_dir: String,
 }

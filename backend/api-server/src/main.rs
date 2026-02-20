@@ -3,7 +3,6 @@ use actix_cors::Cors;
 use tracing::{info, Level};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
 
 mod handlers;
 mod pea_handlers;
@@ -20,21 +19,36 @@ async fn main() -> std::io::Result<()> {
 
     info!("Starting Fendtastic API Server");
 
-    let zenoh_session = zenoh::open(zenoh::Config::default())
-        .await
-        .expect("Failed to open Zenoh session");
+    // Configure Zenoh session — use ZENOH_ROUTER env var if set
+    let zenoh_session = {
+        let mut config = zenoh::Config::default();
+        if let Ok(endpoint) = std::env::var("ZENOH_ROUTER") {
+            info!("Connecting to Zenoh router: {}", endpoint);
+            config
+                .insert_json5("connect/endpoints", &format!(r#"["{}"]"#, endpoint))
+                .expect("Failed to configure Zenoh endpoints");
+        }
+        zenoh::open(config)
+            .await
+            .expect("Failed to open Zenoh session")
+    };
 
     let pea_config_dir = std::env::var("PEA_CONFIG_DIR")
         .unwrap_or_else(|_| "./data/pea-configs".to_string());
 
+    let recipe_dir = std::env::var("RECIPE_DIR")
+        .unwrap_or_else(|_| "./data/recipes".to_string());
+
     let pea_configs = pea_handlers::load_pea_configs(&pea_config_dir);
+    let recipes = pea_handlers::load_recipes(&recipe_dir);
 
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
         connections: Arc::new(RwLock::new(0)),
         pea_configs: Arc::new(RwLock::new(pea_configs)),
-        recipes: Arc::new(RwLock::new(HashMap::new())),
+        recipes: Arc::new(RwLock::new(recipes)),
         pea_config_dir,
+        recipe_dir,
     });
 
     let host = std::env::var("API_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

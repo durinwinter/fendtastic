@@ -168,6 +168,8 @@ pub async fn create_recipe(
     recipe.created_at = Utc::now();
 
     let id = recipe.id.clone();
+    persist_recipe(&state.recipe_dir, &recipe);
+
     let mut recipes = state.recipes.write().await;
     recipes.insert(id, recipe.clone());
 
@@ -228,6 +230,57 @@ fn delete_pea_file(dir: &str, pea_id: &str) {
             error!("Failed to delete PEA config file {}: {}", path, e);
         }
     }
+}
+
+fn persist_recipe(dir: &str, recipe: &Recipe) {
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        error!("Failed to create recipe dir {}: {}", dir, e);
+        return;
+    }
+    let path = format!("{}/{}.json", dir, recipe.id);
+    match serde_json::to_string_pretty(recipe) {
+        Ok(json) => {
+            if let Err(e) = std::fs::write(&path, json) {
+                error!("Failed to persist recipe to {}: {}", path, e);
+            }
+        }
+        Err(e) => error!("Failed to serialize recipe: {}", e),
+    }
+}
+
+pub fn load_recipes(dir: &str) -> std::collections::HashMap<String, Recipe> {
+    let mut recipes = std::collections::HashMap::new();
+
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                if let Err(create_err) = std::fs::create_dir_all(dir) {
+                    error!("Failed to create recipe dir {}: {}", dir, create_err);
+                }
+            }
+            return recipes;
+        }
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_some_and(|ext| ext == "json") {
+            match std::fs::read_to_string(&path) {
+                Ok(content) => match serde_json::from_str::<Recipe>(&content) {
+                    Ok(recipe) => {
+                        info!("Loaded recipe: {} ({})", recipe.name, recipe.id);
+                        recipes.insert(recipe.id.clone(), recipe);
+                    }
+                    Err(e) => error!("Failed to parse recipe {:?}: {}", path, e),
+                },
+                Err(e) => error!("Failed to read recipe {:?}: {}", path, e),
+            }
+        }
+    }
+
+    info!("Loaded {} recipes", recipes.len());
+    recipes
 }
 
 pub fn load_pea_configs(dir: &str) -> std::collections::HashMap<String, PeaConfig> {

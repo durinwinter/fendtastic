@@ -1,51 +1,104 @@
-import React, { useState } from 'react'
-import { Paper, Typography, Button, Box, TextField } from '@mui/material'
-import zenohService from '../../services/zenohService'
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+    Paper, Typography, Button, Box, TextField, List, ListItem,
+    ListItemText, ListItemSecondaryAction, IconButton, Alert, Chip
+} from '@mui/material'
+import { PlayArrow, Delete } from '@mui/icons-material'
+import apiService from '../../services/apiService'
+import { Recipe } from '../../types/recipe'
 
 const RecipeManager: React.FC = () => {
-    const [recipeName, setRecipeName] = useState('')
+    const [recipes, setRecipes] = useState<Recipe[]>([])
+    const [newName, setNewName] = useState('')
+    const [executing, setExecuting] = useState<string | null>(null)
 
-    const handleLoadRecipe = () => {
-        if (recipeName) {
-            zenohService.publish('heptapod/recipes/command', { command: 'load', recipe: recipeName })
+    const loadRecipes = useCallback(async () => {
+        try {
+            const list = await apiService.listRecipes()
+            setRecipes(list)
+        } catch (e) {
+            console.error('Failed to load recipes:', e)
+        }
+    }, [])
+
+    useEffect(() => { loadRecipes() }, [loadRecipes])
+
+    const handleCreate = async () => {
+        if (!newName.trim()) return
+        try {
+            const recipe = await apiService.createRecipe({
+                id: '',
+                name: newName.trim(),
+                description: '',
+                steps: [],
+                created_at: new Date().toISOString(),
+            })
+            setRecipes(prev => [...prev, recipe])
+            setNewName('')
+        } catch (e) {
+            console.error('Failed to create recipe:', e)
         }
     }
 
-    const handleStartRecipe = () => {
-        zenohService.publish('heptapod/recipes/command', { command: 'start' })
+    const handleExecute = async (id: string) => {
+        setExecuting(id)
+        try {
+            await apiService.executeRecipe(id)
+        } catch (e) {
+            console.error('Failed to execute recipe:', e)
+        } finally {
+            setTimeout(() => setExecuting(null), 2000)
+        }
     }
 
     return (
-        <Paper sx={{ p: 2, height: '100%' }}>
+        <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h6" gutterBottom>
                 Recipe Management
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                 <TextField
-                    label="Recipe Name"
+                    label="New Recipe Name"
                     variant="outlined"
                     size="small"
-                    value={recipeName}
-                    onChange={(e) => setRecipeName(e.target.value)}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     fullWidth
                 />
-                <Button variant="contained" onClick={handleLoadRecipe}>
-                    Load
+                <Button variant="contained" onClick={handleCreate} disabled={!newName.trim()}>
+                    Create
                 </Button>
             </Box>
-            <Box sx={{ mt: 2 }}>
-                <Button variant="contained" color="success" fullWidth onClick={handleStartRecipe} size="large">
-                    START PRODUCTION
-                </Button>
-            </Box>
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                    Current Recipe Status:
-                </Typography>
-                <Typography variant="body1">
-                    No recipe loaded.
-                </Typography>
-            </Box>
+
+            {recipes.length === 0 ? (
+                <Alert severity="info">No recipes yet. Create one above.</Alert>
+            ) : (
+                <List sx={{ flex: 1, overflow: 'auto' }} disablePadding>
+                    {recipes.map(recipe => (
+                        <ListItem key={recipe.id} divider sx={{ pr: 10 }}>
+                            <ListItemText
+                                primary={recipe.name}
+                                secondary={`${recipe.steps.length} steps — ${recipe.id.slice(0, 8)}`}
+                            />
+                            {executing === recipe.id && (
+                                <Chip label="EXECUTING" color="success" size="small" sx={{ mr: 1 }} />
+                            )}
+                            <ListItemSecondaryAction>
+                                <IconButton
+                                    edge="end"
+                                    color="success"
+                                    onClick={() => handleExecute(recipe.id)}
+                                    disabled={executing !== null}
+                                >
+                                    <PlayArrow />
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItem>
+                    ))}
+                </List>
+            )}
         </Paper>
     )
 }
