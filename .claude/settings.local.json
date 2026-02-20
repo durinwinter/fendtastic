@@ -6,7 +6,9 @@
       "WebFetch(domain:info.bma.ai)",
       "Bash(cargo build:*)",
       "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gh api:*)",
+      "Bash(python3:*)"
     ]
   }
 }
