@@ -42,6 +42,8 @@ const COLOR_PALETTE = [
   { border: '#E74C3C', bg: 'rgba(231, 76, 60, 0.1)' },
   { border: '#9B59B6', bg: 'rgba(155, 89, 182, 0.1)' },
   { border: '#1ABC9C', bg: 'rgba(26, 188, 156, 0.1)' },
+  { border: '#F1C40F', bg: 'rgba(241, 196, 15, 0.1)' },
+  { border: '#00BCD4', bg: 'rgba(0, 188, 212, 0.1)' },
 ]
 
 /** Extract a short display label from a Zenoh key like "fendtastic/sensor/temperature" */
@@ -85,6 +87,7 @@ const TimeSeriesChart: React.FC = () => {
       pointHoverRadius: number
     }>
   }>({ labels: [], datasets: [] })
+  const [rawValues, setRawValues] = useState<Record<string, (number | null)[]>>({})
   const [loading, setLoading] = useState(true)
 
   // Discover available keys on mount
@@ -119,32 +122,52 @@ const TimeSeriesChart: React.FC = () => {
             map.set(p.t, y)
           }
         }
-        return { key: res.key, map }
+        // Compute min/max for normalization
+        const vals = Array.from(map.values())
+        const min = vals.length > 0 ? Math.min(...vals) : 0
+        const max = vals.length > 0 ? Math.max(...vals) : 1
+        return { key: res.key, map, min, max }
       })
 
       const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b)
       const labels = sortedTimestamps.map(t => new Date(t).toLocaleTimeString())
 
+      // Build raw values lookup for tooltips
+      const rawLookup: Record<string, (number | null)[]> = {}
+
       const datasets = seriesData
         .map((s, i) => {
           const color = COLOR_PALETTE[i % COLOR_PALETTE.length]
-          const data = sortedTimestamps.map(t => s.map.get(t) ?? null)
-          const hasAny = data.some(v => v !== null)
-          return hasAny ? {
-            label: keyToLabel(s.key),
+          const rawData = sortedTimestamps.map(t => s.map.get(t) ?? null)
+          const hasAny = rawData.some(v => v !== null)
+          if (!hasAny) return null
+
+          const label = keyToLabel(s.key)
+          rawLookup[label] = rawData
+
+          // Normalize to 0–100 so all sensors share the same scale
+          const range = s.max - s.min
+          const data = rawData.map(v =>
+            v !== null && range > 0 ? ((v - s.min) / range) * 100 : v
+          )
+
+          return {
+            label,
             data,
             borderColor: color.border,
             backgroundColor: color.bg,
-            fill: true,
+            fill: false,
+            spanGaps: true,
             tension: 0.4,
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
-          } : null
+          }
         })
         .filter((ds): ds is NonNullable<typeof ds> => ds !== null)
 
       setChartData({ labels, datasets })
+      setRawValues(rawLookup)
     } catch {
       // keep showing previous data
     } finally {
@@ -185,6 +208,15 @@ const TimeSeriesChart: React.FC = () => {
         borderWidth: 1,
         padding: 12,
         displayColors: true,
+        callbacks: {
+          label: (ctx) => {
+            const label = ctx.dataset.label || ''
+            const raw = rawValues[label]?.[ctx.dataIndex]
+            return raw !== null && raw !== undefined
+              ? `${label}: ${raw}`
+              : `${label}: --`
+          },
+        },
       },
     },
     scales: {
@@ -202,13 +234,14 @@ const TimeSeriesChart: React.FC = () => {
       },
       y: {
         display: true,
+        min: 0,
+        max: 100,
         grid: {
           color: 'rgba(255, 255, 255, 0.05)',
           drawTicks: false,
         },
         ticks: {
-          color: '#b0b0b0',
-          font: { size: 10 },
+          display: false,
         },
       },
     },

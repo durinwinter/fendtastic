@@ -7,6 +7,7 @@ export class ZenohService {
   private connectionListeners: Set<(connected: boolean) => void> = new Set()
   public isConnected: boolean = false
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private pendingSends: any[] = []
 
   constructor(private url: string) {}
 
@@ -24,6 +25,12 @@ export class ZenohService {
           for (const key of this.subscribers.keys()) {
             this.send({ type: 'subscribe', key })
           }
+
+          // Flush any messages queued before WS was open
+          for (const queued of this.pendingSends) {
+            this.send(queued)
+          }
+          this.pendingSends = []
 
           resolve()
         }
@@ -105,6 +112,8 @@ export class ZenohService {
   private send(data: any): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data))
+    } else {
+      this.pendingSends.push(data)
     }
   }
 
@@ -130,5 +139,8 @@ function buildWsUrl(): string {
 }
 
 const zenohService = new ZenohService(buildWsUrl())
+
+// Auto-connect immediately so subscribers registered before connect() aren't lost
+zenohService.connect().catch(() => {})
 
 export default zenohService

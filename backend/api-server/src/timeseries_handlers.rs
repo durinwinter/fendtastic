@@ -20,6 +20,24 @@ pub async fn get_ts_keys(state: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({ "keys": keys }))
 }
 
+/// GET /ts/latest — return the most recent value for every stored key.
+pub async fn get_ts_latest(state: web::Data<AppState>) -> impl Responder {
+    let store = state.timeseries.read().await;
+    let mut entries = serde_json::Map::new();
+    for (key, buf) in &store.data {
+        if let Some(last) = buf.back() {
+            entries.insert(
+                key.clone(),
+                serde_json::json!({
+                    "t": last.timestamp_ms,
+                    "v": last.value,
+                }),
+            );
+        }
+    }
+    HttpResponse::Ok().json(serde_json::Value::Object(entries))
+}
+
 /// GET /ts/query?key=...&start_ms=...&end_ms=... — query historical data for a key.
 pub async fn query_timeseries(
     state: web::Data<AppState>,

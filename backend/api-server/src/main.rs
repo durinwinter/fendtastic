@@ -125,6 +125,7 @@ async fn main() -> std::io::Result<()> {
                     // Time-series historical data
                     .route("/ts/keys", web::get().to(timeseries_handlers::get_ts_keys))
                     .route("/ts/query", web::get().to(timeseries_handlers::query_timeseries))
+                    .route("/ts/latest", web::get().to(timeseries_handlers::get_ts_latest))
                     // PEA CRUD
                     .route("/pea", web::get().to(pea_handlers::list_peas))
                     .route("/pea", web::post().to(pea_handlers::create_pea))
@@ -147,6 +148,10 @@ async fn main() -> std::io::Result<()> {
                     .route("/mesh/keys/{key_expr:.*}", web::get().to(mesh_handlers::get_key_value))
                     .route("/mesh/config", web::post().to(mesh_handlers::update_config))
                     .route("/mesh/generate-config", web::post().to(mesh_handlers::generate_node_config))
+                    // Simulator
+                    .route("/simulator/start", web::post().to(simulator::start_standalone))
+                    .route("/simulator/stop", web::post().to(simulator::stop_standalone))
+                    .route("/simulator/status", web::get().to(simulator::get_status))
                     // WebSocket
                     .route("/ws", web::get().to(websocket::ws_handler))
             )

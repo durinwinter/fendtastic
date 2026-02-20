@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Box, Paper, Typography, Divider } from '@mui/material'
 import { TrendingUp, TrendingDown } from '@mui/icons-material'
-import zenohService from '../services/zenohService'
+import apiService from '../services/apiService'
 
 interface SpotValue {
   label: string
@@ -11,66 +11,100 @@ interface SpotValue {
   trend?: 'up' | 'down' | 'stable'
 }
 
-const DEFAULT_VALUES: SpotValue[] = [
-  { label: 'Engine Temp', value: '--', unit: '°C', status: 'normal', trend: 'stable' },
-  { label: 'Oil Pressure', value: '--', unit: 'PSI', status: 'normal', trend: 'stable' },
-  { label: 'RPM', value: '--', unit: 'rpm', status: 'normal', trend: 'stable' },
-  { label: 'Fuel Level', value: '--', unit: '%', status: 'normal', trend: 'stable' },
-  { label: 'Hydraulic Temp', value: '--', unit: '°C', status: 'normal', trend: 'stable' },
-  { label: 'Battery Voltage', value: '--', unit: 'V', status: 'normal', trend: 'stable' },
-  { label: 'Coolant Level', value: '--', unit: '%', status: 'normal', trend: 'stable' },
-  { label: 'Vibration', value: '--', unit: 'Hz', status: 'normal', trend: 'stable' },
-]
+const LABEL_MAP: Record<string, { label: string; unit: string }> = {
+  engine_temp: { label: 'Engine Temp', unit: '°C' },
+  oil_pressure: { label: 'Oil Pressure', unit: 'PSI' },
+  rpm: { label: 'RPM', unit: 'rpm' },
+  fuel_level: { label: 'Fuel Level', unit: '%' },
+  hydraulic_temp: { label: 'Hydraulic Temp', unit: '°C' },
+  battery_voltage: { label: 'Battery Voltage', unit: 'V' },
+  coolant_level: { label: 'Coolant Level', unit: '%' },
+  vibration: { label: 'Vibration', unit: 'Hz' },
+}
+
+const DEFAULT_VALUES: SpotValue[] = Object.values(LABEL_MAP).map(({ label, unit }) => ({
+  label,
+  value: '--',
+  unit,
+  status: 'normal' as const,
+  trend: 'stable' as const,
+}))
+
+function extractNumeric(v: unknown): number | null {
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const n = parseFloat(v)
+    return isNaN(n) ? null : n
+  }
+  if (v && typeof v === 'object') {
+    const obj = v as Record<string, unknown>
+    for (const field of ['value', 'v', 'data', 'val']) {
+      if (field in obj) return extractNumeric(obj[field])
+    }
+  }
+  return null
+}
+
+const POLL_INTERVAL = 1000
 
 const SpotValues: React.FC = () => {
   const [spotValues, setSpotValues] = useState<SpotValue[]>(DEFAULT_VALUES)
   const [connected, setConnected] = useState(false)
+  const prevValuesRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
-    const unsubConn = zenohService.onConnectionChange(setConnected)
+    let active = true
 
-    // Subscribe to all fendtastic data for live updates
-    const unsub = zenohService.subscribe('fendtastic/**', (data: any) => {
-      if (!data) return
+    const poll = async () => {
+      try {
+        const latest = await apiService.getTsLatest()
+        if (!active) return
 
-      // Handle EVA-ICS sensor updates
-      if (data.oid && data.value !== undefined) {
-        setSpotValues(prev => {
-          // Try to match OID suffix to a known label
-          const oid: string = data.oid
-          const tag = oid.split('/').pop() || ''
-          const labelMap: Record<string, string> = {
-            engine_temp: 'Engine Temp',
-            oil_pressure: 'Oil Pressure',
-            rpm: 'RPM',
-            fuel_level: 'Fuel Level',
-            hydraulic_temp: 'Hydraulic Temp',
-            battery_voltage: 'Battery Voltage',
-            coolant_level: 'Coolant Level',
-            vibration: 'Vibration',
-          }
-          const label = labelMap[tag]
-          if (!label) return prev
+        setConnected(true)
 
-          return prev.map(sv => {
-            if (sv.label !== label) return sv
-            const newVal = typeof data.value === 'number'
-              ? Math.round(data.value * 10) / 10
-              : data.value
-            const prevNum = typeof sv.value === 'number' ? sv.value : 0
-            const newNum = typeof newVal === 'number' ? newVal : 0
-            return {
-              ...sv,
-              value: newVal,
-              trend: newNum > prevNum ? 'up' as const : newNum < prevNum ? 'down' as const : sv.trend,
-              status: data.status === 0 ? 'critical' as const : sv.status,
+        // Build a map from sensor tag to latest numeric value
+        const updates: Record<string, number> = {}
+        for (const [key, entry] of Object.entries(latest)) {
+          // Extract tag from key like "fendtastic/pea/fendt-vario-1001/data/engine_temp"
+          const tag = key.split('/').pop() || ''
+          if (tag in LABEL_MAP) {
+            const num = extractNumeric(entry.v)
+            if (num !== null) {
+              updates[tag] = Math.round(num * 10) / 10
             }
-          })
-        })
-      }
-    })
+          }
+        }
 
-    return () => { unsubConn(); unsub() }
+        if (Object.keys(updates).length > 0) {
+          const prev = prevValuesRef.current
+
+          setSpotValues(current =>
+            current.map(sv => {
+              const entry = Object.entries(LABEL_MAP).find(([, v]) => v.label === sv.label)
+              if (!entry) return sv
+              const tag = entry[0]
+              const newVal = updates[tag]
+              if (newVal === undefined) return sv
+
+              const prevVal = prev[tag]
+              const trend = prevVal !== undefined
+                ? newVal > prevVal ? 'up' as const : newVal < prevVal ? 'down' as const : sv.trend
+                : sv.trend
+
+              return { ...sv, value: newVal, trend }
+            })
+          )
+
+          prevValuesRef.current = { ...prev, ...updates }
+        }
+      } catch {
+        if (active) setConnected(false)
+      }
+    }
+
+    poll()
+    const interval = setInterval(poll, POLL_INTERVAL)
+    return () => { active = false; clearInterval(interval) }
   }, [])
 
   const getStatusColor = (status: SpotValue['status']) => {

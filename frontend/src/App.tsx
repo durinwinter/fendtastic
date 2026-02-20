@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
@@ -7,13 +6,9 @@ import Dashboard from './pages/Dashboard'
 import Heptapod from './pages/Heptapod'
 import PEALauncher from './pages/PEALauncher'
 import HeptapodMesh from './pages/HeptapodMesh'
-import zenohService from './services/zenohService'
 import './App.css'
 
 function App() {
-  useEffect(() => {
-    zenohService.connect().catch(console.error)
-  }, [])
 
   return (
     <ThemeProvider theme={fendtTheme}>

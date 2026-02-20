@@ -139,7 +139,29 @@ class ApiService {
     return response.data
   }
 
+  // ─── Simulator ──────────────────────────────────────────────────────────
+
+  async startSimulator(): Promise<{ status: string; simulator: string; pea_id: string }> {
+    const response = await this.client.post('/simulator/start')
+    return response.data
+  }
+
+  async stopSimulator(): Promise<{ status: string; simulator: string }> {
+    const response = await this.client.post('/simulator/stop')
+    return response.data
+  }
+
+  async getSimulatorStatus(): Promise<{ running: boolean; simulator: string; pea_id: string }> {
+    const response = await this.client.get('/simulator/status')
+    return response.data
+  }
+
   // ─── Time-Series Historical Data ──────────────────────────────────────────
+
+  async getTsLatest(): Promise<Record<string, { t: number; v: unknown }>> {
+    const response = await this.client.get('/ts/latest')
+    return response.data
+  }
 
   async getTsKeys(): Promise<{ keys: string[] }> {
     const response = await this.client.get('/ts/keys')
