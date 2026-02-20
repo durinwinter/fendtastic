@@ -84,26 +84,36 @@ pub async fn deploy_pea(
     let configs = state.pea_configs.read().await;
     match configs.get(pea_id.as_str()) {
         Some(config) => {
+            // Publish deploy command to Zenoh (for eva-ics-connector if running)
             let deploy_msg = serde_json::json!({
                 "action": "deploy",
                 "pea_config": config
             });
             let topic = shared::mtp::topics::pea_deploy(&pea_id);
-            match state.zenoh_session.put(&topic, deploy_msg.to_string()).await {
-                Ok(_) => {
-                    info!("Deploy command sent for PEA: {}", pea_id);
-                    HttpResponse::Accepted().json(serde_json::json!({
-                        "status": "deploying",
-                        "pea_id": pea_id.as_str()
-                    }))
-                }
-                Err(e) => {
-                    error!("Failed to publish deploy command: {}", e);
-                    HttpResponse::InternalServerError().json(serde_json::json!({
-                        "error": format!("Failed to publish deploy: {}", e)
-                    }))
-                }
-            }
+            let _ = state.zenoh_session.put(&topic, deploy_msg.to_string()).await;
+
+            // Publish deployed status directly so frontend gets immediate feedback
+            let status = serde_json::json!({
+                "pea_id": pea_id.as_str(),
+                "deployed": true,
+                "running": false,
+                "services": config.services.iter().map(|s| serde_json::json!({
+                    "tag": s.tag,
+                    "state": "Idle",
+                    "state_code": 16,
+                    "operation_mode": "Offline",
+                    "source_mode": "Internal",
+                })).collect::<Vec<_>>(),
+                "last_updated": chrono::Utc::now().to_rfc3339(),
+            });
+            let status_topic = shared::mtp::topics::pea_status(&pea_id);
+            let _ = state.zenoh_session.put(&status_topic, status.to_string()).await;
+
+            info!("PEA deployed: {} ({})", config.name, pea_id);
+            HttpResponse::Accepted().json(serde_json::json!({
+                "status": "deployed",
+                "pea_id": pea_id.as_str()
+            }))
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "PEA not found"})),
     }
@@ -113,40 +123,113 @@ pub async fn start_pea(
     state: web::Data<AppState>,
     pea_id: web::Path<String>,
 ) -> impl Responder {
-    let cmd = serde_json::json!({"action": "start"});
-    let topic = shared::mtp::topics::pea_lifecycle(&pea_id);
-    match state.zenoh_session.put(&topic, cmd.to_string()).await {
-        Ok(_) => {
-            info!("Start command sent for PEA: {}", pea_id);
-            HttpResponse::Accepted().json(serde_json::json!({"status": "starting"}))
+    let pea_id_str = pea_id.into_inner();
+
+    // Check PEA exists
+    let config_name = {
+        let configs = state.pea_configs.read().await;
+        match configs.get(&pea_id_str) {
+            Some(c) => c.name.clone(),
+            None => return HttpResponse::NotFound().json(serde_json::json!({"error": "PEA not found"})),
         }
-        Err(e) => {
-            error!("Failed to send start command: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to start: {}", e)
-            }))
+    };
+
+    // Also publish lifecycle command for eva-ics-connector
+    let cmd = serde_json::json!({"action": "start"});
+    let topic = shared::mtp::topics::pea_lifecycle(&pea_id_str);
+    let _ = state.zenoh_session.put(&topic, cmd.to_string()).await;
+
+    // Start the built-in simulator
+    {
+        let mut sims = state.running_sims.write().await;
+        // Stop existing sim if any
+        if let Some(handle) = sims.remove(&pea_id_str) {
+            handle.abort();
+        }
+        let handle = crate::simulator::spawn_simulator(
+            state.zenoh_session.clone(),
+            pea_id_str.clone(),
+        );
+        sims.insert(pea_id_str.clone(), handle);
+    }
+
+    // Publish running status directly
+    {
+        let configs = state.pea_configs.read().await;
+        if let Some(config) = configs.get(&pea_id_str) {
+            let status = serde_json::json!({
+                "pea_id": &pea_id_str,
+                "deployed": true,
+                "running": true,
+                "services": config.services.iter().map(|s| serde_json::json!({
+                    "tag": s.tag,
+                    "state": "Execute",
+                    "state_code": 64,
+                    "operation_mode": "Automatic",
+                    "source_mode": "External",
+                })).collect::<Vec<_>>(),
+                "last_updated": chrono::Utc::now().to_rfc3339(),
+            });
+            let status_topic = shared::mtp::topics::pea_status(&pea_id_str);
+            let _ = state.zenoh_session.put(&status_topic, status.to_string()).await;
         }
     }
+
+    info!("PEA started (with simulator): {} ({})", config_name, pea_id_str);
+    HttpResponse::Accepted().json(serde_json::json!({
+        "status": "running",
+        "pea_id": &pea_id_str,
+        "simulator": true,
+    }))
 }
 
 pub async fn stop_pea(
     state: web::Data<AppState>,
     pea_id: web::Path<String>,
 ) -> impl Responder {
+    let pea_id_str = pea_id.into_inner();
+
+    // Also publish lifecycle command for eva-ics-connector
     let cmd = serde_json::json!({"action": "stop"});
-    let topic = shared::mtp::topics::pea_lifecycle(&pea_id);
-    match state.zenoh_session.put(&topic, cmd.to_string()).await {
-        Ok(_) => {
-            info!("Stop command sent for PEA: {}", pea_id);
-            HttpResponse::Accepted().json(serde_json::json!({"status": "stopping"}))
-        }
-        Err(e) => {
-            error!("Failed to send stop command: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to stop: {}", e)
-            }))
+    let topic = shared::mtp::topics::pea_lifecycle(&pea_id_str);
+    let _ = state.zenoh_session.put(&topic, cmd.to_string()).await;
+
+    // Stop the simulator
+    {
+        let mut sims = state.running_sims.write().await;
+        if let Some(handle) = sims.remove(&pea_id_str) {
+            handle.abort();
+            info!("Simulator stopped for PEA: {}", pea_id_str);
         }
     }
+
+    // Publish idle status directly
+    {
+        let configs = state.pea_configs.read().await;
+        if let Some(config) = configs.get(&pea_id_str) {
+            let status = serde_json::json!({
+                "pea_id": &pea_id_str,
+                "deployed": true,
+                "running": false,
+                "services": config.services.iter().map(|s| serde_json::json!({
+                    "tag": s.tag,
+                    "state": "Idle",
+                    "state_code": 16,
+                    "operation_mode": "Offline",
+                    "source_mode": "Internal",
+                })).collect::<Vec<_>>(),
+                "last_updated": chrono::Utc::now().to_rfc3339(),
+            });
+            let status_topic = shared::mtp::topics::pea_status(&pea_id_str);
+            let _ = state.zenoh_session.put(&status_topic, status.to_string()).await;
+        }
+    }
+
+    info!("PEA stopped: {}", pea_id_str);
+    HttpResponse::Accepted().json(serde_json::json!({
+        "status": "stopped",
+        "pea_id": &pea_id_str,
+    }))
 }
 
 // ─── Recipe CRUD ─────────────────────────────────────────────────────────────

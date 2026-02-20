@@ -2,11 +2,13 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
 use tracing::{info, error, Level};
 use std::sync::Arc;
+use std::collections::HashMap;
 use tokio::sync::RwLock;
 
 mod handlers;
 mod mesh_handlers;
 mod pea_handlers;
+mod simulator;
 mod state;
 mod timeseries_handlers;
 mod websocket;
@@ -54,6 +56,7 @@ async fn main() -> std::io::Result<()> {
         pea_config_dir,
         recipe_dir,
         timeseries: timeseries.clone(),
+        running_sims: Arc::new(RwLock::new(HashMap::new())),
     });
 
     // Spawn background Zenoh subscriber to collect time-series data

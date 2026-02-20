@@ -59,4 +59,6 @@ pub struct AppState {
     pub pea_config_dir: String,
     pub recipe_dir: String,
     pub timeseries: Arc<RwLock<TimeSeriesStore>>,
+    /// Running simulator tasks keyed by pea_id
+    pub running_sims: Arc<RwLock<HashMap<String, tokio::task::JoinHandle<()>>>>,
 }
