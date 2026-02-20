@@ -11,10 +11,8 @@ import {
   Tooltip,
   Legend,
   Filler,
-  TimeScale,
   ChartOptions,
 } from 'chart.js'
-import 'chartjs-adapter-date-fns'
 import apiService from '../services/apiService'
 
 ChartJS.register(
@@ -25,8 +23,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler,
-  TimeScale
+  Filler
 )
 
 const TIME_RANGES = [
@@ -75,9 +72,10 @@ const TimeSeriesChart: React.FC = () => {
   const [rangeMs, setRangeMs] = useState(300_000) // default 5m
   const [keys, setKeys] = useState<string[]>([])
   const [chartData, setChartData] = useState<{
+    labels: string[]
     datasets: Array<{
       label: string
-      data: Array<{ x: number; y: number }>
+      data: (number | null)[]
       borderColor: string
       backgroundColor: string
       fill: boolean
@@ -86,7 +84,7 @@ const TimeSeriesChart: React.FC = () => {
       pointRadius: number
       pointHoverRadius: number
     }>
-  }>({ datasets: [] })
+  }>({ labels: [], datasets: [] })
   const [loading, setLoading] = useState(true)
 
   // Discover available keys on mount
@@ -110,18 +108,30 @@ const TimeSeriesChart: React.FC = () => {
         keys.map(key => apiService.queryTimeSeries(key, startMs, endMs))
       )
 
-      const datasets = results
-        .map((res, i) => {
-          const color = COLOR_PALETTE[i % COLOR_PALETTE.length]
-          const data = res.points
-            .map(p => {
-              const y = extractNumeric(p.v)
-              return y !== null ? { x: p.t, y } : null
-            })
-            .filter((p): p is { x: number; y: number } => p !== null)
+      // Collect all unique timestamps across all keys, sorted
+      const allTimestamps = new Set<number>()
+      const seriesData = results.map(res => {
+        const map = new Map<number, number>()
+        for (const p of res.points) {
+          const y = extractNumeric(p.v)
+          if (y !== null) {
+            allTimestamps.add(p.t)
+            map.set(p.t, y)
+          }
+        }
+        return { key: res.key, map }
+      })
 
-          return {
-            label: keyToLabel(res.key),
+      const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b)
+      const labels = sortedTimestamps.map(t => new Date(t).toLocaleTimeString())
+
+      const datasets = seriesData
+        .map((s, i) => {
+          const color = COLOR_PALETTE[i % COLOR_PALETTE.length]
+          const data = sortedTimestamps.map(t => s.map.get(t) ?? null)
+          const hasAny = data.some(v => v !== null)
+          return hasAny ? {
+            label: keyToLabel(s.key),
             data,
             borderColor: color.border,
             backgroundColor: color.bg,
@@ -130,11 +140,11 @@ const TimeSeriesChart: React.FC = () => {
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
-          }
+          } : null
         })
-        .filter(ds => ds.data.length > 0)
+        .filter((ds): ds is NonNullable<typeof ds> => ds !== null)
 
-      setChartData({ datasets })
+      setChartData({ labels, datasets })
     } catch {
       // keep showing previous data
     } finally {
@@ -175,26 +185,11 @@ const TimeSeriesChart: React.FC = () => {
         borderWidth: 1,
         padding: 12,
         displayColors: true,
-        callbacks: {
-          title: (items) => {
-            if (items.length > 0) {
-              return new Date(items[0].parsed.x).toLocaleTimeString()
-            }
-            return ''
-          },
-        },
       },
     },
     scales: {
       x: {
-        type: 'time',
-        time: {
-          displayFormats: {
-            second: 'HH:mm:ss',
-            minute: 'HH:mm',
-            hour: 'HH:mm',
-          },
-        },
+        display: true,
         grid: {
           color: 'rgba(255, 255, 255, 0.05)',
           drawTicks: false,
