@@ -1,0 +1,35 @@
+{
+  "33ade699-1c33-4ac3-aaec-45fe1bd6ee64": {
+    "id": "33ade699-1c33-4ac3-aaec-45fe1bd6ee64",
+    "severity": "critical",
+    "status": "open",
+    "source": "fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "event": "VIBRATION HIGH",
+    "value": "",
+    "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "timestamp": "2026-02-21T03:15:43.178026781+00:00",
+    "duplicate_count": 3
+  },
+  "11732152-0baa-4392-9199-1c4c18e0023a": {
+    "id": "11732152-0baa-4392-9199-1c4c18e0023a",
+    "severity": "critical",
+    "status": "open",
+    "source": "fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "event": "TEMP WARNING",
+    "value": "",
+    "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "timestamp": "2026-02-21T03:16:43.246185507+00:00",
+    "duplicate_count": 4
+  },
+  "7e083067-54cc-4730-a6e8-c814d3c42b7a": {
+    "id": "7e083067-54cc-4730-a6e8-c814d3c42b7a",
+    "severity": "critical",
+    "status": "open",
+    "source": "fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "event": "PRESSURE ALERT",
+    "value": "",
+    "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
+    "timestamp": "2026-02-21T03:17:03.271711740+00:00",
+    "duplicate_count": 4
+  }
+}
