@@ -11,14 +11,17 @@ interface ActiveElementEditorProps {
   onChange: (elements: ActiveElement[]) => void
 }
 
-const ELEMENT_TYPES = ['BinVlv', 'AnaVlv', 'BinDrv', 'AnaDrv', 'PIDCtrl'] as const
+const ELEMENT_TYPES = ['BinVlv', 'BinMon', 'AnaVlv', 'BinDrv', 'AnaDrv', 'DIntDrv', 'DIntMon', 'PIDCtrl'] as const
 type ElementType = typeof ELEMENT_TYPES[number]
 
 const TYPE_LABELS: Record<ElementType, string> = {
   BinVlv: 'Binary Valve',
+  BinMon: 'Binary Monitor',
   AnaVlv: 'Analog Valve',
   BinDrv: 'Binary Drive',
   AnaDrv: 'Analog Drive',
+  DIntDrv: 'DInt Drive',
+  DIntMon: 'DInt Monitor',
   PIDCtrl: 'PID Controller',
 }
 
@@ -30,6 +33,8 @@ function createDefault(type: ElementType): ActiveElement {
     case 'AnaVlv':
       return { element_type: 'AnaVlv', tag: '', name: '', safe_pos: 0,
         pos_min: 0, pos_max: 100, pos_unit: '%', pos_fbk_tag: null, pos_sp_tag: null }
+    case 'BinMon':
+      return { element_type: 'BinMon', tag: '', name: '', fbk_tag: null }
     case 'BinDrv':
       return { element_type: 'BinDrv', tag: '', name: '', safe_pos: false,
         fwd_fbk_tag: null, rev_fbk_tag: null, fwd_cmd_tag: null, rev_cmd_tag: null, stop_cmd_tag: null }
@@ -37,6 +42,12 @@ function createDefault(type: ElementType): ActiveElement {
       return { element_type: 'AnaDrv', tag: '', name: '', safe_pos: 0,
         rpm_min: 0, rpm_max: 3000, rpm_unit: 'RPM',
         rpm_fbk_tag: null, rpm_sp_tag: null, fwd_cmd_tag: null, rev_cmd_tag: null, stop_cmd_tag: null }
+    case 'DIntDrv':
+      return { element_type: 'DIntDrv', tag: '', name: '', safe_pos: 0,
+        rpm_min: 0, rpm_max: 3000, rpm_unit: 'RPM',
+        rpm_fbk_tag: null, rpm_sp_tag: null, fwd_cmd_tag: null, rev_cmd_tag: null, stop_cmd_tag: null }
+    case 'DIntMon':
+      return { element_type: 'DIntMon', tag: '', name: '', unit: '', v_scl_min: 0, v_scl_max: 100, fbk_tag: null }
     case 'PIDCtrl':
       return { element_type: 'PIDCtrl', tag: '', name: '', kp: 1, ki: 0, kd: 0,
         pv_unit: '', pv_scl_min: 0, pv_scl_max: 100, sp_scl_min: 0, sp_scl_max: 100,
@@ -129,6 +140,11 @@ const ActiveElementEditor: React.FC<ActiveElementEditorProps> = ({ elements, onC
                 </>
               )}
 
+              {elem.element_type === 'BinMon' && (
+                <TagMappingField label="Feedback" mapping={elem.fbk_tag}
+                  onChange={(m) => updateElement(index, { fbk_tag: m })} />
+              )}
+
               {elem.element_type === 'AnaVlv' && (
                 <>
                   <Box sx={{ display: 'flex', gap: 1 }}>
@@ -181,6 +197,44 @@ const ActiveElementEditor: React.FC<ActiveElementEditorProps> = ({ elements, onC
                     onChange={(m) => updateElement(index, { rev_cmd_tag: m })} />
                   <TagMappingField label="Stop Cmd" mapping={elem.stop_cmd_tag}
                     onChange={(m) => updateElement(index, { stop_cmd_tag: m })} />
+                </>
+              )}
+
+              {elem.element_type === 'DIntDrv' && (
+                <>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField label="RPM Min" size="small" type="number" value={elem.rpm_min} sx={{ width: 100 }}
+                      onChange={(e) => updateElement(index, { rpm_min: Number(e.target.value) })} />
+                    <TextField label="RPM Max" size="small" type="number" value={elem.rpm_max} sx={{ width: 100 }}
+                      onChange={(e) => updateElement(index, { rpm_max: Number(e.target.value) })} />
+                    <TextField label="Unit" size="small" value={elem.rpm_unit} sx={{ width: 80 }}
+                      onChange={(e) => updateElement(index, { rpm_unit: e.target.value })} />
+                  </Box>
+                  <TagMappingField label="RPM Fbk" mapping={elem.rpm_fbk_tag}
+                    onChange={(m) => updateElement(index, { rpm_fbk_tag: m })} />
+                  <TagMappingField label="RPM SP" mapping={elem.rpm_sp_tag}
+                    onChange={(m) => updateElement(index, { rpm_sp_tag: m })} />
+                  <TagMappingField label="Fwd Cmd" mapping={elem.fwd_cmd_tag}
+                    onChange={(m) => updateElement(index, { fwd_cmd_tag: m })} />
+                  <TagMappingField label="Rev Cmd" mapping={elem.rev_cmd_tag}
+                    onChange={(m) => updateElement(index, { rev_cmd_tag: m })} />
+                  <TagMappingField label="Stop Cmd" mapping={elem.stop_cmd_tag}
+                    onChange={(m) => updateElement(index, { stop_cmd_tag: m })} />
+                </>
+              )}
+
+              {elem.element_type === 'DIntMon' && (
+                <>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField label="Unit" size="small" value={elem.unit} sx={{ width: 80 }}
+                      onChange={(e) => updateElement(index, { unit: e.target.value })} />
+                    <TextField label="Scale Min" size="small" type="number" value={elem.v_scl_min} sx={{ width: 110 }}
+                      onChange={(e) => updateElement(index, { v_scl_min: Number(e.target.value) })} />
+                    <TextField label="Scale Max" size="small" type="number" value={elem.v_scl_max} sx={{ width: 110 }}
+                      onChange={(e) => updateElement(index, { v_scl_max: Number(e.target.value) })} />
+                  </Box>
+                  <TagMappingField label="Feedback" mapping={elem.fbk_tag}
+                    onChange={(m) => updateElement(index, { fbk_tag: m })} />
                 </>
               )}
 

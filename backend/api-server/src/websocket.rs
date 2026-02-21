@@ -3,7 +3,7 @@ use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{info, error};
+use tracing::{error, info};
 use uuid::Uuid;
 use zenoh::Session;
 
@@ -36,8 +36,11 @@ impl Actor for WsConnection {
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
-        info!("WebSocket {} disconnected — cancelling {} subscriptions",
-            self.id, self.subscription_tasks.len());
+        info!(
+            "WebSocket {} disconnected — cancelling {} subscriptions",
+            self.id,
+            self.subscription_tasks.len()
+        );
         for (_, handle) in self.subscription_tasks.drain() {
             handle.abort();
         }

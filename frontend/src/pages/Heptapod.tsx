@@ -1,10 +1,15 @@
 import React from 'react'
-import { Box, Grid, Typography } from '@mui/material'
+import { Box, Grid, Typography, Tabs, Tab } from '@mui/material'
 import Header from '../components/Header'
 import PEAList from '../components/heptapod/PEAList'
 import RecipeManager from '../components/heptapod/RecipeManager'
+import AlarmCenter from '../components/heptapod/AlarmCenter'
+import IsometricWorkbench from '../components/heptapod/IsometricWorkbench'
+import PeaConnectionsDesigner from '../components/heptapod/PeaConnectionsDesigner'
 
 const Heptapod: React.FC = () => {
+    const [tab, setTab] = React.useState(0)
+
     return (
         <Box sx={{
             width: '100%',
@@ -21,14 +26,38 @@ const Heptapod: React.FC = () => {
                     Process Orchestration Layer (POL)
                 </Typography>
 
-                <Grid container spacing={3} sx={{ height: 'calc(100% - 60px)' }}>
-                    <Grid item xs={12} md={8}>
-                        <PEAList />
+                <Tabs value={tab} onChange={(_, next) => setTab(next)} sx={{ mb: 2 }}>
+                    <Tab label="Orchestration" />
+                    <Tab label="Alarm Center" />
+                    <Tab label="Isometric" />
+                    <Tab label="PEA Connections" />
+                </Tabs>
+
+                {tab === 0 && (
+                    <Grid container spacing={3} sx={{ height: 'calc(100% - 110px)' }}>
+                        <Grid item xs={12} md={8}>
+                            <PEAList />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                            <RecipeManager />
+                        </Grid>
                     </Grid>
-                    <Grid item xs={12} md={4}>
-                        <RecipeManager />
-                    </Grid>
-                </Grid>
+                )}
+                {tab === 1 && (
+                    <Box sx={{ height: 'calc(100% - 110px)' }}>
+                        <AlarmCenter />
+                    </Box>
+                )}
+                {tab === 2 && (
+                    <Box sx={{ height: 'calc(100% - 110px)' }}>
+                        <IsometricWorkbench />
+                    </Box>
+                )}
+                {tab === 3 && (
+                    <Box sx={{ height: 'calc(100% - 110px)' }}>
+                        <PeaConnectionsDesigner />
+                    </Box>
+                )}
             </Box>
         </Box>
     )

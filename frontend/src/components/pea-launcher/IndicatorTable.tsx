@@ -12,7 +12,7 @@ interface IndicatorTableProps {
   title?: string
 }
 
-const INDICATOR_TYPES = ['AnaView', 'BinView', 'DIntView', 'StringView'] as const
+const INDICATOR_TYPES = ['AnaView', 'BinView', 'BinStringView', 'DIntView', 'DIntStringView', 'StringView'] as const
 
 function createDefault(type: typeof INDICATOR_TYPES[number]): IndicatorElement {
   switch (type) {
@@ -20,8 +20,12 @@ function createDefault(type: typeof INDICATOR_TYPES[number]): IndicatorElement {
       return { type: 'AnaView', tag: '', name: '', unit: '', v_scl_min: 0, v_scl_max: 100, tag_mapping: null }
     case 'BinView':
       return { type: 'BinView', tag: '', name: '', v_state0: 'OFF', v_state1: 'ON', tag_mapping: null }
+    case 'BinStringView':
+      return { type: 'BinStringView', tag: '', name: '', v_state0: 'OFF', v_state1: 'ON', tag_mapping: null }
     case 'DIntView':
       return { type: 'DIntView', tag: '', name: '', unit: '', v_scl_min: 0, v_scl_max: 100, tag_mapping: null }
+    case 'DIntStringView':
+      return { type: 'DIntStringView', tag: '', name: '', v_scl_min: 0, v_scl_max: 100, tag_mapping: null }
     case 'StringView':
       return { type: 'StringView', tag: '', name: '', tag_mapping: null }
   }
@@ -114,6 +118,24 @@ const IndicatorTable: React.FC<IndicatorTableProps> = ({ indicators, onChange, t
                           onChange={(e) => updateField(index, 'v_state0', e.target.value)} />
                         <TextField size="small" label="State1" variant="standard" value={ind.v_state1} sx={{ width: 60 }}
                           onChange={(e) => updateField(index, 'v_state1', e.target.value)} />
+                      </Box>
+                    )}
+                    {ind.type === 'BinStringView' && (
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <TextField size="small" label="State0" variant="standard" value={ind.v_state0} sx={{ width: 60 }}
+                          onChange={(e) => updateField(index, 'v_state0', e.target.value)} />
+                        <TextField size="small" label="State1" variant="standard" value={ind.v_state1} sx={{ width: 60 }}
+                          onChange={(e) => updateField(index, 'v_state1', e.target.value)} />
+                      </Box>
+                    )}
+                    {ind.type === 'DIntStringView' && (
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <TextField size="small" label="Min" type="number" variant="standard"
+                          value={ind.v_scl_min} sx={{ width: 50 }}
+                          onChange={(e) => updateField(index, 'v_scl_min', Number(e.target.value))} />
+                        <TextField size="small" label="Max" type="number" variant="standard"
+                          value={ind.v_scl_max} sx={{ width: 50 }}
+                          onChange={(e) => updateField(index, 'v_scl_max', Number(e.target.value))} />
                       </Box>
                     )}
                   </TableCell>

@@ -27,7 +27,10 @@ async fn publish_telemetry(session: &Session) -> anyhow::Result<()> {
     });
 
     session
-        .put("fendtastic/machines/machine-001/state", machine_state.to_string())
+        .put(
+            "fendtastic/machines/machine-001/state",
+            machine_state.to_string(),
+        )
         .await
         .map_err(|e| anyhow::anyhow!(e))?;
 
@@ -40,7 +43,10 @@ async fn publish_telemetry(session: &Session) -> anyhow::Result<()> {
     });
 
     session
-        .put("fendtastic/sensors/machine-001/temp-001", sensor_data.to_string())
+        .put(
+            "fendtastic/sensors/machine-001/temp-001",
+            sensor_data.to_string(),
+        )
         .await
         .map_err(|e| anyhow::anyhow!(e))?;
 

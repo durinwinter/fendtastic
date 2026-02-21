@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use actix_web::{web, HttpResponse, Responder};
+use std::sync::Arc;
+use tracing::{error, info};
 use zenoh::Session;
-use tracing::{info, error};
 
 use crate::state::AppState;
 
@@ -20,14 +20,78 @@ struct SensorSim {
 }
 
 const SENSORS: &[SensorSim] = &[
-    SensorSim { tag: "engine_temp",     oid_suffix: "engine_temp",     base: 85.0,  variance: 3.0,   drift_rate: 0.02,  min: 60.0,  max: 110.0 },
-    SensorSim { tag: "oil_pressure",    oid_suffix: "oil_pressure",    base: 45.0,  variance: 2.0,   drift_rate: 0.01,  min: 30.0,  max: 65.0  },
-    SensorSim { tag: "rpm",             oid_suffix: "rpm",             base: 1800.0, variance: 50.0, drift_rate: 0.1,   min: 800.0, max: 2400.0 },
-    SensorSim { tag: "fuel_level",      oid_suffix: "fuel_level",      base: 92.0,  variance: 0.0,   drift_rate: -0.005, min: 0.0,  max: 100.0 },
-    SensorSim { tag: "hydraulic_temp",  oid_suffix: "hydraulic_temp",  base: 55.0,  variance: 2.0,   drift_rate: 0.015, min: 30.0,  max: 90.0  },
-    SensorSim { tag: "battery_voltage", oid_suffix: "battery_voltage", base: 13.2,  variance: 0.15,  drift_rate: 0.0,   min: 11.5,  max: 14.5  },
-    SensorSim { tag: "coolant_level",   oid_suffix: "coolant_level",   base: 92.0,  variance: 0.5,   drift_rate: -0.002, min: 50.0, max: 100.0 },
-    SensorSim { tag: "vibration",       oid_suffix: "vibration",       base: 35.0,  variance: 5.0,   drift_rate: 0.0,   min: 10.0,  max: 80.0  },
+    SensorSim {
+        tag: "engine_temp",
+        oid_suffix: "engine_temp",
+        base: 85.0,
+        variance: 3.0,
+        drift_rate: 0.02,
+        min: 60.0,
+        max: 110.0,
+    },
+    SensorSim {
+        tag: "oil_pressure",
+        oid_suffix: "oil_pressure",
+        base: 45.0,
+        variance: 2.0,
+        drift_rate: 0.01,
+        min: 30.0,
+        max: 65.0,
+    },
+    SensorSim {
+        tag: "rpm",
+        oid_suffix: "rpm",
+        base: 1800.0,
+        variance: 50.0,
+        drift_rate: 0.1,
+        min: 800.0,
+        max: 2400.0,
+    },
+    SensorSim {
+        tag: "fuel_level",
+        oid_suffix: "fuel_level",
+        base: 92.0,
+        variance: 0.0,
+        drift_rate: -0.005,
+        min: 0.0,
+        max: 100.0,
+    },
+    SensorSim {
+        tag: "hydraulic_temp",
+        oid_suffix: "hydraulic_temp",
+        base: 55.0,
+        variance: 2.0,
+        drift_rate: 0.015,
+        min: 30.0,
+        max: 90.0,
+    },
+    SensorSim {
+        tag: "battery_voltage",
+        oid_suffix: "battery_voltage",
+        base: 13.2,
+        variance: 0.15,
+        drift_rate: 0.0,
+        min: 11.5,
+        max: 14.5,
+    },
+    SensorSim {
+        tag: "coolant_level",
+        oid_suffix: "coolant_level",
+        base: 92.0,
+        variance: 0.5,
+        drift_rate: -0.002,
+        min: 50.0,
+        max: 100.0,
+    },
+    SensorSim {
+        tag: "vibration",
+        oid_suffix: "vibration",
+        base: 35.0,
+        variance: 5.0,
+        drift_rate: 0.0,
+        min: 10.0,
+        max: 80.0,
+    },
 ];
 
 /// State machine phases for the swimlane simulation
@@ -40,10 +104,10 @@ const STATE_SEQUENCE: &[(&str, u64)] = &[
 
 /// User actions triggered at state transitions
 const ACTION_AT_TRANSITION: &[&str] = &[
-    "START",       // IDLE → OPERATING
-    "PAUSE",       // OPERATING → MAINTENANCE
-    "RESUME",      // MAINTENANCE → OPERATING
-    "STOP",        // OPERATING → IDLE (cycle restart)
+    "START",  // IDLE → OPERATING
+    "PAUSE",  // OPERATING → MAINTENANCE
+    "RESUME", // MAINTENANCE → OPERATING
+    "STOP",   // OPERATING → IDLE (cycle restart)
 ];
 
 /// Alarm definitions: (tick offset within cycle, label, severity)
@@ -54,10 +118,7 @@ const ALARMS: &[(u64, &str, &str)] = &[
 ];
 
 /// Spawn a background task that publishes simulated Fendt Vario telemetry.
-pub fn spawn_simulator(
-    session: Arc<Session>,
-    pea_id: String,
-) -> tokio::task::JoinHandle<()> {
+pub fn spawn_simulator(session: Arc<Session>, pea_id: String) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         info!("Simulator started for PEA: {}", pea_id);
 
@@ -168,7 +229,9 @@ pub fn spawn_simulator(
 }
 
 fn pseudo_random(tick: u64, idx: u64) -> f64 {
-    let mut x = tick.wrapping_mul(6364136223846793005).wrapping_add(idx.wrapping_mul(1442695040888963407));
+    let mut x = tick
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(idx.wrapping_mul(1442695040888963407));
     x ^= x >> 33;
     x = x.wrapping_mul(0xff51afd7ed558ccd);
     x ^= x >> 33;
@@ -188,10 +251,7 @@ pub async fn start_standalone(state: web::Data<AppState>) -> impl Responder {
         }));
     }
 
-    let handle = spawn_simulator(
-        state.zenoh_session.clone(),
-        "fendt-vario-1001".to_string(),
-    );
+    let handle = spawn_simulator(state.zenoh_session.clone(), "fendt-vario-1001".to_string());
     sims.insert(STANDALONE_SIM_ID.to_string(), handle);
 
     info!("Standalone Fendt Vario simulator started");

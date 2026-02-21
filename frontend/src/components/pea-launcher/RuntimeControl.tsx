@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
     Paper, Typography, Box, Button, Chip, Grid, Card, CardContent,
-    CardActions, IconButton, Tooltip, LinearProgress, Alert
+    CardActions, IconButton, Tooltip, LinearProgress, Alert, Select, MenuItem
 } from '@mui/material'
 import {
     PlayArrow, Stop, CloudUpload, Refresh,
@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material'
 import zenohService from '../../services/zenohService'
 import apiService from '../../services/apiService'
-import { PeaConfig, ServiceState, getStateColor, ZENOH_TOPICS } from '../../types/mtp'
+import { PeaConfig, ServiceState, ServiceCommand, ALLOWED_COMMANDS, getStateColor, ZENOH_TOPICS } from '../../types/mtp'
 
 interface PeaRuntime {
     config: PeaConfig
@@ -27,6 +27,7 @@ const RuntimeControl: React.FC = () => {
     const [peas, setPeas] = useState<PeaRuntime[]>([])
     const [loading, setLoading] = useState(true)
     const [actionInProgress, setActionInProgress] = useState<string | null>(null)
+    const [serviceCmdSelections, setServiceCmdSelections] = useState<Record<string, { command: ServiceCommand; procedureId?: number }>>({})
 
     const loadPeas = useCallback(async () => {
         try {
@@ -102,6 +103,23 @@ const RuntimeControl: React.FC = () => {
         finally { setActionInProgress(null) }
     }
 
+    const handleUndeploy = async (peaId: string) => {
+        setActionInProgress(peaId)
+        try { await apiService.undeployPea(peaId) }
+        catch (e) { console.error('Undeploy failed:', e) }
+        finally { setActionInProgress(null) }
+    }
+
+    const handleServiceCommand = async (peaId: string, serviceTag: string) => {
+        const key = `${peaId}:${serviceTag}`
+        const selection = serviceCmdSelections[key] ?? { command: ServiceCommand.Start }
+        try {
+            await apiService.commandService(peaId, serviceTag, selection.command, selection.procedureId)
+        } catch (e) {
+            console.error('Service command failed:', e)
+        }
+    }
+
     if (loading) {
         return (
             <Paper sx={{ p: 2, height: '100%' }}>
@@ -170,9 +188,14 @@ const RuntimeControl: React.FC = () => {
                                     <Box sx={{ mt: 1.5 }}>
                                         <Typography variant="caption" fontWeight="bold">Services:</Typography>
                                         {pea.services.map(svc => (
+                                            (() => {
+                                                const allowed = ALLOWED_COMMANDS[svc.state] ?? []
+                                                const key = `${pea.config.id}:${svc.tag}`
+                                                const selectedCommand = serviceCmdSelections[key]?.command ?? allowed[0]
+                                                return (
                                             <Box key={svc.tag} sx={{
                                                 display: 'flex', justifyContent: 'space-between',
-                                                alignItems: 'center', mt: 0.5
+                                                alignItems: 'center', mt: 0.5, gap: 1, flexWrap: 'wrap'
                                             }}>
                                                 <Typography variant="body2">{svc.tag}</Typography>
                                                 <Chip
@@ -181,7 +204,57 @@ const RuntimeControl: React.FC = () => {
                                                     color={getStateColor(svc.state)}
                                                     sx={{ fontSize: '0.65rem', height: 20 }}
                                                 />
+                                                {pea.running && (
+                                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                                        <Select
+                                                            size="small"
+                                                            value={(selectedCommand ?? '') as string}
+                                                            onChange={(e) => setServiceCmdSelections(prev => ({
+                                                                ...prev,
+                                                                [key]: {
+                                                                    ...(prev[key] ?? {}),
+                                                                    command: e.target.value as ServiceCommand,
+                                                                },
+                                                            }))}
+                                                            sx={{ minWidth: 110, height: 28, fontSize: '0.75rem' }}
+                                                            disabled={allowed.length === 0}
+                                                        >
+                                                            {allowed.length === 0 && <MenuItem value="">No Commands</MenuItem>}
+                                                            {allowed.map(cmd => (
+                                                                <MenuItem key={cmd} value={cmd}>{cmd}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                        <Select
+                                                            size="small"
+                                                            value={serviceCmdSelections[`${pea.config.id}:${svc.tag}`]?.procedureId ?? ''}
+                                                            displayEmpty
+                                                            onChange={(e) => setServiceCmdSelections(prev => ({
+                                                                ...prev,
+                                                                [key]: {
+                                                                    ...(prev[key] ?? { command: selectedCommand ?? ServiceCommand.Start }),
+                                                                    procedureId: e.target.value === '' ? undefined : Number(e.target.value),
+                                                                },
+                                                            }))}
+                                                            sx={{ minWidth: 90, height: 28, fontSize: '0.75rem' }}
+                                                        >
+                                                            <MenuItem value="">Auto Proc</MenuItem>
+                                                            {(pea.config.services.find(s => s.tag === svc.tag)?.procedures ?? []).map(proc => (
+                                                                <MenuItem key={proc.id} value={proc.id}>{proc.id}</MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            onClick={() => handleServiceCommand(pea.config.id, svc.tag)}
+                                                            disabled={actionInProgress !== null || allowed.length === 0}
+                                                        >
+                                                            Send
+                                                        </Button>
+                                                    </Box>
+                                                )}
                                             </Box>
+                                                )
+                                            })()
                                         ))}
                                     </Box>
                                 )}
@@ -207,6 +280,13 @@ const RuntimeControl: React.FC = () => {
                                         onClick={() => handleStop(pea.config.id)}
                                         disabled={actionInProgress !== null}>
                                         Stop
+                                    </Button>
+                                )}
+                                {pea.deployed && !pea.running && (
+                                    <Button size="small" color="warning"
+                                        onClick={() => handleUndeploy(pea.config.id)}
+                                        disabled={actionInProgress !== null}>
+                                        Undeploy
                                     </Button>
                                 )}
                             </CardActions>

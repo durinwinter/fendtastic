@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios'
-import { PeaConfig } from '../types/mtp'
+import { PeaConfig, ServiceCommand } from '../types/mtp'
 import { Recipe } from '../types/recipe'
 import { ZenohNode, RouterInfo, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
 
@@ -50,6 +50,20 @@ class ApiService {
     return response.data
   }
 
+  async acknowledgeAlarm(id: string) {
+    const response = await this.client.post(`/alarms/${id}/ack`)
+    return response.data
+  }
+
+  async shelveAlarm(id: string) {
+    const response = await this.client.post(`/alarms/${id}/shelve`)
+    return response.data
+  }
+
+  async deleteAlarmById(id: string): Promise<void> {
+    await this.client.delete(`/alarms/${id}`)
+  }
+
   async getTimeSeries(machineId: string, startTime?: string, endTime?: string) {
     const response = await this.client.get(`/timeseries/${machineId}`, {
       params: { startTime, endTime },
@@ -89,12 +103,28 @@ class ApiService {
     await this.client.post(`/pea/${id}/deploy`)
   }
 
+  async undeployPea(id: string): Promise<void> {
+    await this.client.post(`/pea/${id}/undeploy`)
+  }
+
   async startPea(id: string): Promise<void> {
     await this.client.post(`/pea/${id}/start`)
   }
 
   async stopPea(id: string): Promise<void> {
     await this.client.post(`/pea/${id}/stop`)
+  }
+
+  async commandService(
+    peaId: string,
+    serviceTag: string,
+    command: ServiceCommand,
+    procedureId?: number
+  ): Promise<void> {
+    await this.client.post(`/pea/${peaId}/services/${serviceTag}/command`, {
+      command,
+      procedure_id: procedureId ?? null,
+    })
   }
 
   // ─── Recipes ─────────────────────────────────────────────────────────────
@@ -109,8 +139,32 @@ class ApiService {
     return response.data
   }
 
+  async updateRecipe(id: string, recipe: Recipe): Promise<Recipe> {
+    const response = await this.client.put(`/recipes/${id}`, recipe)
+    return response.data
+  }
+
+  async deleteRecipe(id: string): Promise<void> {
+    await this.client.delete(`/recipes/${id}`)
+  }
+
   async executeRecipe(id: string): Promise<void> {
     await this.client.post(`/recipes/${id}/execute`)
+  }
+
+  async listRecipeExecutions(): Promise<Array<{
+    execution_id: string
+    recipe_id: string
+    recipe_name: string
+    current_step: number
+    total_steps: number
+    step_statuses: string[]
+    state: 'running' | 'completed' | 'failed' | 'aborted' | 'pending'
+    started_at: string
+    updated_at: string
+  }>> {
+    const response = await this.client.get('/recipes/executions')
+    return response.data
   }
 
   // ─── Mesh / Zenoh Admin ──────────────────────────────────────────────────
@@ -190,6 +244,18 @@ class ApiService {
     const response = await this.client.get('/ts/query', {
       params: { key, start_ms: startMs, end_ms: endMs },
     })
+    return response.data
+  }
+
+  // ─── POL Topology ────────────────────────────────────────────────────────
+
+  async getPolTopology(): Promise<{ edges: Array<{ from: string; to: string }>; updated_at: string }> {
+    const response = await this.client.get('/pol/topology')
+    return response.data
+  }
+
+  async putPolTopology(edges: Array<{ from: string; to: string }>): Promise<{ edges: Array<{ from: string; to: string }>; updated_at: string }> {
+    const response = await this.client.put('/pol/topology', { edges })
     return response.data
   }
 }

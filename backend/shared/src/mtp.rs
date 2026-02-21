@@ -118,7 +118,9 @@ pub struct StringParameter {
 pub enum IndicatorElement {
     AnaView(AnaViewConfig),
     BinView(BinViewConfig),
+    BinStringView(BinStringViewConfig),
     DIntView(DIntViewConfig),
+    DIntStringView(DIntStringViewConfig),
     StringView(StringViewConfig),
 }
 
@@ -142,10 +144,28 @@ pub struct BinViewConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BinStringViewConfig {
+    pub tag: String,
+    pub name: String,
+    pub v_state0: String,
+    pub v_state1: String,
+    pub tag_mapping: Option<TagMapping>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DIntViewConfig {
     pub tag: String,
     pub name: String,
     pub unit: String,
+    pub v_scl_min: i64,
+    pub v_scl_max: i64,
+    pub tag_mapping: Option<TagMapping>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DIntStringViewConfig {
+    pub tag: String,
+    pub name: String,
     pub v_scl_min: i64,
     pub v_scl_max: i64,
     pub tag_mapping: Option<TagMapping>,
@@ -164,9 +184,12 @@ pub struct StringViewConfig {
 #[serde(tag = "element_type")]
 pub enum ActiveElement {
     BinVlv(BinVlvConfig),
+    BinMon(BinMonConfig),
     AnaVlv(AnaVlvConfig),
     BinDrv(BinDrvConfig),
     AnaDrv(AnaDrvConfig),
+    DIntDrv(DIntDrvConfig),
+    DIntMon(DIntMonConfig),
     PIDCtrl(PIDCtrlConfig),
 }
 
@@ -179,6 +202,13 @@ pub struct BinVlvConfig {
     pub close_fbk_tag: Option<TagMapping>,
     pub open_cmd_tag: Option<TagMapping>,
     pub close_cmd_tag: Option<TagMapping>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BinMonConfig {
+    pub tag: String,
+    pub name: String,
+    pub fbk_tag: Option<TagMapping>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -218,6 +248,31 @@ pub struct AnaDrvConfig {
     pub fwd_cmd_tag: Option<TagMapping>,
     pub rev_cmd_tag: Option<TagMapping>,
     pub stop_cmd_tag: Option<TagMapping>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DIntDrvConfig {
+    pub tag: String,
+    pub name: String,
+    pub safe_pos: i64,
+    pub rpm_min: i64,
+    pub rpm_max: i64,
+    pub rpm_unit: String,
+    pub rpm_fbk_tag: Option<TagMapping>,
+    pub rpm_sp_tag: Option<TagMapping>,
+    pub fwd_cmd_tag: Option<TagMapping>,
+    pub rev_cmd_tag: Option<TagMapping>,
+    pub stop_cmd_tag: Option<TagMapping>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DIntMonConfig {
+    pub tag: String,
+    pub name: String,
+    pub unit: String,
+    pub v_scl_min: i64,
+    pub v_scl_max: i64,
+    pub fbk_tag: Option<TagMapping>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -343,7 +398,11 @@ impl ServiceState {
                 ServiceCommand::Stop,
                 ServiceCommand::Abort,
             ],
-            Self::Completed => vec![ServiceCommand::Reset, ServiceCommand::Stop, ServiceCommand::Abort],
+            Self::Completed => vec![
+                ServiceCommand::Reset,
+                ServiceCommand::Stop,
+                ServiceCommand::Abort,
+            ],
             Self::Paused => vec![
                 ServiceCommand::Resume,
                 ServiceCommand::Stop,
@@ -503,10 +562,7 @@ pub mod topics {
     }
 
     pub fn pea_service_command(pea_id: &str, service_tag: &str) -> String {
-        format!(
-            "fendtastic/pea/{}/services/{}/command",
-            pea_id, service_tag
-        )
+        format!("fendtastic/pea/{}/services/{}/command", pea_id, service_tag)
     }
 
     pub fn pea_data(pea_id: &str, data_tag: &str) -> String {

@@ -1,6 +1,6 @@
-use shared::mtp::*;
 use crate::eva_client::EvaIcsClient;
 use anyhow::Result;
+use shared::mtp::*;
 use tracing::info;
 
 pub struct PeaDeployer {
@@ -44,7 +44,10 @@ impl PeaDeployer {
             for procedure in &service.procedures {
                 for param in &procedure.parameters {
                     let (tag, mapping) = extract_param_tag_and_mapping(param);
-                    let oid = format!("lvar:pea/{}/{}/proc/{}/{}", pea_id, service.tag, procedure.id, tag);
+                    let oid = format!(
+                        "lvar:pea/{}/{}/proc/{}/{}",
+                        pea_id, service.tag, procedure.id, tag
+                    );
                     items.push(serde_json::json!({"oid": oid, "enabled": true}));
 
                     if let Some(m) = mapping {
@@ -110,27 +113,33 @@ impl PeaDeployer {
         }
 
         // Deploy items to EVA-ICS
-        info!("Deploying {} items for PEA {} ({})", items.len(), config.name, pea_id);
+        info!(
+            "Deploying {} items for PEA {} ({})",
+            items.len(),
+            config.name,
+            pea_id
+        );
         self.eva_client.deploy_items(items.clone()).await?;
 
         // Initialize service states to Idle
         for service in &config.services {
             let state_oid = format!("lvar:pea/{}/{}/state", pea_id, service.tag);
-            self.eva_client.set_item_state(
-                &state_oid,
-                1,
-                serde_json::json!(ServiceState::Idle.code()),
-            ).await?;
+            self.eva_client
+                .set_item_state(&state_oid, 1, serde_json::json!(ServiceState::Idle.code()))
+                .await?;
         }
 
         // Deploy OPC UA controller service if there are mappings
         let controller_config = if !node_mappings.is_empty() {
             let svc_id = format!("eva.controller.opcua.pea_{}", pea_id.replace('-', "_"));
-            let pull_config: Vec<serde_json::Value> = node_mappings.iter()
-                .map(|m| serde_json::json!({
-                    "node": m.node_id,
-                    "map": [{"oid": m.oid}],
-                }))
+            let pull_config: Vec<serde_json::Value> = node_mappings
+                .iter()
+                .map(|m| {
+                    serde_json::json!({
+                        "node": m.node_id,
+                        "map": [{"oid": m.oid}],
+                    })
+                })
                 .collect();
 
             let svc_config = serde_json::json!({
@@ -158,11 +167,14 @@ impl PeaDeployer {
             None
         };
 
-        let eva_items = items.iter()
-            .filter_map(|i| i["oid"].as_str().map(|s| EvaItem {
-                oid: s.to_string(),
-                enabled: true,
-            }))
+        let eva_items = items
+            .iter()
+            .filter_map(|i| {
+                i["oid"].as_str().map(|s| EvaItem {
+                    oid: s.to_string(),
+                    enabled: true,
+                })
+            })
             .collect();
 
         Ok(EvaDeploymentPlan {
@@ -174,7 +186,10 @@ impl PeaDeployer {
 
     pub async fn undeploy(&self, pea_id: &str) -> Result<()> {
         // Get all items with the PEA's OID prefix
-        let items = self.eva_client.get_item_states(&format!("#:pea/{}/**", pea_id)).await?;
+        let items = self
+            .eva_client
+            .get_item_states(&format!("#:pea/{}/**", pea_id))
+            .await?;
         let oids: Vec<String> = items.iter().map(|i| i.oid.clone()).collect();
 
         if !oids.is_empty() {
@@ -205,38 +220,117 @@ fn extract_indicator_tag_and_mapping(ind: &IndicatorElement) -> (String, Option<
     match ind {
         IndicatorElement::AnaView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
         IndicatorElement::BinView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
+        IndicatorElement::BinStringView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
         IndicatorElement::DIntView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
+        IndicatorElement::DIntStringView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
         IndicatorElement::StringView(v) => (v.tag.clone(), v.tag_mapping.as_ref()),
     }
 }
 
-fn create_active_element_items<'a>(pea_id: &str, element: &'a ActiveElement) -> Vec<(String, Option<&'a TagMapping>)> {
+fn create_active_element_items<'a>(
+    pea_id: &str,
+    element: &'a ActiveElement,
+) -> Vec<(String, Option<&'a TagMapping>)> {
     let prefix = format!("unit:pea/{}/active", pea_id);
     match element {
         ActiveElement::BinVlv(v) => vec![
-            (format!("{}/{}/open_fbk", prefix, v.tag), v.open_fbk_tag.as_ref()),
-            (format!("{}/{}/close_fbk", prefix, v.tag), v.close_fbk_tag.as_ref()),
-            (format!("{}/{}/open_cmd", prefix, v.tag), v.open_cmd_tag.as_ref()),
-            (format!("{}/{}/close_cmd", prefix, v.tag), v.close_cmd_tag.as_ref()),
+            (
+                format!("{}/{}/open_fbk", prefix, v.tag),
+                v.open_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/close_fbk", prefix, v.tag),
+                v.close_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/open_cmd", prefix, v.tag),
+                v.open_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/close_cmd", prefix, v.tag),
+                v.close_cmd_tag.as_ref(),
+            ),
         ],
+        ActiveElement::BinMon(v) => vec![(format!("{}/{}/fbk", prefix, v.tag), v.fbk_tag.as_ref())],
         ActiveElement::AnaVlv(v) => vec![
-            (format!("{}/{}/pos_fbk", prefix, v.tag), v.pos_fbk_tag.as_ref()),
-            (format!("{}/{}/pos_sp", prefix, v.tag), v.pos_sp_tag.as_ref()),
+            (
+                format!("{}/{}/pos_fbk", prefix, v.tag),
+                v.pos_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/pos_sp", prefix, v.tag),
+                v.pos_sp_tag.as_ref(),
+            ),
         ],
         ActiveElement::BinDrv(v) => vec![
-            (format!("{}/{}/fwd_fbk", prefix, v.tag), v.fwd_fbk_tag.as_ref()),
-            (format!("{}/{}/rev_fbk", prefix, v.tag), v.rev_fbk_tag.as_ref()),
-            (format!("{}/{}/fwd_cmd", prefix, v.tag), v.fwd_cmd_tag.as_ref()),
-            (format!("{}/{}/rev_cmd", prefix, v.tag), v.rev_cmd_tag.as_ref()),
-            (format!("{}/{}/stop_cmd", prefix, v.tag), v.stop_cmd_tag.as_ref()),
+            (
+                format!("{}/{}/fwd_fbk", prefix, v.tag),
+                v.fwd_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rev_fbk", prefix, v.tag),
+                v.rev_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/fwd_cmd", prefix, v.tag),
+                v.fwd_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rev_cmd", prefix, v.tag),
+                v.rev_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/stop_cmd", prefix, v.tag),
+                v.stop_cmd_tag.as_ref(),
+            ),
         ],
         ActiveElement::AnaDrv(v) => vec![
-            (format!("{}/{}/rpm_fbk", prefix, v.tag), v.rpm_fbk_tag.as_ref()),
-            (format!("{}/{}/rpm_sp", prefix, v.tag), v.rpm_sp_tag.as_ref()),
-            (format!("{}/{}/fwd_cmd", prefix, v.tag), v.fwd_cmd_tag.as_ref()),
-            (format!("{}/{}/rev_cmd", prefix, v.tag), v.rev_cmd_tag.as_ref()),
-            (format!("{}/{}/stop_cmd", prefix, v.tag), v.stop_cmd_tag.as_ref()),
+            (
+                format!("{}/{}/rpm_fbk", prefix, v.tag),
+                v.rpm_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rpm_sp", prefix, v.tag),
+                v.rpm_sp_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/fwd_cmd", prefix, v.tag),
+                v.fwd_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rev_cmd", prefix, v.tag),
+                v.rev_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/stop_cmd", prefix, v.tag),
+                v.stop_cmd_tag.as_ref(),
+            ),
         ],
+        ActiveElement::DIntDrv(v) => vec![
+            (
+                format!("{}/{}/rpm_fbk", prefix, v.tag),
+                v.rpm_fbk_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rpm_sp", prefix, v.tag),
+                v.rpm_sp_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/fwd_cmd", prefix, v.tag),
+                v.fwd_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/rev_cmd", prefix, v.tag),
+                v.rev_cmd_tag.as_ref(),
+            ),
+            (
+                format!("{}/{}/stop_cmd", prefix, v.tag),
+                v.stop_cmd_tag.as_ref(),
+            ),
+        ],
+        ActiveElement::DIntMon(v) => {
+            vec![(format!("{}/{}/fbk", prefix, v.tag), v.fbk_tag.as_ref())]
+        }
         ActiveElement::PIDCtrl(v) => vec![
             (format!("{}/{}/pv", prefix, v.tag), v.pv_tag.as_ref()),
             (format!("{}/{}/sp", prefix, v.tag), v.sp_tag.as_ref()),

@@ -103,7 +103,9 @@ export interface StringParameter {
 export type IndicatorElement =
   | ({ type: 'AnaView' } & AnaViewConfig)
   | ({ type: 'BinView' } & BinViewConfig)
+  | ({ type: 'BinStringView' } & BinStringViewConfig)
   | ({ type: 'DIntView' } & DIntViewConfig)
+  | ({ type: 'DIntStringView' } & DIntStringViewConfig)
   | ({ type: 'StringView' } & StringViewConfig)
 
 export interface AnaViewConfig {
@@ -123,10 +125,26 @@ export interface BinViewConfig {
   tag_mapping: TagMapping | null
 }
 
+export interface BinStringViewConfig {
+  tag: string
+  name: string
+  v_state0: string
+  v_state1: string
+  tag_mapping: TagMapping | null
+}
+
 export interface DIntViewConfig {
   tag: string
   name: string
   unit: string
+  v_scl_min: number
+  v_scl_max: number
+  tag_mapping: TagMapping | null
+}
+
+export interface DIntStringViewConfig {
+  tag: string
+  name: string
   v_scl_min: number
   v_scl_max: number
   tag_mapping: TagMapping | null
@@ -142,9 +160,12 @@ export interface StringViewConfig {
 
 export type ActiveElement =
   | ({ element_type: 'BinVlv' } & BinVlvConfig)
+  | ({ element_type: 'BinMon' } & BinMonConfig)
   | ({ element_type: 'AnaVlv' } & AnaVlvConfig)
   | ({ element_type: 'BinDrv' } & BinDrvConfig)
   | ({ element_type: 'AnaDrv' } & AnaDrvConfig)
+  | ({ element_type: 'DIntDrv' } & DIntDrvConfig)
+  | ({ element_type: 'DIntMon' } & DIntMonConfig)
   | ({ element_type: 'PIDCtrl' } & PIDCtrlConfig)
 
 export interface BinVlvConfig {
@@ -155,6 +176,12 @@ export interface BinVlvConfig {
   close_fbk_tag: TagMapping | null
   open_cmd_tag: TagMapping | null
   close_cmd_tag: TagMapping | null
+}
+
+export interface BinMonConfig {
+  tag: string
+  name: string
+  fbk_tag: TagMapping | null
 }
 
 export interface AnaVlvConfig {
@@ -191,6 +218,29 @@ export interface AnaDrvConfig {
   fwd_cmd_tag: TagMapping | null
   rev_cmd_tag: TagMapping | null
   stop_cmd_tag: TagMapping | null
+}
+
+export interface DIntDrvConfig {
+  tag: string
+  name: string
+  safe_pos: number
+  rpm_min: number
+  rpm_max: number
+  rpm_unit: string
+  rpm_fbk_tag: TagMapping | null
+  rpm_sp_tag: TagMapping | null
+  fwd_cmd_tag: TagMapping | null
+  rev_cmd_tag: TagMapping | null
+  stop_cmd_tag: TagMapping | null
+}
+
+export interface DIntMonConfig {
+  tag: string
+  name: string
+  unit: string
+  v_scl_min: number
+  v_scl_max: number
+  fbk_tag: TagMapping | null
 }
 
 export interface PIDCtrlConfig {

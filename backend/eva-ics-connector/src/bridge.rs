@@ -1,12 +1,12 @@
 use crate::eva_client::EvaIcsClient;
 use crate::pea_deployer::PeaDeployer;
+use anyhow::Result;
 use shared::mtp::*;
-use zenoh::Session;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, error};
-use anyhow::Result;
+use tracing::{error, info, warn};
+use zenoh::Session;
 
 /// Tracks deployed PEAs and their configurations
 pub struct PeaBridge {
@@ -33,19 +33,22 @@ impl PeaBridge {
         info!("Starting PeaBridge command listener");
 
         // Subscribe to deploy commands
-        let deploy_sub = self.zenoh_session
+        let deploy_sub = self
+            .zenoh_session
             .declare_subscriber(topics::PEA_DEPLOY_WILDCARD)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to deploy topic: {}", e))?;
 
         // Subscribe to lifecycle commands (start/stop)
-        let lifecycle_sub = self.zenoh_session
+        let lifecycle_sub = self
+            .zenoh_session
             .declare_subscriber(topics::PEA_LIFECYCLE_WILDCARD)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to lifecycle topic: {}", e))?;
 
         // Subscribe to service commands
-        let service_cmd_sub = self.zenoh_session
+        let service_cmd_sub = self
+            .zenoh_session
             .declare_subscriber(topics::PEA_SERVICE_COMMAND_WILDCARD)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to service command topic: {}", e))?;
@@ -131,25 +134,35 @@ impl PeaBridge {
                             info!("Deploying PEA: {} ({})", config.name, pea_id);
                             match self.deployer.deploy(&config).await {
                                 Ok(plan) => {
-                                    info!("PEA {} deployed: {} items, controller: {}",
-                                        pea_id, plan.items.len(),
-                                        plan.controller_service.is_some());
+                                    info!(
+                                        "PEA {} deployed: {} items, controller: {}",
+                                        pea_id,
+                                        plan.items.len(),
+                                        plan.controller_service.is_some()
+                                    );
 
                                     // Track deployed PEA
-                                    self.deployed_peas.write().await.insert(pea_id.clone(), config.clone());
+                                    self.deployed_peas
+                                        .write()
+                                        .await
+                                        .insert(pea_id.clone(), config.clone());
 
                                     // Publish status update
                                     let status = PeaInstanceStatus {
                                         pea_id: pea_id.clone(),
                                         deployed: true,
                                         running: false,
-                                        services: config.services.iter().map(|s| ServiceRuntimeState {
-                                            tag: s.tag.clone(),
-                                            state: ServiceState::Idle,
-                                            current_procedure_id: None,
-                                            operation_mode: OperationMode::Offline,
-                                            source_mode: SourceMode::Internal,
-                                        }).collect(),
+                                        services: config
+                                            .services
+                                            .iter()
+                                            .map(|s| ServiceRuntimeState {
+                                                tag: s.tag.clone(),
+                                                state: ServiceState::Idle,
+                                                current_procedure_id: None,
+                                                operation_mode: OperationMode::Offline,
+                                                source_mode: SourceMode::Internal,
+                                            })
+                                            .collect(),
                                         opcua_endpoint: Some(config.opcua_config.endpoint.clone()),
                                         last_updated: chrono::Utc::now(),
                                     };
@@ -204,10 +217,15 @@ impl PeaBridge {
                     // Set all service states to Execute
                     for service in &config.services {
                         let state_oid = format!("lvar:pea/{}/{}/state", pea_id, service.tag);
-                        if let Err(e) = self.eva_client.set_item_state(
-                            &state_oid, 1,
-                            serde_json::json!(ServiceState::Execute.code()),
-                        ).await {
+                        if let Err(e) = self
+                            .eva_client
+                            .set_item_state(
+                                &state_oid,
+                                1,
+                                serde_json::json!(ServiceState::Execute.code()),
+                            )
+                            .await
+                        {
                             error!("Failed to set state for {}: {}", state_oid, e);
                         }
 
@@ -225,13 +243,17 @@ impl PeaBridge {
                         pea_id: pea_id.clone(),
                         deployed: true,
                         running: true,
-                        services: config.services.iter().map(|s| ServiceRuntimeState {
-                            tag: s.tag.clone(),
-                            state: ServiceState::Execute,
-                            current_procedure_id: None,
-                            operation_mode: OperationMode::Automatic,
-                            source_mode: SourceMode::External,
-                        }).collect(),
+                        services: config
+                            .services
+                            .iter()
+                            .map(|s| ServiceRuntimeState {
+                                tag: s.tag.clone(),
+                                state: ServiceState::Execute,
+                                current_procedure_id: None,
+                                operation_mode: OperationMode::Automatic,
+                                source_mode: SourceMode::External,
+                            })
+                            .collect(),
                         opcua_endpoint: Some(config.opcua_config.endpoint.clone()),
                         last_updated: chrono::Utc::now(),
                     };
@@ -246,10 +268,15 @@ impl PeaBridge {
                 if let Some(config) = deployed.get(&pea_id) {
                     for service in &config.services {
                         let state_oid = format!("lvar:pea/{}/{}/state", pea_id, service.tag);
-                        if let Err(e) = self.eva_client.set_item_state(
-                            &state_oid, 1,
-                            serde_json::json!(ServiceState::Idle.code()),
-                        ).await {
+                        if let Err(e) = self
+                            .eva_client
+                            .set_item_state(
+                                &state_oid,
+                                1,
+                                serde_json::json!(ServiceState::Idle.code()),
+                            )
+                            .await
+                        {
                             error!("Failed to set state for {}: {}", state_oid, e);
                         }
 
@@ -265,13 +292,17 @@ impl PeaBridge {
                         pea_id: pea_id.clone(),
                         deployed: true,
                         running: false,
-                        services: config.services.iter().map(|s| ServiceRuntimeState {
-                            tag: s.tag.clone(),
-                            state: ServiceState::Idle,
-                            current_procedure_id: None,
-                            operation_mode: OperationMode::Offline,
-                            source_mode: SourceMode::Internal,
-                        }).collect(),
+                        services: config
+                            .services
+                            .iter()
+                            .map(|s| ServiceRuntimeState {
+                                tag: s.tag.clone(),
+                                state: ServiceState::Idle,
+                                current_procedure_id: None,
+                                operation_mode: OperationMode::Offline,
+                                source_mode: SourceMode::Internal,
+                            })
+                            .collect(),
                         opcua_endpoint: Some(config.opcua_config.endpoint.clone()),
                         last_updated: chrono::Utc::now(),
                     };
@@ -303,14 +334,19 @@ impl PeaBridge {
             }
         };
 
-        info!("Service command for PEA {}, service {}: {:?}", pea_id, service_tag, msg);
+        info!(
+            "Service command for PEA {}, service {}: {:?}",
+            pea_id, service_tag, msg
+        );
 
         // Write command to EVA-ICS lvar
         let cmd_oid = format!("lvar:pea/{}/{}/command", pea_id, service_tag);
         if let Some(cmd_code) = msg["command_code"].as_u64() {
-            if let Err(e) = self.eva_client.set_item_state(
-                &cmd_oid, 1, serde_json::json!(cmd_code),
-            ).await {
+            if let Err(e) = self
+                .eva_client
+                .set_item_state(&cmd_oid, 1, serde_json::json!(cmd_code))
+                .await
+            {
                 error!("Failed to write service command to {}: {}", cmd_oid, e);
             }
         }
@@ -318,9 +354,11 @@ impl PeaBridge {
         // If a procedure is selected, update the current procedure lvar
         if let Some(proc_id) = msg["procedure_id"].as_u64() {
             let proc_oid = format!("lvar:pea/{}/{}/procedure_cur", pea_id, service_tag);
-            if let Err(e) = self.eva_client.set_item_state(
-                &proc_oid, 1, serde_json::json!(proc_id),
-            ).await {
+            if let Err(e) = self
+                .eva_client
+                .set_item_state(&proc_oid, 1, serde_json::json!(proc_id))
+                .await
+            {
                 error!("Failed to set procedure for {}: {}", proc_oid, e);
             }
         }
@@ -338,9 +376,12 @@ impl PeaBridge {
                 let state_oid = format!("lvar:pea/{}/{}/state", pea_id, service.tag);
                 let state = match self.eva_client.get_item_states(&state_oid).await {
                     Ok(items) if !items.is_empty() => {
-                        let code = items[0].value.as_ref()
+                        let code = items[0]
+                            .value
+                            .as_ref()
                             .and_then(|v| v.as_u64())
-                            .unwrap_or(ServiceState::Idle.code() as u64) as u32;
+                            .unwrap_or(ServiceState::Idle.code() as u64)
+                            as u32;
                         ServiceState::from_code(code).unwrap_or(ServiceState::Idle)
                     }
                     _ => ServiceState::Idle,
@@ -353,11 +394,11 @@ impl PeaBridge {
                 // Read current procedure
                 let proc_oid = format!("lvar:pea/{}/{}/procedure_cur", pea_id, service.tag);
                 let current_procedure_id = match self.eva_client.get_item_states(&proc_oid).await {
-                    Ok(items) if !items.is_empty() => {
-                        items[0].value.as_ref()
-                            .and_then(|v| v.as_u64())
-                            .map(|v| v as u32)
-                    }
+                    Ok(items) if !items.is_empty() => items[0]
+                        .value
+                        .as_ref()
+                        .and_then(|v| v.as_u64())
+                        .map(|v| v as u32),
                     _ => None,
                 };
 
@@ -415,7 +456,10 @@ impl PeaBridge {
                 "opcua_endpoint": config.opcua_config.endpoint,
                 "timestamp": chrono::Utc::now().to_rfc3339(),
             });
-            let _ = self.zenoh_session.put(&topic, announcement.to_string()).await;
+            let _ = self
+                .zenoh_session
+                .put(&topic, announcement.to_string())
+                .await;
         }
     }
 

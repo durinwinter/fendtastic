@@ -1,29 +1,28 @@
 use actix_web::{web, HttpResponse, Responder};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
+use tokio::process::Command;
+use tracing::{error, info};
 use uuid::Uuid;
-use chrono::Utc;
-use tracing::{info, error};
 
 use crate::state::AppState;
 
-/// A running scenario process with metadata
 #[derive(Clone, Debug, Serialize)]
-#[allow(dead_code)]
 pub struct RunningScenario {
-    pub id: String,
+    pub run_id: String,
     pub scenario_id: String,
     pub name: String,
     pub started_at: String,
-    pub status: String, // "running", "completed", "failed"
+    pub status: String,
     pub pid: u32,
     pub progress_percent: u32,
     pub message: String,
+    pub timeout_real_s: u32,
 }
 
-/// Response for listing available scenarios
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ScenarioInfo {
     pub id: String,
     pub name: String,
@@ -37,8 +36,8 @@ pub struct ScenarioInfo {
 #[derive(Debug, Deserialize)]
 pub struct LaunchScenarioRequest {
     pub scenario_id: String,
-    pub put_cmd: Option<String>, // Product Under Test command
-    pub site: Option<String>,     // Zenoh site name (default: refinery_01)
+    pub put_cmd: Option<String>,
+    pub site: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -49,19 +48,18 @@ pub struct LaunchScenarioResponse {
     pub status: String,
 }
 
-/// List available scenarios from durins-forge
-pub async fn list_scenarios(
-    _state: web::Data<AppState>,
-) -> impl Responder {
-    // In a real implementation, this would parse the scenario_matrix.yaml
-    // For now, return a static list
-    let scenarios = vec![
+fn built_in_scenarios() -> Vec<ScenarioInfo> {
+    vec![
         ScenarioInfo {
             id: "S001".to_string(),
             name: "Baseline Throughput Under Normal Power".to_string(),
             spec: "factorio/specs/S001_baseline_throughput.md".to_string(),
             priority: "P1".to_string(),
-            tags: vec!["power".to_string(), "baseline".to_string(), "throughput".to_string()],
+            tags: vec![
+                "power".to_string(),
+                "baseline".to_string(),
+                "throughput".to_string(),
+            ],
             duration_sim_min: 15,
             timeout_real_s: 300,
         },
@@ -70,7 +68,11 @@ pub async fn list_scenarios(
             name: "Recovery From Power Loss".to_string(),
             spec: "factorio/specs/S010_recovery_from_power_loss.md".to_string(),
             priority: "P1".to_string(),
-            tags: vec!["power".to_string(), "recovery".to_string(), "brownout".to_string()],
+            tags: vec![
+                "power".to_string(),
+                "recovery".to_string(),
+                "brownout".to_string(),
+            ],
             duration_sim_min: 30,
             timeout_real_s: 600,
         },
@@ -79,7 +81,11 @@ pub async fn list_scenarios(
             name: "Sensor Noise and Debounce".to_string(),
             spec: "factorio/specs/S020_sensor_noise_debounce.md".to_string(),
             priority: "P1".to_string(),
-            tags: vec!["fluids".to_string(), "noise".to_string(), "debounce".to_string()],
+            tags: vec![
+                "fluids".to_string(),
+                "noise".to_string(),
+                "debounce".to_string(),
+            ],
             duration_sim_min: 20,
             timeout_real_s: 400,
         },
@@ -92,54 +98,60 @@ pub async fn list_scenarios(
             duration_sim_min: 25,
             timeout_real_s: 500,
         },
-    ];
+    ]
+}
 
+fn compute_progress(started_at: &str, timeout_real_s: u32, status: &str) -> u32 {
+    if status == "completed" || status == "failed" {
+        return 100;
+    }
+    let start = DateTime::parse_from_rfc3339(started_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+    let elapsed = (Utc::now() - start).num_seconds().max(0) as u64;
+    let timeout = timeout_real_s.max(1) as u64;
+    ((elapsed.saturating_mul(100)) / timeout).min(99) as u32
+}
+
+pub async fn list_scenarios(_state: web::Data<AppState>) -> impl Responder {
+    let scenarios = built_in_scenarios();
     HttpResponse::Ok().json(json!({
         "scenarios": scenarios,
         "count": scenarios.len(),
     }))
 }
 
-/// Launch a scenario
 pub async fn launch_scenario(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     req: web::Json<LaunchScenarioRequest>,
 ) -> impl Responder {
-    let scenario_id = &req.scenario_id;
-    let put_cmd = req.put_cmd.clone().unwrap_or_else(|| "none".to_string());
-    let site = req.site.clone().unwrap_or_else(|| "refinery_01".to_string());
+    let scenarios = built_in_scenarios();
+    let Some(scenario) = scenarios.iter().find(|s| s.id == req.scenario_id) else {
+        return HttpResponse::NotFound().json(json!({"error": "Unknown scenario"}));
+    };
 
-    // Generate a unique run ID
+    let put_cmd = req.put_cmd.clone().unwrap_or_else(|| "none".to_string());
+    let site = req
+        .site
+        .clone()
+        .unwrap_or_else(|| "refinery_01".to_string());
     let run_id = Uuid::new_v4().to_string();
     let started_at = Utc::now().to_rfc3339();
 
-    info!("Launching scenario: {} (run_id: {})", scenario_id, run_id);
+    let durins_forge_root = std::env::var("DURINS_FORGE_ROOT").unwrap_or_else(|_| {
+        if std::path::Path::new("../durins-forge").exists() {
+            "../durins-forge".to_string()
+        } else if std::path::Path::new("/home/earthling/Documents/durins-forge").exists() {
+            "/home/earthling/Documents/durins-forge".to_string()
+        } else {
+            "./durins-forge".to_string()
+        }
+    });
 
-    // Try DURINS_FORGE_ROOT env var, then fall back to relative path
-    let durins_forge_root = std::env::var("DURINS_FORGE_ROOT")
-        .unwrap_or_else(|_| {
-            // Try to find durins-forge as sibling directory
-            if std::path::Path::new("../durins-forge").exists() {
-                "../durins-forge".to_string()
-            } else if std::path::Path::new("/home/earthling/Documents/durins-forge").exists() {
-                "/home/earthling/Documents/durins-forge".to_string()
-            } else {
-                "./durins-forge".to_string()
-            }
-        });
-
-    // For now, construct a command to launch durins-forge scenario or Factorio directly
-    // The command can be customized based on scenario type
-    let shell_cmd = if scenario_id.starts_with("S") {
-        // Standard scenario: use durins-forge runner
-        format!(
-            "cd {} && PUT_CMD=\"{}\" PUT_SITE=\"{}\" ./harness/runner/run_one.sh {}",
-            durins_forge_root, put_cmd, site, scenario_id
-        )
-    } else {
-        // Direct Factorio launch
-        format!("SCENARIO_ID=\"{}\" ./factorio_linux_2.0.73/factorio/bin/x64/factorio", scenario_id)
-    };
+    let shell_cmd = format!(
+        "cd {} && PUT_CMD=\"{}\" PUT_SITE=\"{}\" ./harness/runner/run_one.sh {}",
+        durins_forge_root, put_cmd, site, req.scenario_id
+    );
 
     let mut cmd = Command::new("sh");
     cmd.arg("-c")
@@ -149,53 +161,123 @@ pub async fn launch_scenario(
 
     match cmd.spawn() {
         Ok(mut child) => {
-            let pid = child.id();
-            info!("Scenario process started with PID: {}", pid);
+            let pid = child.id().unwrap_or(0);
+            info!(
+                "Scenario {} started (run_id={}, pid={})",
+                req.scenario_id, run_id, pid
+            );
 
-            // Spawn a task to monitor the process
-            let run_id_clone = run_id.clone();
-            let scenario_id_clone = scenario_id.clone();
+            {
+                let mut runs = state.scenario_runs.write().await;
+                runs.insert(
+                    run_id.clone(),
+                    json!({
+                        "run_id": run_id,
+                        "scenario_id": req.scenario_id,
+                        "name": scenario.name,
+                        "started_at": started_at,
+                        "status": "running",
+                        "pid": pid,
+                        "progress_percent": 0,
+                        "message": "Scenario is running",
+                        "timeout_real_s": scenario.timeout_real_s,
+                    }),
+                );
+            }
+
+            let runs = state.scenario_runs.clone();
+            let run_id_cloned = run_id.clone();
             tokio::spawn(async move {
-                let _ = child.wait();
-                info!("Scenario {} (run_id: {}) completed", scenario_id_clone, run_id_clone);
+                match child.wait().await {
+                    Ok(exit) => {
+                        let mut runs_guard = runs.write().await;
+                        if let Some(run) = runs_guard.get_mut(&run_id_cloned) {
+                            run["status"] = json!(if exit.success() {
+                                "completed"
+                            } else {
+                                "failed"
+                            });
+                            run["progress_percent"] = json!(100);
+                            run["message"] = if exit.success() {
+                                json!("Scenario completed successfully")
+                            } else {
+                                json!(format!("Scenario failed with status {:?}", exit.code()))
+                            };
+                        }
+                    }
+                    Err(e) => {
+                        error!("Scenario wait failed for {}: {}", run_id_cloned, e);
+                        let mut runs_guard = runs.write().await;
+                        if let Some(run) = runs_guard.get_mut(&run_id_cloned) {
+                            run["status"] = json!("failed");
+                            run["progress_percent"] = json!(100);
+                            run["message"] = json!(format!("Scenario process error: {}", e));
+                        }
+                    }
+                }
             });
 
             HttpResponse::Accepted().json(LaunchScenarioResponse {
-                run_id: run_id.clone(),
-                scenario_id: scenario_id.clone(),
+                run_id,
+                scenario_id: req.scenario_id.clone(),
                 started_at,
                 status: "running".to_string(),
             })
         }
         Err(e) => {
-            error!("Failed to launch scenario: {}", e);
+            error!("Failed to launch scenario {}: {}", req.scenario_id, e);
             HttpResponse::InternalServerError().json(json!({
                 "error": format!("Failed to launch scenario: {}", e),
-                "scenario_id": scenario_id,
+                "scenario_id": req.scenario_id,
             }))
         }
     }
 }
 
-/// Get status of a running scenario (placeholder)
 pub async fn get_scenario_status(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     run_id: web::Path<String>,
 ) -> impl Responder {
-    HttpResponse::Ok().json(json!({
-        "run_id": run_id.as_str(),
-        "status": "running",
-        "progress_percent": 50,
-        "message": "Scenario in progress...",
-    }))
+    let runs = state.scenario_runs.read().await;
+    match runs.get(run_id.as_str()) {
+        Some(run) => {
+            let mut out = run.clone();
+            let started_at = out["started_at"].as_str().unwrap_or_default();
+            let timeout_real_s = out["timeout_real_s"].as_u64().unwrap_or(300) as u32;
+            let status = out["status"].as_str().unwrap_or("running");
+            out["progress_percent"] = json!(compute_progress(started_at, timeout_real_s, status));
+            HttpResponse::Ok().json(out)
+        }
+        None => HttpResponse::NotFound().json(json!({"error": "Run not found"})),
+    }
 }
 
-/// List running scenarios (placeholder)
-pub async fn list_running_scenarios(
-    _state: web::Data<AppState>,
-) -> impl Responder {
+pub async fn list_running_scenarios(state: web::Data<AppState>) -> impl Responder {
+    let runs = state.scenario_runs.read().await;
+    let mut list: Vec<RunningScenario> = runs
+        .values()
+        .filter_map(|run| {
+            Some(RunningScenario {
+                run_id: run["run_id"].as_str()?.to_string(),
+                scenario_id: run["scenario_id"].as_str()?.to_string(),
+                name: run["name"].as_str().unwrap_or_default().to_string(),
+                started_at: run["started_at"].as_str()?.to_string(),
+                status: run["status"].as_str().unwrap_or("running").to_string(),
+                pid: run["pid"].as_u64().unwrap_or(0) as u32,
+                progress_percent: compute_progress(
+                    run["started_at"].as_str().unwrap_or_default(),
+                    run["timeout_real_s"].as_u64().unwrap_or(300) as u32,
+                    run["status"].as_str().unwrap_or("running"),
+                ),
+                message: run["message"].as_str().unwrap_or_default().to_string(),
+                timeout_real_s: run["timeout_real_s"].as_u64().unwrap_or(300) as u32,
+            })
+        })
+        .collect();
+
+    list.sort_by(|a, b| b.started_at.cmp(&a.started_at));
     HttpResponse::Ok().json(json!({
-        "running_scenarios": [],
-        "count": 0,
+        "running_scenarios": list,
+        "count": list.len(),
     }))
 }

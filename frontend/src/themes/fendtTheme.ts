@@ -36,8 +36,8 @@ export const fendtTheme = createTheme({
       dark: '#4E9020',
     },
     background: {
-      default: '#0a0a0a',
-      paper: '#1a1a1a',
+      default: '#07110b',
+      paper: '#111a14',
     },
     text: {
       primary: '#ffffff',
@@ -45,7 +45,7 @@ export const fendtTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Rajdhani", "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: '2.5rem',
       fontWeight: 600,
@@ -82,7 +82,24 @@ export const fendtTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        ':root': {
+          '--fendt-green': '#6EC72D',
+          '--fendt-green-dark': '#4E9020',
+          '--fendt-green-light': '#8FD84F',
+          '--heptapod-steel': '#1f2a23',
+          '--alarm-critical': '#E74C3C',
+          '--alarm-warning': '#F39C12',
+        },
+        '*': {
+          boxSizing: 'border-box',
+        },
         body: {
+          margin: 0,
+          minHeight: '100vh',
+          backgroundColor: '#07110b',
+          backgroundImage:
+            'radial-gradient(circle at 12% 10%, rgba(110,199,45,0.08), transparent 25%), radial-gradient(circle at 85% 20%, rgba(52,152,219,0.08), transparent 24%), linear-gradient(165deg, #061008 0%, #111a14 60%, #17251d 100%)',
+          backgroundAttachment: 'fixed',
           scrollbarColor: '#4E9020 #1a1a1a',
           '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
             width: 8,
@@ -102,17 +119,35 @@ export const fendtTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backgroundColor: '#1a1a1a',
-          borderRadius: 8,
+          backgroundColor: 'rgba(17, 26, 20, 0.92)',
+          borderRadius: 10,
+          border: '1px solid rgba(110, 199, 45, 0.12)',
+          backdropFilter: 'blur(2px)',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1a1a1a',
-          borderRadius: 8,
+          backgroundColor: 'rgba(17, 26, 20, 0.92)',
+          borderRadius: 10,
           border: '1px solid rgba(110, 199, 45, 0.1)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'linear-gradient(180deg, rgba(8,16,11,0.95), rgba(17,26,20,0.9))',
+          borderBottom: '1px solid rgba(110, 199, 45, 0.2)',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600,
+          letterSpacing: '0.04em',
         },
       },
     },

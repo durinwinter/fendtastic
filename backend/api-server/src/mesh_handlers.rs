@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse, Responder};
 use crate::state::AppState;
+use actix_web::{web, HttpResponse, Responder};
 use serde::Deserialize;
-use tracing::{info, error};
+use tracing::{error, info};
 
 // ─── Query Parameters ────────────────────────────────────────────────────────
 
@@ -150,12 +150,10 @@ pub async fn get_router_info(state: web::Data<AppState>) -> impl Responder {
     let local_zid = session.zid().to_string();
 
     match query_zenoh(session, "@/*/router/**").await {
-        Ok(entries) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "local_zid": local_zid,
-                "entries": entries,
-            }))
-        }
+        Ok(entries) => HttpResponse::Ok().json(serde_json::json!({
+            "local_zid": local_zid,
+            "entries": entries,
+        })),
         Err(e) => {
             error!("Failed to query router info: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -185,14 +183,8 @@ pub async fn get_links(state: web::Data<AppState>) -> impl Responder {
 // ─── GET /mesh/keys?prefix=fendtastic/** ─────────────────────────────────────
 
 /// Lists stored keys and their latest values by querying the Zenoh storage.
-pub async fn get_keys(
-    state: web::Data<AppState>,
-    query: web::Query<KeysQuery>,
-) -> impl Responder {
-    let prefix = query
-        .prefix
-        .as_deref()
-        .unwrap_or("fendtastic/**");
+pub async fn get_keys(state: web::Data<AppState>, query: web::Query<KeysQuery>) -> impl Responder {
+    let prefix = query.prefix.as_deref().unwrap_or("fendtastic/**");
 
     let session = &*state.zenoh_session;
 
@@ -288,9 +280,7 @@ pub async fn update_config(
 // ─── POST /mesh/generate-config ──────────────────────────────────────────────
 
 /// Generates a Zenoh configuration JSON for a new node.
-pub async fn generate_node_config(
-    body: web::Json<serde_json::Value>,
-) -> impl Responder {
+pub async fn generate_node_config(body: web::Json<serde_json::Value>) -> impl Responder {
     let mode = body["mode"].as_str().unwrap_or("client");
     let listen = body["listen_endpoints"]
         .as_array()
@@ -302,9 +292,7 @@ pub async fn generate_node_config(
         .unwrap_or_default();
     let multicast_scouting = body["multicast_scouting"].as_bool().unwrap_or(true);
     let storage_enabled = body["storage_enabled"].as_bool().unwrap_or(false);
-    let storage_key_expr = body["storage_key_expr"]
-        .as_str()
-        .unwrap_or("fendtastic/**");
+    let storage_key_expr = body["storage_key_expr"].as_str().unwrap_or("fendtastic/**");
 
     let mut config = serde_json::json!({
         "mode": mode,
