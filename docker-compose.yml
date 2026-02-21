@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fendtastic-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-fendtastic}
+      - POSTGRES_USER=${POSTGRES_USER:-fendtastic}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fendtastic}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fendtastic} -d ${POSTGRES_DB:-fendtastic}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   zenoh-router:
     image: eclipse/zenoh:latest
     container_name: fendtastic-zenoh-router
@@ -33,12 +50,19 @@ services:
       - EVA_ICS_URL=http://eva-ics:7727
       - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
       - PEA_CONFIG_DIR=/app/data/pea-configs
+      - POL_DB_DIR=/app/data/pol
+      - DATABASE_URL=postgres://${POSTGRES_USER:-fendtastic}:${POSTGRES_PASSWORD:-fendtastic}@postgres:5432/${POSTGRES_DB:-fendtastic}
     depends_on:
-      - zenoh-router
-      - eva-ics
+      postgres:
+        condition: service_healthy
+      zenoh-router:
+        condition: service_started
+      eva-ics:
+        condition: service_started
     volumes:
       - ./config:/app/config
       - pea-configs:/app/data/pea-configs
+      - pol-data:/app/data/pol
 
   frontend:
     build:
@@ -51,5 +75,7 @@ services:
       - backend
 
 volumes:
+  postgres-data:
   eva-ics-data:
   pea-configs:
+  pol-data:

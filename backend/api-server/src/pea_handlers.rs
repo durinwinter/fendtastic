@@ -388,6 +388,37 @@ pub async fn execute_recipe(
     steps.sort_by_key(|s| s.order);
     let total_steps = steps.len();
 
+    // Enforce orchestration topology: each cross-PEA transition must follow an edge.
+    {
+        let topology = state.topology.read().await;
+        if steps.len() > 1 {
+            for pair in steps.windows(2) {
+                let prev = &pair[0];
+                let next = &pair[1];
+                if prev.pea_id == next.pea_id {
+                    continue;
+                }
+                if topology.edges.is_empty() {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Topology is empty. Define PEA connections before executing cross-PEA recipes."
+                    }));
+                }
+                let allowed = topology
+                    .edges
+                    .iter()
+                    .any(|e| e.from == prev.pea_id && e.to == next.pea_id);
+                if !allowed {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": format!(
+                            "Topology violation: no connection from '{}' to '{}' for recipe step transition.",
+                            prev.pea_id, next.pea_id
+                        )
+                    }));
+                }
+            }
+        }
+    }
+
     {
         let mut execs = state.recipe_executions.write().await;
         execs.insert(

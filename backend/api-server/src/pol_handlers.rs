@@ -1,8 +1,8 @@
 use actix_web::{web, HttpResponse, Responder};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use tracing::error;
 
-use crate::state::{AppState, PolEdge, PolTopology};
+use crate::state::{AlarmRule, AppState, BlackoutWindow, PolEdge, PolTopology};
 
 const ALARMS_FILE: &str = "alarms.json";
 const TOPOLOGY_FILE: &str = "topology.json";
@@ -15,6 +15,23 @@ pub struct AlarmActionPayload {
 #[derive(serde::Deserialize)]
 pub struct TopologyPayload {
     pub edges: Vec<PolEdge>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct AlarmRulePayload {
+    pub name: String,
+    pub severity: String,
+    pub source_pattern: String,
+    pub event_pattern: String,
+    pub enabled: bool,
+}
+
+#[derive(serde::Deserialize)]
+pub struct BlackoutPayload {
+    pub name: String,
+    pub starts_at: String,
+    pub ends_at: String,
+    pub scope: Option<String>,
 }
 
 pub async fn get_topology(state: web::Data<AppState>) -> impl Responder {
@@ -37,6 +54,9 @@ pub async fn put_topology(
         *stored = topology.clone();
     }
     persist_topology(&state.pol_db_dir, &topology);
+    if let Err(e) = upsert_topology_db(&state.db_client, &topology).await {
+        error!("Failed to persist topology in Postgres: {}", e);
+    }
 
     let bus_msg = serde_json::json!({
         "edges": topology.edges,
@@ -79,6 +99,9 @@ pub async fn delete_alarm(
         alarms.remove(&id);
         persist_alarms(&state.pol_db_dir, &alarms);
     }
+    if let Err(e) = delete_alarm_db(&state.db_client, &id).await {
+        error!("Failed to delete alarm {} in Postgres: {}", id, e);
+    }
     let _ = state
         .zenoh_session
         .put(
@@ -115,6 +138,9 @@ async fn handle_alarm_action(
                 let alarms = state.alarms.read().await;
                 persist_alarms(&state.pol_db_dir, &alarms);
             }
+            if let Err(e) = upsert_alarm_db(&state.db_client, &alarm).await {
+                error!("Failed to persist alarm in Postgres: {}", e);
+            }
             let _ = state
                 .zenoh_session
                 .put(
@@ -131,6 +157,145 @@ async fn handle_alarm_action(
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Alarm not found"})),
     }
+}
+
+pub async fn list_alarm_rules(state: web::Data<AppState>) -> impl Responder {
+    let rules = state.alarm_rules.read().await;
+    let list: Vec<AlarmRule> = rules.values().cloned().collect();
+    HttpResponse::Ok().json(list)
+}
+
+pub async fn create_alarm_rule(
+    state: web::Data<AppState>,
+    body: web::Json<AlarmRulePayload>,
+) -> impl Responder {
+    let now = Utc::now().to_rfc3339();
+    let rule = AlarmRule {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: body.name.clone(),
+        severity: body.severity.clone(),
+        source_pattern: body.source_pattern.clone(),
+        event_pattern: body.event_pattern.clone(),
+        enabled: body.enabled,
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    {
+        let mut rules = state.alarm_rules.write().await;
+        rules.insert(rule.id.clone(), rule.clone());
+    }
+    if let Err(e) = upsert_alarm_rule_db(&state.db_client, &rule).await {
+        error!("Failed to persist alarm rule in Postgres: {}", e);
+    }
+    HttpResponse::Created().json(rule)
+}
+
+pub async fn update_alarm_rule(
+    state: web::Data<AppState>,
+    rule_id: web::Path<String>,
+    body: web::Json<AlarmRulePayload>,
+) -> impl Responder {
+    let id = rule_id.into_inner();
+    let updated = {
+        let mut rules = state.alarm_rules.write().await;
+        if let Some(rule) = rules.get_mut(&id) {
+            rule.name = body.name.clone();
+            rule.severity = body.severity.clone();
+            rule.source_pattern = body.source_pattern.clone();
+            rule.event_pattern = body.event_pattern.clone();
+            rule.enabled = body.enabled;
+            rule.updated_at = Utc::now().to_rfc3339();
+            Some(rule.clone())
+        } else {
+            None
+        }
+    };
+    match updated {
+        Some(rule) => {
+            if let Err(e) = upsert_alarm_rule_db(&state.db_client, &rule).await {
+                error!("Failed to persist alarm rule in Postgres: {}", e);
+            }
+            HttpResponse::Ok().json(rule)
+        }
+        None => HttpResponse::NotFound().json(serde_json::json!({"error": "Rule not found"})),
+    }
+}
+
+pub async fn delete_alarm_rule(
+    state: web::Data<AppState>,
+    rule_id: web::Path<String>,
+) -> impl Responder {
+    let id = rule_id.into_inner();
+    {
+        let mut rules = state.alarm_rules.write().await;
+        rules.remove(&id);
+    }
+    if let Err(e) = delete_alarm_rule_db(&state.db_client, &id).await {
+        error!("Failed to delete alarm rule from Postgres: {}", e);
+    }
+    HttpResponse::NoContent().finish()
+}
+
+pub async fn list_blackouts(state: web::Data<AppState>) -> impl Responder {
+    let windows = state.blackout_windows.read().await;
+    let list: Vec<BlackoutWindow> = windows.values().cloned().collect();
+    HttpResponse::Ok().json(list)
+}
+
+pub async fn create_blackout(
+    state: web::Data<AppState>,
+    body: web::Json<BlackoutPayload>,
+) -> impl Responder {
+    let starts_at = match DateTime::parse_from_rfc3339(&body.starts_at) {
+        Ok(dt) => dt.with_timezone(&Utc),
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "starts_at must be RFC3339"}));
+        }
+    };
+    let ends_at = match DateTime::parse_from_rfc3339(&body.ends_at) {
+        Ok(dt) => dt.with_timezone(&Utc),
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "ends_at must be RFC3339"}));
+        }
+    };
+    if ends_at <= starts_at {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({"error": "ends_at must be after starts_at"}));
+    }
+
+    let blackout = BlackoutWindow {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: body.name.clone(),
+        starts_at: starts_at.to_rfc3339(),
+        ends_at: ends_at.to_rfc3339(),
+        scope: body.scope.clone().unwrap_or_else(|| "global".to_string()),
+        created_at: Utc::now().to_rfc3339(),
+    };
+    {
+        let mut windows = state.blackout_windows.write().await;
+        windows.insert(blackout.id.clone(), blackout.clone());
+    }
+    if let Err(e) = upsert_blackout_db(&state.db_client, &blackout).await {
+        error!("Failed to persist blackout in Postgres: {}", e);
+    }
+    HttpResponse::Created().json(blackout)
+}
+
+pub async fn delete_blackout(
+    state: web::Data<AppState>,
+    blackout_id: web::Path<String>,
+) -> impl Responder {
+    let id = blackout_id.into_inner();
+    {
+        let mut windows = state.blackout_windows.write().await;
+        windows.remove(&id);
+    }
+    if let Err(e) = delete_blackout_db(&state.db_client, &id).await {
+        error!("Failed to delete blackout from Postgres: {}", e);
+    }
+    HttpResponse::NoContent().finish()
 }
 
 pub fn load_alarms(dir: &str) -> std::collections::HashMap<String, crate::state::AlarmRecord> {
@@ -191,4 +356,139 @@ pub fn persist_topology(dir: &str, topology: &PolTopology) {
         }
         Err(e) => error!("Failed to serialize topology: {}", e),
     }
+}
+
+pub async fn upsert_alarm_db(
+    client: &tokio_postgres::Client,
+    alarm: &crate::state::AlarmRecord,
+) -> anyhow::Result<()> {
+    let ts = DateTime::parse_from_rfc3339(&alarm.timestamp)?.with_timezone(&Utc);
+    client
+        .execute(
+            "INSERT INTO alarms (id, severity, status, source, event, value, description, timestamp, duplicate_count)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             ON CONFLICT (id) DO UPDATE SET
+               severity=EXCLUDED.severity,
+               status=EXCLUDED.status,
+               source=EXCLUDED.source,
+               event=EXCLUDED.event,
+               value=EXCLUDED.value,
+               description=EXCLUDED.description,
+               timestamp=EXCLUDED.timestamp,
+               duplicate_count=EXCLUDED.duplicate_count",
+            &[
+                &alarm.id,
+                &alarm.severity,
+                &alarm.status,
+                &alarm.source,
+                &alarm.event,
+                &alarm.value,
+                &alarm.description,
+                &ts,
+                &(alarm.duplicate_count as i32),
+            ],
+        )
+        .await?;
+    Ok(())
+}
+
+pub async fn delete_alarm_db(
+    client: &tokio_postgres::Client,
+    alarm_id: &str,
+) -> anyhow::Result<()> {
+    client
+        .execute("DELETE FROM alarms WHERE id=$1", &[&alarm_id])
+        .await?;
+    Ok(())
+}
+
+pub async fn upsert_topology_db(
+    client: &tokio_postgres::Client,
+    topology: &PolTopology,
+) -> anyhow::Result<()> {
+    let updated_at = DateTime::parse_from_rfc3339(&topology.updated_at)?.with_timezone(&Utc);
+    client.execute("DELETE FROM topology_edges", &[]).await?;
+    for edge in &topology.edges {
+        client
+            .execute(
+                "INSERT INTO topology_edges (source_pea, target_pea, updated_at) VALUES ($1,$2,$3)",
+                &[&edge.from, &edge.to, &updated_at],
+            )
+            .await?;
+    }
+    Ok(())
+}
+
+pub async fn upsert_alarm_rule_db(
+    client: &tokio_postgres::Client,
+    rule: &AlarmRule,
+) -> anyhow::Result<()> {
+    let created_at = DateTime::parse_from_rfc3339(&rule.created_at)?.with_timezone(&Utc);
+    let updated_at = DateTime::parse_from_rfc3339(&rule.updated_at)?.with_timezone(&Utc);
+    client
+        .execute(
+            "INSERT INTO alarm_rules (id, name, severity, source_pattern, event_pattern, enabled, created_at, updated_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+             ON CONFLICT (id) DO UPDATE SET
+               name=EXCLUDED.name,
+               severity=EXCLUDED.severity,
+               source_pattern=EXCLUDED.source_pattern,
+               event_pattern=EXCLUDED.event_pattern,
+               enabled=EXCLUDED.enabled,
+               updated_at=EXCLUDED.updated_at",
+            &[
+                &rule.id,
+                &rule.name,
+                &rule.severity,
+                &rule.source_pattern,
+                &rule.event_pattern,
+                &rule.enabled,
+                &created_at,
+                &updated_at,
+            ],
+        )
+        .await?;
+    Ok(())
+}
+
+pub async fn delete_alarm_rule_db(
+    client: &tokio_postgres::Client,
+    rule_id: &str,
+) -> anyhow::Result<()> {
+    client
+        .execute("DELETE FROM alarm_rules WHERE id=$1", &[&rule_id])
+        .await?;
+    Ok(())
+}
+
+pub async fn upsert_blackout_db(
+    client: &tokio_postgres::Client,
+    w: &BlackoutWindow,
+) -> anyhow::Result<()> {
+    let starts_at = DateTime::parse_from_rfc3339(&w.starts_at)?.with_timezone(&Utc);
+    let ends_at = DateTime::parse_from_rfc3339(&w.ends_at)?.with_timezone(&Utc);
+    let created_at = DateTime::parse_from_rfc3339(&w.created_at)?.with_timezone(&Utc);
+    client
+        .execute(
+            "INSERT INTO blackout_windows (id, name, starts_at, ends_at, scope, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6)
+             ON CONFLICT (id) DO UPDATE SET
+               name=EXCLUDED.name,
+               starts_at=EXCLUDED.starts_at,
+               ends_at=EXCLUDED.ends_at,
+               scope=EXCLUDED.scope",
+            &[&w.id, &w.name, &starts_at, &ends_at, &w.scope, &created_at],
+        )
+        .await?;
+    Ok(())
+}
+
+pub async fn delete_blackout_db(
+    client: &tokio_postgres::Client,
+    blackout_id: &str,
+) -> anyhow::Result<()> {
+    client
+        .execute("DELETE FROM blackout_windows WHERE id=$1", &[&blackout_id])
+        .await?;
+    Ok(())
 }

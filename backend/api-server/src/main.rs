@@ -6,8 +6,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, Level};
 
-mod handlers;
 mod db;
+mod handlers;
 mod mesh_handlers;
 mod pea_handlers;
 mod pol_handlers;
@@ -44,8 +44,9 @@ async fn main() -> std::io::Result<()> {
 
     let recipe_dir = std::env::var("RECIPE_DIR").unwrap_or_else(|_| "./data/recipes".to_string());
     let pol_db_dir = std::env::var("POL_DB_DIR").unwrap_or_else(|_| "./data/pol".to_string());
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://fendtastic:fendtastic@localhost:5432/fendtastic".to_string());
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://fendtastic:fendtastic@localhost:5432/fendtastic".to_string()
+    });
 
     let db_client = db::connect_and_migrate(&database_url)
         .await
@@ -190,7 +191,10 @@ async fn main() -> std::io::Result<()> {
     {
         let session = app_state.zenoh_session.clone();
         let alarms_state = app_state.alarms.clone();
+        let rules_state = app_state.alarm_rules.clone();
+        let blackout_state = app_state.blackout_windows.clone();
         let topology_state = app_state.topology.clone();
+        let db_client = app_state.db_client.clone();
         let pol_dir = app_state.pol_db_dir.clone();
         tokio::spawn(async move {
             let alarm_sub = match session
@@ -238,31 +242,75 @@ async fn main() -> std::io::Result<()> {
                                 let active = v.get("active").and_then(|x| x.as_bool()).unwrap_or(false);
                                 let alarm_text = v.get("alarm").and_then(|x| x.as_str()).unwrap_or_default();
                                 if active && !alarm_text.is_empty() {
-                                    let mut alarms = alarms_state.write().await;
-                                    let existing_id = alarms.iter()
-                                        .find(|(_, a)| a.source == key && a.event == alarm_text && a.status != "cleared")
-                                        .map(|(id, _)| id.clone());
-                                    if let Some(id) = existing_id {
-                                        if let Some(existing) = alarms.get_mut(&id) {
-                                            existing.duplicate_count += 1;
-                                            existing.timestamp = Utc::now().to_rfc3339();
-                                            existing.value = v.get("value").map(|x| x.to_string()).unwrap_or_default();
-                                        }
-                                    } else {
-                                        let id = uuid::Uuid::new_v4().to_string();
-                                        alarms.insert(id.clone(), state::AlarmRecord {
-                                            id,
-                                            severity: v.get("severity").and_then(|x| x.as_str()).unwrap_or("warning").to_string(),
-                                            status: "open".to_string(),
-                                            source: key.clone(),
-                                            event: alarm_text.to_string(),
-                                            value: v.get("value").map(|x| x.to_string()).unwrap_or_default(),
-                                            description: format!("Live alarm from {}", key),
-                                            timestamp: v.get("timestamp").and_then(|x| x.as_str()).unwrap_or(&Utc::now().to_rfc3339()).to_string(),
-                                            duplicate_count: 1,
-                                        });
+                                    let now = Utc::now();
+                                    let rules: Vec<state::AlarmRule> = rules_state.read().await.values().cloned().collect();
+                                    let blackouts: Vec<state::BlackoutWindow> = blackout_state.read().await.values().cloned().collect();
+                                    let active_rules: Vec<_> = rules.iter().filter(|r| r.enabled).collect();
+
+                                    let matched_rule = active_rules.iter().find(|rule| {
+                                        key.contains(&rule.source_pattern) && alarm_text.contains(&rule.event_pattern)
+                                    });
+
+                                    if !active_rules.is_empty() && matched_rule.is_none() {
+                                        continue;
                                     }
-                                    pol_handlers::persist_alarms(&pol_dir, &alarms);
+
+                                    let in_blackout = blackouts.iter().any(|b| {
+                                        match (
+                                            chrono::DateTime::parse_from_rfc3339(&b.starts_at),
+                                            chrono::DateTime::parse_from_rfc3339(&b.ends_at),
+                                        ) {
+                                            (Ok(start), Ok(end)) => {
+                                                let start_utc = start.with_timezone(&Utc);
+                                                let end_utc = end.with_timezone(&Utc);
+                                                let in_window = now >= start_utc && now <= end_utc;
+                                                let in_scope = b.scope == "global" || key.contains(&b.scope);
+                                                in_window && in_scope
+                                            }
+                                            _ => false,
+                                        }
+                                    });
+
+                                    let mut changed_alarm: Option<state::AlarmRecord> = None;
+                                    {
+                                        let mut alarms = alarms_state.write().await;
+                                        let existing_id = alarms.iter()
+                                            .find(|(_, a)| a.source == key && a.event == alarm_text && a.status != "cleared")
+                                            .map(|(id, _)| id.clone());
+                                        if let Some(id) = existing_id {
+                                            if let Some(existing) = alarms.get_mut(&id) {
+                                                existing.duplicate_count += 1;
+                                                existing.timestamp = Utc::now().to_rfc3339();
+                                                existing.value = v.get("value").map(|x| x.to_string()).unwrap_or_default();
+                                                changed_alarm = Some(existing.clone());
+                                            }
+                                        } else {
+                                            let id = uuid::Uuid::new_v4().to_string();
+                                            let alarm = state::AlarmRecord {
+                                                id,
+                                                severity: matched_rule
+                                                    .map(|r| r.severity.clone())
+                                                    .unwrap_or_else(|| v.get("severity").and_then(|x| x.as_str()).unwrap_or("warning").to_string()),
+                                                status: if in_blackout { "shelved".to_string() } else { "open".to_string() },
+                                                source: key.clone(),
+                                                event: alarm_text.to_string(),
+                                                value: v.get("value").map(|x| x.to_string()).unwrap_or_default(),
+                                                description: if in_blackout {
+                                                    format!("Live alarm from {} (blackout active)", key)
+                                                } else {
+                                                    format!("Live alarm from {}", key)
+                                                },
+                                                timestamp: v.get("timestamp").and_then(|x| x.as_str()).unwrap_or(&Utc::now().to_rfc3339()).to_string(),
+                                                duplicate_count: 1,
+                                            };
+                                            alarms.insert(alarm.id.clone(), alarm.clone());
+                                            changed_alarm = Some(alarm);
+                                        }
+                                        pol_handlers::persist_alarms(&pol_dir, &alarms);
+                                    }
+                                    if let Some(changed) = changed_alarm {
+                                        let _ = pol_handlers::upsert_alarm_db(&db_client, &changed).await;
+                                    }
                                 }
                             }
                         }
@@ -273,13 +321,24 @@ async fn main() -> std::io::Result<()> {
                                     v.get("alarm_id").and_then(|x| x.as_str()),
                                     v.get("action").and_then(|x| x.as_str()),
                                 ) {
-                                    let mut alarms = alarms_state.write().await;
-                                    if action == "delete" {
-                                        alarms.remove(alarm_id);
-                                    } else if let Some(alarm) = alarms.get_mut(alarm_id) {
-                                        alarm.status = action.to_string();
+                                    let mut db_alarm_update: Option<state::AlarmRecord> = None;
+                                    let mut db_alarm_delete = false;
+                                    {
+                                        let mut alarms = alarms_state.write().await;
+                                        if action == "delete" {
+                                            alarms.remove(alarm_id);
+                                            db_alarm_delete = true;
+                                        } else if let Some(alarm) = alarms.get_mut(alarm_id) {
+                                            alarm.status = action.to_string();
+                                            db_alarm_update = Some(alarm.clone());
+                                        }
+                                        pol_handlers::persist_alarms(&pol_dir, &alarms);
                                     }
-                                    pol_handlers::persist_alarms(&pol_dir, &alarms);
+                                    if db_alarm_delete {
+                                        let _ = pol_handlers::delete_alarm_db(&db_client, alarm_id).await;
+                                    } else if let Some(updated_alarm) = db_alarm_update {
+                                        let _ = pol_handlers::upsert_alarm_db(&db_client, &updated_alarm).await;
+                                    }
                                 }
                             }
                         }
@@ -297,6 +356,7 @@ async fn main() -> std::io::Result<()> {
                                             *t = topology.clone();
                                         }
                                         pol_handlers::persist_topology(&pol_dir, &topology);
+                                        let _ = pol_handlers::upsert_topology_db(&db_client, &topology).await;
                                     }
                                 }
                             }
@@ -344,6 +404,28 @@ async fn main() -> std::io::Result<()> {
                         web::post().to(pol_handlers::action_alarm),
                     )
                     .route("/alarms/{id}", web::delete().to(pol_handlers::delete_alarm))
+                    .route(
+                        "/alarm-rules",
+                        web::get().to(pol_handlers::list_alarm_rules),
+                    )
+                    .route(
+                        "/alarm-rules",
+                        web::post().to(pol_handlers::create_alarm_rule),
+                    )
+                    .route(
+                        "/alarm-rules/{id}",
+                        web::put().to(pol_handlers::update_alarm_rule),
+                    )
+                    .route(
+                        "/alarm-rules/{id}",
+                        web::delete().to(pol_handlers::delete_alarm_rule),
+                    )
+                    .route("/blackouts", web::get().to(pol_handlers::list_blackouts))
+                    .route("/blackouts", web::post().to(pol_handlers::create_blackout))
+                    .route(
+                        "/blackouts/{id}",
+                        web::delete().to(pol_handlers::delete_blackout),
+                    )
                     .route(
                         "/timeseries/{machine_id}",
                         web::get().to(handlers::get_timeseries),

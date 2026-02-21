@@ -61,7 +61,9 @@ pub async fn connect_and_migrate(db_url: &str) -> anyhow::Result<Client> {
     Ok(client)
 }
 
-pub async fn load_alarms(client: &Client) -> anyhow::Result<std::collections::HashMap<String, AlarmRecord>> {
+pub async fn load_alarms(
+    client: &Client,
+) -> anyhow::Result<std::collections::HashMap<String, AlarmRecord>> {
     let rows = client
         .query(
             "SELECT id, severity, status, source, event, value, description, timestamp, duplicate_count FROM alarms",
@@ -89,7 +91,9 @@ pub async fn load_alarms(client: &Client) -> anyhow::Result<std::collections::Ha
     Ok(alarms)
 }
 
-pub async fn load_alarm_rules(client: &Client) -> anyhow::Result<std::collections::HashMap<String, AlarmRule>> {
+pub async fn load_alarm_rules(
+    client: &Client,
+) -> anyhow::Result<std::collections::HashMap<String, AlarmRule>> {
     let rows = client
         .query(
             "SELECT id, name, severity, source_pattern, event_pattern, enabled, created_at, updated_at FROM alarm_rules",
@@ -116,7 +120,9 @@ pub async fn load_alarm_rules(client: &Client) -> anyhow::Result<std::collection
     Ok(rules)
 }
 
-pub async fn load_blackouts(client: &Client) -> anyhow::Result<std::collections::HashMap<String, BlackoutWindow>> {
+pub async fn load_blackouts(
+    client: &Client,
+) -> anyhow::Result<std::collections::HashMap<String, BlackoutWindow>> {
     let rows = client
         .query(
             "SELECT id, name, starts_at, ends_at, scope, created_at FROM blackout_windows",
@@ -156,4 +162,3 @@ pub async fn load_topology(client: &Client) -> anyhow::Result<PolTopology> {
     }
     Ok(PolTopology { edges, updated_at })
 }
-

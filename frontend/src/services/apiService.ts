@@ -64,6 +64,72 @@ class ApiService {
     await this.client.delete(`/alarms/${id}`)
   }
 
+  async listAlarmRules(): Promise<Array<{
+    id: string
+    name: string
+    severity: string
+    source_pattern: string
+    event_pattern: string
+    enabled: boolean
+    created_at: string
+    updated_at: string
+  }>> {
+    const response = await this.client.get('/alarm-rules')
+    return response.data
+  }
+
+  async createAlarmRule(payload: {
+    name: string
+    severity: string
+    source_pattern: string
+    event_pattern: string
+    enabled: boolean
+  }) {
+    const response = await this.client.post('/alarm-rules', payload)
+    return response.data
+  }
+
+  async updateAlarmRule(id: string, payload: {
+    name: string
+    severity: string
+    source_pattern: string
+    event_pattern: string
+    enabled: boolean
+  }) {
+    const response = await this.client.put(`/alarm-rules/${id}`, payload)
+    return response.data
+  }
+
+  async deleteAlarmRule(id: string): Promise<void> {
+    await this.client.delete(`/alarm-rules/${id}`)
+  }
+
+  async listBlackouts(): Promise<Array<{
+    id: string
+    name: string
+    starts_at: string
+    ends_at: string
+    scope: string
+    created_at: string
+  }>> {
+    const response = await this.client.get('/blackouts')
+    return response.data
+  }
+
+  async createBlackout(payload: {
+    name: string
+    starts_at: string
+    ends_at: string
+    scope?: string
+  }) {
+    const response = await this.client.post('/blackouts', payload)
+    return response.data
+  }
+
+  async deleteBlackout(id: string): Promise<void> {
+    await this.client.delete(`/blackouts/${id}`)
+  }
+
   async getTimeSeries(machineId: string, startTime?: string, endTime?: string) {
     const response = await this.client.get(`/timeseries/${machineId}`, {
       params: { startTime, endTime },
