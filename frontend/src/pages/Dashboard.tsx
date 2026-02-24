@@ -1,13 +1,14 @@
-import React, { Suspense, useState, useEffect, useCallback } from 'react'
-import { Box, Paper, Typography, CircularProgress, Button, Chip } from '@mui/material'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Box, Paper, Typography, CircularProgress, Button, Chip, Fade } from '@mui/material'
 import { PlayArrow, Stop, Agriculture } from '@mui/icons-material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
 import TimeSeriesChart from '../components/TimeSeriesChart'
-import SpotValues from '../components/SpotValues'
 import Header from '../components/Header'
 import apiService from '../services/apiService'
+import SpotValues from '../components/SpotValues'
+import Coobie from '../components/Coobie'
 
-// Lazy-load Three.js heavy component to avoid blocking initial render
+// Lazy-load Three.js heavy component
 const IsometricView = React.lazy(() => import('../components/IsometricView'))
 
 const Dashboard: React.FC = () => {
@@ -18,9 +19,7 @@ const Dashboard: React.FC = () => {
     try {
       const status = await apiService.getSimulatorStatus()
       setSimRunning(status.running)
-    } catch {
-      // API not available yet
-    }
+    } catch { /* API not available */ }
   }, [])
 
   useEffect(() => { checkSimStatus() }, [checkSimStatus])
@@ -37,8 +36,6 @@ const Dashboard: React.FC = () => {
       }
     } catch (e: any) {
       console.error('Simulator toggle failed:', e)
-      // The global interceptor will handle the network error, 
-      // but we can add specific logic here if needed.
     } finally {
       setSimLoading(false)
     }
@@ -51,139 +48,147 @@ const Dashboard: React.FC = () => {
       display: 'flex',
       flexDirection: 'column',
       backgroundColor: 'background.default',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      color: 'text.primary'
     }}>
       <Header />
 
-      {/* Simulator control bar */}
+      {/* Control Bar */}
       <Box sx={{
         display: 'flex',
         alignItems: 'center',
         gap: 2,
-        px: 2,
-        pt: 1,
+        px: 3,
+        py: 1,
+        borderBottom: '1px solid #333',
+        backgroundColor: '#0B0B0B'
       }}>
-        <Agriculture sx={{ color: 'success.main', fontSize: 28 }} />
-        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-          Fendt Vario 1001
+        <Agriculture sx={{ color: 'success.main', fontSize: 24 }} />
+        <Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: '0.05em' }}>
+          FENdt Vario 1001
         </Typography>
         <Chip
           size="small"
-          label={simRunning ? 'SIMULATING' : 'OFFLINE'}
-          color={simRunning ? 'success' : 'default'}
-          variant={simRunning ? 'filled' : 'outlined'}
-          sx={{ fontSize: '0.7rem' }}
+          label={simRunning ? 'ONLINE' : 'OFFLINE'}
+          sx={{
+            height: 20,
+            fontSize: '0.65rem',
+            fontWeight: 800,
+            borderRadius: 1,
+            backgroundColor: simRunning ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+            color: simRunning ? 'success.main' : 'text.secondary',
+            border: `1px solid ${simRunning ? '#2ECC71' : '#444'}`
+          }}
         />
         <Button
           size="small"
-          variant={simRunning ? 'outlined' : 'contained'}
+          variant="contained"
           color={simRunning ? 'error' : 'success'}
           startIcon={simLoading ? <CircularProgress size={14} color="inherit" /> : simRunning ? <Stop /> : <PlayArrow />}
           onClick={toggleSimulator}
           disabled={simLoading}
-          sx={{ ml: 'auto', minWidth: 120 }}
+          sx={{ ml: 'auto', px: 2, py: 0.5, borderRadius: 1 }}
         >
-          {simRunning ? 'Stop Sim' : 'Start Sim'}
+          {simRunning ? 'STOP SIM' : 'START SIM'}
         </Button>
       </Box>
 
       <Box sx={{
         flex: 1,
         display: 'flex',
-        gap: 2,
-        p: 2,
         overflow: 'hidden'
       }}>
-        {/* Main content area */}
+        {/* Main Content (Left) */}
         <Box sx={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          p: 2,
           gap: 2,
-          minWidth: 0
+          overflow: 'hidden'
         }}>
-          {/* Swimlane Diagram */}
-          <Paper sx={{
-            flex: '0 0 35%',
-            p: 2,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-              System Timeline
-            </Typography>
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+          {/* System Timeline */}
+          <Paper sx={{ flex: '0 0 32%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
+                SYSTEM TIMELINE
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
               <SwimlaneDiagram />
             </Box>
           </Paper>
 
-          {/* Time Series Chart */}
-          <Paper sx={{
-            flex: '0 0 30%',
-            p: 2,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-              Telemetry
-            </Typography>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          {/* Telemetry */}
+          <Paper sx={{ flex: '0 0 30%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
+                TELEMETRY
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {['1M', '5M', '15M', '1H', '6H', '24H'].map(t => (
+                  <Chip key={t} label={t} size="small" sx={{ height: 18, fontSize: '0.6rem', borderRadius: 0.5, backgroundColor: t === '5M' ? 'primary.main' : 'transparent', border: '1px solid #444' }} />
+                ))}
+              </Box>
+            </Box>
+            <Box sx={{ flex: 1, overflow: 'hidden', p: 1 }}>
               <TimeSeriesChart />
             </Box>
           </Paper>
 
-          {/* Isometric View */}
-          <Paper sx={{
-            flex: 1,
-            p: 2,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-              Machine View
-            </Typography>
+          {/* Machine View */}
+          <Paper sx={{ flex: 1, p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
+                MACHINE VIEW
+              </Typography>
+            </Box>
             <Box sx={{ flex: 1, position: 'relative' }}>
-              <Suspense fallback={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                  <CircularProgress color="primary" size={32} />
-                </Box>
-              }>
+              <React.Suspense fallback={<Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>}>
                 <IsometricView />
-              </Suspense>
+              </React.Suspense>
               {!simRunning && (
-                <Box sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: 'rgba(0,0,0,0.6)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10,
-                  borderRadius: 1
-                }}>
-                  <Typography variant="h6" color="white" sx={{ fontWeight: 'bold' }}>
-                    SIMULATOR OFFLINE
-                  </Typography>
-                </Box>
+                <Fade in={!simRunning}>
+                  <Box sx={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)'
+                  }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.1em', color: '#fff' }}>
+                      SIMULATOR OFFLINE
+                    </Typography>
+                  </Box>
+                </Fade>
               )}
             </Box>
           </Paper>
         </Box>
 
-        {/* Right sidebar - Spot Values */}
+        {/* Live Metrics Sidebar (Right) */}
         <Box sx={{
-          width: '280px',
+          width: 300,
+          backgroundColor: '#0B0B0B',
+          borderLeft: '1px solid #333',
           display: 'flex',
           flexDirection: 'column',
-          flexShrink: 0
+          p: 2,
+          overflow: 'hidden'
         }}>
-          <SpotValues />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', color: 'primary.main' }}>
+              LIVE METRICS
+            </Typography>
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#2ECC71', boxShadow: '0 0 8px #2ECC71' }} />
+          </Box>
+
+          <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+            <SpotValues />
+          </Box>
+
+          {/* Coobie Placement */}
+          <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222' }}>
+            <Coobie />
+          </Box>
         </Box>
       </Box>
     </Box>

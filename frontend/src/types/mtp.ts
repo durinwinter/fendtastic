@@ -397,21 +397,24 @@ export function getStateColor(state: ServiceState): 'success' | 'warning' | 'err
 // ─── Zenoh Topic Helpers ─────────────────────────────────────────────────────
 
 export const ZENOH_TOPICS = {
-  peaAnnounce: (peaId: string) => `fendtastic/pea/${peaId}/announce`,
-  peaStatus: (peaId: string) => `fendtastic/pea/${peaId}/status`,
-  peaServiceState: (peaId: string, svcTag: string) =>
-    `fendtastic/pea/${peaId}/services/${svcTag}/state`,
-  peaServiceCommand: (peaId: string, svcTag: string) =>
-    `fendtastic/pea/${peaId}/services/${svcTag}/command`,
-  peaData: (peaId: string, dataTag: string) =>
-    `fendtastic/pea/${peaId}/data/${dataTag}`,
-  peaConfig: (peaId: string) => `fendtastic/pea/${peaId}/config`,
+  peaAnnounce: (peaId: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/announce`,
+  peaStatus: (peaId: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/status`,
+  peaServiceState: (peaId: string, svcTag: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/state`,
+  peaServiceCommand: (peaId: string, svcTag: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/command`,
+  peaData: (peaId: string, dataTag: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/data/${dataTag}`,
+  peaConfig: (peaId: string, nodeId: string = '+') =>
+    `murph/habitat/nodes/${nodeId}/pea/${peaId}/config`,
 
-  peaDiscoveryWildcard: 'fendtastic/pea/+/announce',
-  peaStatusWildcard: 'fendtastic/pea/+/status',
-  polRecipesCommand: 'fendtastic/pol/recipes/command',
-  polRecipesStatus: 'fendtastic/pol/recipes/status',
-  statusEvaIcs: 'fendtastic/status/eva-ics',
+  peaDiscoveryWildcard: 'murph/habitat/nodes/+/pea/+/announce',
+  peaStatusWildcard: 'murph/habitat/nodes/+/pea/+/status',
+  polRecipesCommand: 'murph/pol/recipes/command',
+  polRecipesStatus: 'murph/pol/recipes/status',
+  statusEvaIcs: 'murph/status/eva-ics',
 } as const
 
 // ─── Factory Helpers ─────────────────────────────────────────────────────────

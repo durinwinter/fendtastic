@@ -1,6 +1,6 @@
-# Fendtastic - Industrial Monitoring System
+# MURPH - Mars Habitat Control System
 
-A real-time industrial monitoring system combining Fendt Tractor UI aesthetics with Mars Control System functionality.
+A real-time distributed control system for Martian surface operations.
 
 ## Architecture
 
@@ -11,8 +11,8 @@ A real-time industrial monitoring system combining Fendt Tractor UI aesthetics w
 
 ### Frontend
 - **React**: Modern UI framework
-- **Fendt Theme**: Agricultural machinery inspired design language
-- **Mars Control System UI**: Space-grade control interface patterns
+- **MURPH Theme**: Red Mars inspired design language (Mars Rust / Terminal Amber)
+- **Coobie Assistant**: Built-in expedition mascot helper
 
 ## Features
 
@@ -32,7 +32,7 @@ A real-time industrial monitoring system combining Fendt Tractor UI aesthetics w
 ## Project Structure
 
 ```
-fendtastic/
+murph/
 ├── dev.sh                # One-command dev launcher
 ├── backend/              # Rust backend services
 │   ├── api-server/       # REST API server
@@ -42,7 +42,7 @@ fendtastic/
 ├── frontend/             # React application
 │   ├── src/
 │   │   ├── components/   # React components
-│   │   ├── themes/       # Fendt & Mars theming
+│   │   ├── themes/       # MURPH theming
 │   │   └── services/     # API & Zenoh clients
 ├── config/               # Configuration files
 └── docs/                 # Documentation

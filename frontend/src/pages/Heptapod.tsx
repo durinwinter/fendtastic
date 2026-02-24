@@ -6,6 +6,7 @@ import RecipeManager from '../components/heptapod/RecipeManager'
 import AlarmCenter from '../components/heptapod/AlarmCenter'
 import IsometricWorkbench from '../components/heptapod/IsometricWorkbench'
 import PeaConnectionsDesigner from '../components/heptapod/PeaConnectionsDesigner'
+import Coobie from '../components/Coobie'
 
 const Heptapod: React.FC = () => {
     const [tab, setTab] = React.useState(0)
@@ -23,13 +24,13 @@ const Heptapod: React.FC = () => {
 
             <Box sx={{ p: 3, flex: 1, overflow: 'auto' }}>
                 <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 'bold' }}>
-                    Process Orchestration Layer (POL)
+                    MURPH Habitat Orchestration
                 </Typography>
 
                 <Tabs value={tab} onChange={(_, next) => setTab(next)} sx={{ mb: 2 }}>
                     <Tab label="Orchestration" />
                     <Tab label="Alarm Center" />
-                    <Tab label="Isometric" />
+                    <Tab label="Habitat Overview" />
                     <Tab label="PEA Connections" />
                 </Tabs>
 
@@ -58,6 +59,9 @@ const Heptapod: React.FC = () => {
                         <PeaConnectionsDesigner />
                     </Box>
                 )}
+            </Box>
+            <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+                <Coobie />
             </Box>
         </Box>
     )

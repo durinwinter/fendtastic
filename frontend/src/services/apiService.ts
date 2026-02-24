@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { PeaConfig, ServiceCommand } from '../types/mtp'
 import { Recipe } from '../types/recipe'
-import { ZenohNode, RouterInfo, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
+import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
 
 class ApiService {
   private client: AxiosInstance

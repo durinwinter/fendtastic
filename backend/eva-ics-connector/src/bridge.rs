@@ -107,7 +107,7 @@ impl PeaBridge {
 
     /// Handles deploy/undeploy commands from Zenoh
     async fn handle_deploy_message(&self, key: &str, payload: &str) {
-        // Extract pea_id from key: fendtastic/pea/{pea_id}/deploy
+        // Extract pea_id from key: murph/pea/{pea_id}/deploy
         let pea_id = match extract_pea_id_from_key(key) {
             Some(id) => id,
             None => {
@@ -317,14 +317,14 @@ impl PeaBridge {
 
     /// Handles individual service commands (from POL or UI)
     async fn handle_service_command(&self, key: &str, payload: &str) {
-        // key: fendtastic/pea/{pea_id}/services/{service_tag}/command
+        // key: murph/habitat/nodes/{node_id}/pea/{pea_id}/services/{service_tag}/command
         let parts: Vec<&str> = key.split('/').collect();
-        if parts.len() < 6 {
+        if parts.len() < 8 {
             warn!("Invalid service command key: {}", key);
             return;
         }
-        let pea_id = parts[2];
-        let service_tag = parts[4];
+        let pea_id = parts[5];
+        let service_tag = parts[7];
 
         let msg: serde_json::Value = match serde_json::from_str(payload) {
             Ok(v) => v,
@@ -479,7 +479,7 @@ pub async fn sync_sensors(eva_client: &EvaIcsClient, zenoh_session: &Session) ->
     let sensors = eva_client.list_sensors().await?;
 
     for sensor in sensors {
-        let key = format!("fendtastic/eva-ics/sensors/{}", sensor.oid);
+        let key = format!("murph/eva-ics/sensors/{}", sensor.oid);
         let payload = serde_json::json!({
             "oid": sensor.oid,
             "status": sensor.status,
@@ -507,11 +507,11 @@ pub async fn sync_sensors(eva_client: &EvaIcsClient, zenoh_session: &Session) ->
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/// Extracts pea_id from a Zenoh key like "fendtastic/pea/{pea_id}/..."
+/// Extracts pea_id from a Zenoh key like "murph/pea/{pea_id}/..."
 fn extract_pea_id_from_key(key: &str) -> Option<String> {
     let parts: Vec<&str> = key.split('/').collect();
-    if parts.len() >= 3 && parts[0] == "fendtastic" && parts[1] == "pea" {
-        Some(parts[2].to_string())
+    if parts.len() >= 6 && parts[0] == "murph" && parts[4] == "pea" {
+        Some(parts[5].to_string())
     } else {
         None
     }

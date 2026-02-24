@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Snackbar, Alert } from '@mui/material'
-import React, { useState, useEffect } from 'react'
-import { fendtTheme } from './themes/fendtTheme'
+import { useState } from 'react'
+import { murphTheme } from './themes/murphTheme'
 import Dashboard from './pages/Dashboard'
 import Heptapod from './pages/Heptapod'
 import PEALauncher from './pages/PEALauncher'
@@ -13,16 +13,8 @@ import './App.css'
 function App() {
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handleNetworkError = (event: any) => {
-      setError(event.detail.message)
-    }
-    window.addEventListener('api-network-error', handleNetworkError)
-    return () => window.removeEventListener('api-network-error', handleNetworkError)
-  }, [])
-
   return (
-    <ThemeProvider theme={fendtTheme}>
+    <ThemeProvider theme={murphTheme}>
       <CssBaseline />
       <Router>
         <Routes>

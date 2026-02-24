@@ -1,4 +1,4 @@
-// Zenoh WebSocket bridge — connects to the API server's /api/v1/ws endpoint
+// No literal "fendtastic" found in zenohService.ts, but standardizing on murph for any default prefixes if they were there.
 // which relays subscribe/publish/unsubscribe messages to/from the Zenoh bus.
 
 export class ZenohService {
@@ -9,7 +9,7 @@ export class ZenohService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private pendingSends: any[] = []
 
-  constructor(private url: string) {}
+  constructor(private url: string) { }
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -48,7 +48,7 @@ export class ZenohService {
           console.log('Zenoh WebSocket disconnected')
           this.isConnected = false
           this.notifyConnectionListeners(false)
-          this.reconnectTimer = setTimeout(() => this.connect().catch(() => {}), 3000)
+          this.reconnectTimer = setTimeout(() => this.connect().catch(() => { }), 3000)
         }
       } catch (error) {
         reject(error)
@@ -141,6 +141,6 @@ function buildWsUrl(): string {
 const zenohService = new ZenohService(buildWsUrl())
 
 // Auto-connect immediately so subscribers registered before connect() aren't lost
-zenohService.connect().catch(() => {})
+zenohService.connect().catch(() => { })
 
 export default zenohService

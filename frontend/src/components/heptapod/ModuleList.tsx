@@ -10,15 +10,15 @@ interface Module {
 }
 
 const ModuleList: React.FC = () => {
-    const [modules, setModules] = useState<Module[]>([
+    const [modules] = useState<Module[]>([
         { id: 'module-001', name: 'Processing Station', state: 'IDLE' },
         { id: 'module-002', name: 'Testing Station', state: 'OFFLINE' }
     ])
 
     useEffect(() => {
         // Subscribe to module updates
-        // Topic: heptapod/modules/+/status
-        const unsubscribe = zenohService.subscribe('heptapod/modules/+/status', (data) => {
+        // Topic: murph/habitat/modules/+/status
+        const unsubscribe = zenohService.subscribe('murph/habitat/modules/+/status', (data) => {
             // Logic to update module list based on incoming data
             // For now, we'll just log it as we haven't implemented the backend part yet
             console.log('Module status update:', data)

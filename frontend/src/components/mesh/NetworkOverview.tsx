@@ -110,7 +110,7 @@ const NetworkOverview: React.FC = () => {
             </TableHead>
             <TableBody>
               {nodes.map((node) => {
-                const isLocal = (node as Record<string, unknown>).is_local === true
+                const isLocal = node.is_local === true
                 const isExpanded = expandedZid === node.zid
                 const linkCount = node.links?.length || 0
 

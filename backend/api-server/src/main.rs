@@ -23,7 +23,7 @@ use state::{AppState, TimeSeriesStore};
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
-    info!("Starting Fendtastic API Server");
+    info!("Starting MURPH API Server");
 
     // Configure Zenoh session — use ZENOH_ROUTER env var if set
     let zenoh_session = {
@@ -45,7 +45,7 @@ async fn main() -> std::io::Result<()> {
     let recipe_dir = std::env::var("RECIPE_DIR").unwrap_or_else(|_| "./data/recipes".to_string());
     let pol_db_dir = std::env::var("POL_DB_DIR").unwrap_or_else(|_| "./data/pol".to_string());
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://fendtastic:fendtastic@localhost:5432/fendtastic".to_string()
+        "postgres://murph:murph@localhost:5432/murph".to_string()
     });
 
     let db_client = db::connect_and_migrate(&database_url)
@@ -85,13 +85,13 @@ async fn main() -> std::io::Result<()> {
         let session = app_state.zenoh_session.clone();
         let ts_store = timeseries.clone();
         tokio::spawn(async move {
-            // Subscribe to both fendtastic and durins-forge PEA telemetry
+            // Subscribe to both murph and durins-forge PEA telemetry
             // Note: We need two separate subscriptions since Zenoh doesn't support OR patterns
-            let subscriber1 = match session.declare_subscriber("fendtastic/**").await {
+            let subscriber1 = match session.declare_subscriber("murph/**").await {
                 Ok(sub) => Some(sub),
                 Err(e) => {
                     error!(
-                        "Failed to subscribe to fendtastic/** for time-series: {}",
+                        "Failed to subscribe to murph/** for time-series: {}",
                         e
                     );
                     None
@@ -111,7 +111,7 @@ async fn main() -> std::io::Result<()> {
                 return;
             }
 
-            info!("Time-series collector: subscribed to fendtastic/** and pea/**");
+            info!("Time-series collector: subscribed to murph/** and pea/**");
 
             // Use tokio::select! to handle multiple async subscribers
             match (subscriber1, subscriber2) {
@@ -198,32 +198,32 @@ async fn main() -> std::io::Result<()> {
         let pol_dir = app_state.pol_db_dir.clone();
         tokio::spawn(async move {
             let alarm_sub = match session
-                .declare_subscriber("fendtastic/pea/*/swimlane/alarm")
+                .declare_subscriber("murph/habitat/nodes/*/pea/*/swimlane/alarm")
                 .await
             {
                 Ok(sub) => Some(sub),
                 Err(e) => {
                     error!(
-                        "Failed to subscribe to fendtastic/pea/*/swimlane/alarm: {}",
+                        "Failed to subscribe to murph/habitat/nodes/*/pea/*/swimlane/alarm: {}",
                         e
                     );
                     None
                 }
             };
             let alarm_action_sub = match session
-                .declare_subscriber("fendtastic/pol/alarm/action")
+                .declare_subscriber("murph/pol/alarm/action")
                 .await
             {
                 Ok(sub) => Some(sub),
                 Err(e) => {
-                    error!("Failed to subscribe to fendtastic/pol/alarm/action: {}", e);
+                    error!("Failed to subscribe to murph/pol/alarm/action: {}", e);
                     None
                 }
             };
-            let topology_sub = match session.declare_subscriber("fendtastic/pol/topology").await {
+            let topology_sub = match session.declare_subscriber("murph/pol/topology").await {
                 Ok(sub) => Some(sub),
                 Err(e) => {
-                    error!("Failed to subscribe to fendtastic/pol/topology: {}", e);
+                    error!("Failed to subscribe to murph/pol/topology: {}", e);
                     None
                 }
             };
@@ -537,6 +537,6 @@ async fn main() -> std::io::Result<()> {
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "status": "healthy",
-        "service": "fendtastic-api-server"
+        "service": "murph-api-server"
     }))
 }

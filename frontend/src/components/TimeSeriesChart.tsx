@@ -36,8 +36,9 @@ const TIME_RANGES = [
 ] as const
 
 const COLOR_PALETTE = [
-  { border: '#6EC72D', bg: 'rgba(110, 199, 45, 0.1)' },
-  { border: '#3498DB', bg: 'rgba(52, 152, 219, 0.1)' },
+  { border: '#B7410E', bg: 'rgba(183, 65, 14, 0.1)' }, // Mars Rust
+  { border: '#FFBF00', bg: 'rgba(255, 191, 0, 0.1)' }, // Terminal Amber
+  { border: '#3498DB', bg: 'rgba(52, 152, 219, 0.1)' }, // Ocean Blue
   { border: '#E67E22', bg: 'rgba(230, 126, 34, 0.1)' },
   { border: '#E74C3C', bg: 'rgba(231, 76, 60, 0.1)' },
   { border: '#9B59B6', bg: 'rgba(155, 89, 182, 0.1)' },
@@ -46,9 +47,11 @@ const COLOR_PALETTE = [
   { border: '#00BCD4', bg: 'rgba(0, 188, 212, 0.1)' },
 ]
 
-/** Extract a short display label from a Zenoh key like "fendtastic/sensor/temperature" */
+/** Extract a short display label from a Zenoh key like "murph/habitat/nodes/node1/pea/reactor1/data/temp" */
 function keyToLabel(key: string): string {
   const parts = key.split('/')
+  // Show last few parts (e.g. reactor1/temp)
+  if (parts.length >= 7) return `${parts[5]}/${parts[7]}`
   return parts.slice(-2).join('/')
 }
 
@@ -94,7 +97,7 @@ const TimeSeriesChart: React.FC = () => {
   useEffect(() => {
     apiService.getTsKeys()
       .then(res => setKeys(res.keys || []))
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   const fetchData = useCallback(async () => {

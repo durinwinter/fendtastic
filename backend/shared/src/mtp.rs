@@ -549,44 +549,63 @@ pub struct RecipeParameterValue {
 // ─── Zenoh Topic Helpers ─────────────────────────────────────────────────────
 
 pub mod topics {
+    fn get_node_id() -> String {
+        std::env::var("MURPH_NODE_ID").unwrap_or_else(|_| "local".to_string())
+    }
+
     pub fn pea_announce(pea_id: &str) -> String {
-        format!("fendtastic/pea/{}/announce", pea_id)
+        format!("murph/habitat/nodes/{}/pea/{}/announce", get_node_id(), pea_id)
     }
 
     pub fn pea_status(pea_id: &str) -> String {
-        format!("fendtastic/pea/{}/status", pea_id)
+        format!("murph/habitat/nodes/{}/pea/{}/status", get_node_id(), pea_id)
     }
 
     pub fn pea_service_state(pea_id: &str, service_tag: &str) -> String {
-        format!("fendtastic/pea/{}/services/{}/state", pea_id, service_tag)
+        format!(
+            "murph/habitat/nodes/{}/pea/{}/services/{}/state",
+            get_node_id(),
+            pea_id,
+            service_tag
+        )
     }
 
     pub fn pea_service_command(pea_id: &str, service_tag: &str) -> String {
-        format!("fendtastic/pea/{}/services/{}/command", pea_id, service_tag)
+        format!(
+            "murph/habitat/nodes/{}/pea/{}/services/{}/command",
+            get_node_id(),
+            pea_id,
+            service_tag
+        )
     }
 
     pub fn pea_data(pea_id: &str, data_tag: &str) -> String {
-        format!("fendtastic/pea/{}/data/{}", pea_id, data_tag)
+        format!(
+            "murph/habitat/nodes/{}/pea/{}/data/{}",
+            get_node_id(),
+            pea_id,
+            data_tag
+        )
     }
 
     pub fn pea_config(pea_id: &str) -> String {
-        format!("fendtastic/pea/{}/config", pea_id)
+        format!("murph/habitat/nodes/{}/pea/{}/config", get_node_id(), pea_id)
     }
 
     pub fn pea_deploy(pea_id: &str) -> String {
-        format!("fendtastic/pea/{}/deploy", pea_id)
+        format!("murph/habitat/nodes/{}/pea/{}/deploy", get_node_id(), pea_id)
     }
 
     pub fn pea_lifecycle(pea_id: &str) -> String {
-        format!("fendtastic/pea/{}/lifecycle", pea_id)
+        format!("murph/habitat/nodes/{}/pea/{}/lifecycle", get_node_id(), pea_id)
     }
 
-    pub const PEA_ANNOUNCE_WILDCARD: &str = "fendtastic/pea/*/announce";
-    pub const PEA_STATUS_WILDCARD: &str = "fendtastic/pea/*/status";
-    pub const PEA_DEPLOY_WILDCARD: &str = "fendtastic/pea/*/deploy";
-    pub const PEA_LIFECYCLE_WILDCARD: &str = "fendtastic/pea/*/lifecycle";
-    pub const PEA_SERVICE_COMMAND_WILDCARD: &str = "fendtastic/pea/*/services/*/command";
-    pub const POL_RECIPES_COMMAND: &str = "fendtastic/pol/recipes/command";
-    pub const POL_RECIPES_STATUS: &str = "fendtastic/pol/recipes/status";
-    pub const STATUS_EVA_ICS: &str = "fendtastic/status/eva-ics";
+    pub const PEA_ANNOUNCE_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/announce";
+    pub const PEA_STATUS_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/status";
+    pub const PEA_DEPLOY_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/deploy";
+    pub const PEA_LIFECYCLE_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/lifecycle";
+    pub const PEA_SERVICE_COMMAND_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/services/*/command";
+    pub const POL_RECIPES_COMMAND: &str = "murph/pol/recipes/command";
+    pub const POL_RECIPES_STATUS: &str = "murph/pol/recipes/status";
+    pub const STATUS_EVA_ICS: &str = "murph/status/eva-ics";
 }

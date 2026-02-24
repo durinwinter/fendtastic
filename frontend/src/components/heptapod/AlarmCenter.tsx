@@ -127,7 +127,7 @@ const AlarmCenter: React.FC = () => {
     setNewRule({
       name: '',
       severity: 'warning',
-      source_pattern: 'fendtastic/pea/',
+      source_pattern: 'murph/habitat/nodes/',
       event_pattern: '',
       enabled: true,
     })

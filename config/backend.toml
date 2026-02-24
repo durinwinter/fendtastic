@@ -4,7 +4,12 @@ port = 8080
 
 [zenoh]
 router_endpoint = "tcp/127.0.0.1:7447"
-key_prefix = "fendtastic"
+key_prefix = "murph"
+sensor_topic = "murph/sensors"
+alarm_topic = "murph/alarms"
+control_topic = "murph/commands"
+pol_topic = "murph/pol"
+mesh_topic = "murph/mesh"
 
 [eva_ics]
 url = "http://localhost:7727"

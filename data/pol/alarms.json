@@ -7,8 +7,8 @@
     "event": "VIBRATION HIGH",
     "value": "",
     "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
-    "timestamp": "2026-02-23T15:56:50.722539103+00:00",
-    "duplicate_count": 2
+    "timestamp": "2026-02-23T16:01:51.151803073+00:00",
+    "duplicate_count": 5
   },
   "2f0ab666-dd4f-4d74-a6bf-ee1ffbf28048": {
     "id": "2f0ab666-dd4f-4d74-a6bf-ee1ffbf28048",
@@ -18,8 +18,8 @@
     "event": "TEMP WARNING",
     "value": "",
     "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
-    "timestamp": "2026-02-23T15:57:50.814092955+00:00",
-    "duplicate_count": 3
+    "timestamp": "2026-02-23T16:01:11.094370237+00:00",
+    "duplicate_count": 5
   },
   "56b67f08-49c8-45a8-92ef-e2d06eef0dd5": {
     "id": "56b67f08-49c8-45a8-92ef-e2d06eef0dd5",
@@ -29,7 +29,7 @@
     "event": "PRESSURE ALERT",
     "value": "",
     "description": "Live alarm from fendtastic/pea/fendt-vario-1001/swimlane/alarm",
-    "timestamp": "2026-02-23T15:56:30.691797406+00:00",
-    "duplicate_count": 2
+    "timestamp": "2026-02-23T16:01:31.121041676+00:00",
+    "duplicate_count": 5
   }
 }

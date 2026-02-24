@@ -37,7 +37,7 @@
         },
       },
       storages: {
-        fendtastic: {
+        murph: {
           key_expr: "fendtastic/**",
           volume: "memory",
         },

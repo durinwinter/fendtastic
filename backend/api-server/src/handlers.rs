@@ -29,8 +29,8 @@ pub async fn get_machines(state: web::Data<AppState>) -> impl Responder {
     for key in store.data.keys() {
         if key.contains("/swimlane/state") {
             let parts: Vec<&str> = key.split('/').collect();
-            if parts.len() >= 3 {
-                let pea_id = parts[2];
+            if parts.len() >= 6 {
+                let pea_id = parts[5];
                 if !machines.iter().any(|m| m["id"] == pea_id) {
                     machines.push(json!({
                         "id": pea_id,

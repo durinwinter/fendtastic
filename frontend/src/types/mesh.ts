@@ -7,6 +7,7 @@ export interface ZenohNode {
   whatami: 'router' | 'peer' | 'client'
   locators: string[]
   links: ZenohLink[]
+  is_local?: boolean
 }
 
 export interface ZenohLink {

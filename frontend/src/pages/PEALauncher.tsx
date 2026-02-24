@@ -5,6 +5,7 @@ import EngineeringView from '../components/pea-launcher/EngineeringView'
 import RuntimeControl from '../components/pea-launcher/RuntimeControl'
 import SettingsView from '../components/pea-launcher/SettingsView'
 import DurinsForgeLauncher from '../components/pea-launcher/DurinsForgeLauncher'
+import Coobie from '../components/Coobie'
 
 interface TabPanelProps {
     children?: React.ReactNode
@@ -36,7 +37,7 @@ function CustomTabPanel(props: TabPanelProps) {
 const PEALauncher: React.FC = () => {
     const [tabValue, setTabValue] = useState(0)
 
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue)
     }
 
@@ -78,6 +79,9 @@ const PEALauncher: React.FC = () => {
                         <SettingsView />
                     </CustomTabPanel>
                 </Box>
+            </Box>
+            <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+                <Coobie />
             </Box>
         </Box>
     )

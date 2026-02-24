@@ -200,7 +200,7 @@ const EngineeringView: React.FC = () => {
                     helperText="e.g. opc.tcp://0.0.0.0:4840"
                     onChange={(e) => updatePea({ opcua_config: { ...selectedPea.opcua_config, endpoint: e.target.value } })} />
                   <TextField label="Namespace URI" size="small" value={selectedPea.opcua_config.namespace_uri} fullWidth
-                    helperText="e.g. urn:fendtastic:pea:reactor-1"
+                    helperText="e.g. urn:murph:habitat:node1:pea:reactor-1"
                     onChange={(e) => updatePea({ opcua_config: { ...selectedPea.opcua_config, namespace_uri: e.target.value } })} />
                   <Select
                     value={selectedPea.opcua_config.security_policy}

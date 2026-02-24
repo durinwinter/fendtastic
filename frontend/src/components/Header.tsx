@@ -2,8 +2,42 @@ import React, { useEffect, useState } from 'react'
 import { AppBar, Toolbar, Typography, Box, Chip } from '@mui/material'
 import { Circle as CircleIcon } from '@mui/icons-material'
 import zenohService from '../services/zenohService'
-
 import { useNavigate, useLocation } from 'react-router-dom'
+import { styled } from '@mui/material/styles'
+
+const NavChip = styled(Chip)(({ theme, color }) => ({
+  borderRadius: 8,
+  height: 32,
+  fontWeight: 700,
+  fontSize: '0.75rem',
+  letterSpacing: '0.05em',
+  padding: '0 8px',
+  backgroundColor: color === 'primary' ? theme.palette.primary.main : 'rgba(255,255,255,0.05)',
+  border: `1px solid ${color === 'primary' ? theme.palette.primary.main : '#333'}`,
+  color: '#fff',
+  '&:hover': {
+    backgroundColor: color === 'primary' ? theme.palette.primary.dark : 'rgba(255,255,255,0.1)',
+  },
+  '& .MuiChip-label': {
+    paddingLeft: 12,
+    paddingRight: 12,
+  }
+}))
+
+const StatusChip = styled(Chip)(({ color }) => ({
+  height: 24,
+  borderRadius: 12,
+  fontSize: '0.65rem',
+  fontWeight: 800,
+  backgroundColor: '#0B0B0B',
+  border: `1px solid ${color === 'success' ? '#2ECC71' : '#E74C3C'}`,
+  color: '#fff',
+  '& .MuiChip-icon': {
+    color: color === 'success' ? '#2ECC71' : '#E74C3C',
+    fontSize: 10,
+    marginLeft: 8
+  }
+}))
 
 const Header: React.FC = () => {
   const navigate = useNavigate()
@@ -13,26 +47,14 @@ const Header: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
-    // Clock
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-
-    // Zenoh connection status
     const unsubscribeZenoh = zenohService.onConnectionChange((connected) => {
       setZenohConnected(connected)
-      if (!connected) {
-        setEvaIcsOnline(false)
-      }
+      if (!connected) setEvaIcsOnline(false)
     })
-
-    // EVA-ICS status subscription
-    const unsubscribeEva = zenohService.subscribe('fendtastic/status/eva-ics', (data) => {
-      if (data && data.online) {
-        setEvaIcsOnline(true)
-      } else {
-        setEvaIcsOnline(false)
-      }
+    const unsubscribeEva = zenohService.subscribe('murph/status/eva-ics', (data) => {
+      setEvaIcsOnline(!!(data && data.online))
     })
-
     return () => {
       clearInterval(timer)
       unsubscribeZenoh()
@@ -41,92 +63,54 @@ const Header: React.FC = () => {
   }, [])
 
   return (
-    <AppBar
-      position="static"
-      sx={{
-        backgroundColor: 'background.paper',
-        borderBottom: '2px solid',
-        borderColor: 'primary.main',
-        boxShadow: 'none'
-      }}
-    >
-      <Toolbar>
-        <Typography
-          variant="h5"
-          component="div"
-          sx={{
-            flexGrow: 0,
-            fontWeight: 700,
-            color: 'primary.main',
-            letterSpacing: '0.05em',
-            mr: 4,
-            cursor: 'pointer'
-          }}
-          onClick={() => navigate('/')}
-        >
-          FENDTASTIC CONTROL SYSTEM
-        </Typography>
+    <AppBar position="static" sx={{ height: 64, justifyContent: 'center' }}>
+      <Toolbar sx={{ px: 3, display: 'flex', justifyContent: 'space-between' }}>
+        {/* Left: Branding */}
+        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 1.5 }} onClick={() => navigate('/')}>
+          <Box component="img" src="/heptapod-assets/sprites/people/coobie.png" sx={{ width: 32, height: 32 }} />
+          <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: '0.1em', fontFamily: 'Rajdhani' }}>
+            MURPH CONTROL SYSTEM
+          </Typography>
+        </Box>
 
-        <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
-          <Chip
+        {/* Center: Navigation */}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <NavChip
             label="DASHBOARD"
             onClick={() => navigate('/')}
             color={location.pathname === '/' ? 'primary' : 'default'}
-            variant={location.pathname === '/' ? 'filled' : 'outlined'}
-            clickable
           />
-          <Chip
-            label="HEPTAPOD"
+          <NavChip
+            label="PROCESS MONITOR"
             onClick={() => navigate('/heptapod')}
             color={location.pathname === '/heptapod' ? 'primary' : 'default'}
-            variant={location.pathname === '/heptapod' ? 'filled' : 'outlined'}
-            clickable
           />
-          <Chip
+          <NavChip
             label="PEA LAUNCHER"
             onClick={() => navigate('/pea-launcher')}
             color={location.pathname === '/pea-launcher' ? 'primary' : 'default'}
-            variant={location.pathname === '/pea-launcher' ? 'filled' : 'outlined'}
-            clickable
           />
-          <Chip
-            label="HEPTAPOD MESH"
+          <NavChip
+            label="MESH CONTROL"
             onClick={() => navigate('/heptapod-mesh')}
             color={location.pathname === '/heptapod-mesh' ? 'primary' : 'default'}
-            variant={location.pathname === '/heptapod-mesh' ? 'filled' : 'outlined'}
-            clickable
           />
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Chip
-            icon={<CircleIcon sx={{ fontSize: 12, color: zenohConnected ? 'success.main' : 'error.main' }} />}
+        {/* Right: Status & Clock */}
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+          <StatusChip
+            icon={<CircleIcon />}
             label={zenohConnected ? 'ZENOH CONNECTED' : 'ZENOH DISCONNECTED'}
-            size="small"
-            sx={{
-              backgroundColor: 'background.default',
-              color: 'text.primary',
-              fontWeight: 600,
-              opacity: zenohConnected ? 1 : 1,
-              border: '1px solid',
-              borderColor: zenohConnected ? 'success.main' : 'error.main'
-            }}
+            color={zenohConnected ? 'success' : 'error'}
           />
-          <Chip
-            icon={<CircleIcon sx={{ fontSize: 12, color: evaIcsOnline ? 'success.main' : 'error.main' }} />}
+          <StatusChip
+            icon={<CircleIcon />}
             label={evaIcsOnline ? 'EVA-ICS ONLINE' : 'EVA-ICS OFFLINE'}
-            size="small"
-            sx={{
-              backgroundColor: 'background.default',
-              color: 'text.primary',
-              fontWeight: 600,
-              opacity: evaIcsOnline ? 1 : 1,
-              border: '1px solid',
-              borderColor: evaIcsOnline ? 'success.main' : 'error.main'
-            }}
+            color={evaIcsOnline ? 'success' : 'error'}
           />
-          <Typography variant="body2" sx={{ color: 'text.secondary', ml: 2 }}>
-            {currentTime.toLocaleString()}
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 1, fontFamily: 'JetBrains Mono' }}>
+            {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </Typography>
         </Box>
       </Toolbar>

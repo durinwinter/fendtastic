@@ -6,7 +6,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material'
 import {
-    PlayArrow, Stop, Refresh, CloudUpload, Info as InfoIcon, Cancel,
+    PlayArrow, Refresh, Info as InfoIcon,
     CheckCircle as SuccessIcon, ErrorOutline as ErrorIcon
 } from '@mui/icons-material'
 import axios from 'axios'
