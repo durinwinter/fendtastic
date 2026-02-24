@@ -1,0 +1,20 @@
+{
+	"subject": "Meteorology",
+	"topics": [
+			{"topic": "Amazonian subsurface Sediment"},	
+			{"topic": "Active Trace Gas Sources"},
+			{"topic": "Ancient Ocean Floor"}, 
+			{"topic": "Deployment of Seismic Sensor Network"},		 
+			{"topic": "Geological Cycles & Processes"}, 					
+			{"topic": "Geological Epochs with Differentiated Climates"},
+			{"topic": "Hydrogen and Water Cycle"},	
+			{"topic": "Martian Atmospheric Pressure"},	
+			{"topic": "Martian Climate Change"},
+			{"topic": "Remote Weather Station"}, 			
+			{"topic": "Seasonal Variation of Wind Speed & Direction"},
+			{"topic": "Seasonal Change of North & South Polar Ice Cap"},				
+			{"topic": "Steep Geothermal Gradient"},
+			{"topic": "Surface-Atmosphere Exchange"},
+			{"topic": "Weather Forecast for Long-Range Exploration"}
+	]
+}

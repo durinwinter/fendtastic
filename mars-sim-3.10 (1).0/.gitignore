@@ -1,0 +1,11 @@
+/build
+**/target/
+.classpath
+.project
+/.settings/**
+.idea
+.prefs
+/mars-sim.iml
+.vscode
+.DS_Store
+lib/

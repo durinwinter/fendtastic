@@ -1,0 +1,12 @@
+/target/
+.classpath
+.project
+/.settings/**
+.idea
+.prefs
+/src/main/java/afester/
+/modena/
+/logs/
+/system/
+/profiles/
+/mars-sim-ui.iml

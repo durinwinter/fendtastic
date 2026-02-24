@@ -1,0 +1,55 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<country xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="country.xsd"
+    name="Ireland">
+     <economics-data>
+		 <GDP value="529,245"/>
+		 <PPP value="645,565"/>
+		 <population value="5.023109"/>
+		 <GDP-growth value="11.97"/>
+	</economics-data>
+	
+	<!-- Taken from 
+  	  	https://en.wikipedia.org/wiki/List_of_countries_by_median_age
+    	https://www.worlddata.info/average-bodyheight.php -->
+    <characteristics median-age-male="37.4" median-age-female="38.2" 	
+				average-male-height="179" average-female-height="164"
+	            average-male-weight="89.2" average-female-weight="73.1"/>
+	            
+    <first-name-list>
+        <first-name value="Jack" gender="male" />
+        <first-name value="James" gender="male" />
+        <first-name value="Daniel" gender="male" />
+        <first-name value="Conor" gender="male" />
+        <first-name value="Seán" gender="male" />
+        <first-name value="Adam" gender="male" />
+        <first-name value="Noah" gender="male" />
+        <first-name value="Michael" gender="male" />
+        <first-name value="Charlie" gender="male" />
+        <first-name value="Luke" gender="male" />
+
+        <first-name value="Emily" gender="female" />
+        <first-name value="Emma" gender="female" />
+        <first-name value="Ava" gender="female" />
+        <first-name value="Sophie" gender="female" />
+        <first-name value="Amelia" gender="female" />
+        <first-name value="Ella" gender="female" />
+        <first-name value="Lucy" gender="female" />
+        <first-name value="Grace" gender="female" />
+        <first-name value="Chloe" gender="female" />
+        <first-name value="Mia" gender="female" />
+    </first-name-list>
+    <last-name-list>
+        <!-- 10 most common Irish surnames -->
+
+        <last-name value="Byrne" />
+        <last-name value="Kelly" />
+        <last-name value="Murphy" />
+        <last-name value="Ryan" />
+        <last-name value="Smith" />
+        <last-name value="Sullivan" />
+        <last-name value="O'Brien" />
+        <last-name value="O'Connor" />
+        <last-name value="O'Neill" />
+        <last-name value="Walsh" />
+    </last-name-list>
+</country>       

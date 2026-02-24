@@ -19,6 +19,24 @@ mod websocket;
 
 use state::{AppState, TimeSeriesStore};
 
+async fn ingest_timeseries_sample(
+    sample: zenoh::sample::Sample,
+    ts_store: Arc<RwLock<TimeSeriesStore>>,
+) {
+    let key = sample.key_expr().as_str().to_string();
+    let payload_str = sample
+        .payload()
+        .try_to_string()
+        .unwrap_or_else(|e| e.to_string().into())
+        .to_string();
+    let value = serde_json::from_str::<serde_json::Value>(&payload_str)
+        .unwrap_or(serde_json::Value::String(payload_str));
+    let now_ms = chrono::Utc::now().timestamp_millis();
+
+    let mut store = ts_store.write().await;
+    store.insert(key, value, now_ms);
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
@@ -85,8 +103,8 @@ async fn main() -> std::io::Result<()> {
         let session = app_state.zenoh_session.clone();
         let ts_store = timeseries.clone();
         tokio::spawn(async move {
-            // Subscribe to both murph and durins-forge PEA telemetry
-            // Note: We need two separate subscriptions since Zenoh doesn't support OR patterns
+            // Subscribe to murph, durins-forge PEA, and standalone fendtastic simulator telemetry.
+            // Note: We need separate subscriptions since Zenoh doesn't support OR patterns.
             let subscriber1 = match session.declare_subscriber("murph/**").await {
                 Ok(sub) => Some(sub),
                 Err(e) => {
@@ -105,84 +123,66 @@ async fn main() -> std::io::Result<()> {
                     None
                 }
             };
+            let subscriber3 = match session.declare_subscriber("fendtastic/**").await {
+                Ok(sub) => Some(sub),
+                Err(e) => {
+                    error!(
+                        "Failed to subscribe to fendtastic/** for time-series: {}",
+                        e
+                    );
+                    None
+                }
+            };
 
-            if subscriber1.is_none() && subscriber2.is_none() {
+            if subscriber1.is_none() && subscriber2.is_none() && subscriber3.is_none() {
                 error!("Failed to subscribe to any telemetry topics");
                 return;
             }
 
-            info!("Time-series collector: subscribed to murph/** and pea/**");
+            info!("Time-series collector: subscribed to murph/**, pea/**, and fendtastic/**");
 
-            // Use tokio::select! to handle multiple async subscribers
-            match (subscriber1, subscriber2) {
-                (Some(sub1), Some(sub2)) => loop {
+            match (subscriber1, subscriber2, subscriber3) {
+                (Some(sub1), Some(sub2), Some(sub3)) => loop {
                     tokio::select! {
-                        Ok(sample) = sub1.recv_async() => {
-                            let key = sample.key_expr().as_str().to_string();
-                            let payload_str = sample
-                                .payload()
-                                .try_to_string()
-                                .unwrap_or_else(|e| e.to_string().into())
-                                .to_string();
-                            let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                                .unwrap_or(serde_json::Value::String(payload_str));
-                            let now_ms = chrono::Utc::now().timestamp_millis();
-
-                            let mut store = ts_store.write().await;
-                            store.insert(key, value, now_ms);
-                        }
-                        Ok(sample) = sub2.recv_async() => {
-                            let key = sample.key_expr().as_str().to_string();
-                            let payload_str = sample
-                                .payload()
-                                .try_to_string()
-                                .unwrap_or_else(|e| e.to_string().into())
-                                .to_string();
-                            let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                                .unwrap_or(serde_json::Value::String(payload_str));
-                            let now_ms = chrono::Utc::now().timestamp_millis();
-
-                            let mut store = ts_store.write().await;
-                            store.insert(key, value, now_ms);
-                        }
+                        Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                        Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
                     }
                 },
-                (Some(sub1), None) => loop {
+                (Some(sub1), Some(sub2), None) => loop {
+                    tokio::select! {
+                        Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                        Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                    }
+                },
+                (Some(sub1), None, Some(sub3)) => loop {
+                    tokio::select! {
+                        Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                    }
+                },
+                (None, Some(sub2), Some(sub3)) => loop {
+                    tokio::select! {
+                        Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
+                    }
+                },
+                (Some(sub1), None, None) => loop {
                     if let Ok(sample) = sub1.recv_async().await {
-                        let key = sample.key_expr().as_str().to_string();
-                        let payload_str = sample
-                            .payload()
-                            .try_to_string()
-                            .unwrap_or_else(|e| e.to_string().into())
-                            .to_string();
-                        let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                            .unwrap_or(serde_json::Value::String(payload_str));
-                        let now_ms = chrono::Utc::now().timestamp_millis();
-
-                        let mut store = ts_store.write().await;
-                        store.insert(key, value, now_ms);
+                        ingest_timeseries_sample(sample, ts_store.clone()).await;
                     }
                 },
-                (None, Some(sub2)) => loop {
+                (None, Some(sub2), None) => loop {
                     if let Ok(sample) = sub2.recv_async().await {
-                        let key = sample.key_expr().as_str().to_string();
-                        let payload_str = sample
-                            .payload()
-                            .try_to_string()
-                            .unwrap_or_else(|e| e.to_string().into())
-                            .to_string();
-                        let value = serde_json::from_str::<serde_json::Value>(&payload_str)
-                            .unwrap_or(serde_json::Value::String(payload_str));
-                        let now_ms = chrono::Utc::now().timestamp_millis();
-
-                        let mut store = ts_store.write().await;
-                        store.insert(key, value, now_ms);
+                        ingest_timeseries_sample(sample, ts_store.clone()).await;
                     }
                 },
-                (None, None) => {
-                    // Should not reach here due to earlier check, but just in case
-                    return;
-                }
+                (None, None, Some(sub3)) => loop {
+                    if let Ok(sample) = sub3.recv_async().await {
+                        ingest_timeseries_sample(sample, ts_store.clone()).await;
+                    }
+                },
+                (None, None, None) => return,
             }
         });
     }
@@ -502,6 +502,10 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/simulator/start",
                         web::post().to(simulator::start_standalone),
+                    )
+                    .route(
+                        "/simulator/scenarios",
+                        web::get().to(simulator::list_scenarios),
                     )
                     .route(
                         "/simulator/stop",

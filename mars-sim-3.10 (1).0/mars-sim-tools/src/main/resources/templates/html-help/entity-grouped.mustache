@@ -1,0 +1,24 @@
+{{<help-layout}}
+  {{$body}}
+    <p>{{description}}</p>
+    <div id="groups">
+    <p>Grouped by {{groupname}}.</p>
+    {{#groups}}
+      <a style="display: inline;" href="#{{id}}">{{name}}</a>
+    {{/groups}}
+    </div>
+    {{#groups}}
+      <h3 id="{{id}}">{{name}}</h3>
+      {{#description}}
+        <p>{{description}}</p>
+      {{/description}}
+      <ul>
+      {{#items}}
+        <li><a href="{{typefolder}}{{#filename}}{{.}}{{/filename}}">{{.}}</a></li>
+      {{/items}}
+      </ul>
+      <a class="backlink" href="#top">Back to the top</a>
+    {{/groups}}
+    </br>
+  {{/body}}
+{{/help-layout}}

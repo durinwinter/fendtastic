@@ -1,0 +1,490 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<!DOCTYPE medical [
+	<!ELEMENT medical (medical-complaint-list, treatment-list)>
+	<!ELEMENT medical-complaint-list (medical-complaint*)>
+	<!ELEMENT medical-complaint (seriousness, degrade-time?, recovery-time, probability?, 
+				performance-percent, bed-rest-recovery, environmental?, treatment-type?, degrade-complaint?,
+				effort-influence?)>
+	<!ATTLIST medical-complaint name CDATA #REQUIRED>
+	<!ELEMENT seriousness EMPTY>
+	<!ATTLIST seriousness value CDATA #REQUIRED>
+	<!ELEMENT degrade-time EMPTY>
+	<!ATTLIST degrade-time value CDATA #REQUIRED>
+	<!ELEMENT recovery-time EMPTY>
+	<!ATTLIST recovery-time min CDATA #REQUIRED>
+	<!ATTLIST recovery-time max CDATA #IMPLIED>
+	<!ELEMENT probability EMPTY>
+	<!ATTLIST probability value CDATA #REQUIRED>
+	<!ELEMENT performance-percent EMPTY>
+	<!ATTLIST performance-percent value CDATA #REQUIRED>
+	<!ELEMENT treatment-type EMPTY>
+	<!ATTLIST treatment-type value CDATA #REQUIRED>
+	<!ELEMENT bed-rest-recovery EMPTY>
+	<!ATTLIST bed-rest-recovery value (true|false) #REQUIRED>
+	<!ELEMENT environmental EMPTY>
+	<!ATTLIST environmental value (true|false) "false" >
+	
+	<!ELEMENT degrade-complaint EMPTY>
+	<!ATTLIST degrade-complaint value CDATA #REQUIRED>
+	<!ELEMENT treatment-list (treatment*)>
+	<!ELEMENT treatment (skill?, medical-tech-level?, treatment-time?, self-admin?)> 
+	<!ATTLIST treatment name CDATA #REQUIRED>
+	<!ELEMENT skill EMPTY>
+	<!ATTLIST skill value CDATA #REQUIRED>
+	<!ELEMENT medical-tech-level EMPTY>
+	<!ATTLIST medical-tech-level value CDATA #REQUIRED>
+	<!ELEMENT treatment-time EMPTY>
+	<!ATTLIST treatment-time value CDATA #REQUIRED>
+	<!ELEMENT self-admin EMPTY>
+	<!ATTLIST self-admin value (true|false) #REQUIRED>
+	<!ELEMENT effort-influence EMPTY>
+	<!ATTLIST effort-influence value (LOW|HIGH) #REQUIRED>
+	
+]>
+
+<medical>
+
+	<!-- List of medical complaints -->
+	<medical-complaint-list>
+
+		<!-- A ruptured appendix happens when appendicitis is left untreated. -->
+		<!-- If left untreated, it will cause death. -->
+		<!-- It requires an major operation to treat it. -->
+		<medical-complaint name="Ruptured Appendix">
+			<!-- Seriousness of complaint (required) -->
+			<!-- Values: 1 (not serious) to 100 (most serious) -->
+			<seriousness value="100" />
+			<!-- Degradation time to next complaint (sols) (optional) -->
+			<degrade-time value="2.0" />
+			<!-- Recovery time (once cured, if necessary) (sols) (required) -->
+			<recovery-time min="14.0" />
+			<!-- Percentage of person's normal performance when disabled by this illness. (required) -->
+			<!-- Values: 0.0 (bedridden) to 100.0 (normal fitness) -->
+			<performance-percent value="0.0" />
+			<!--  Does recovery require bed rest at a medical aid? -->
+			<bed-rest-recovery value="true" />
+			<!-- Treatment to cure the illness (see treatment list below). (optional) -->
+			<!-- If no treatment is listed, then illness immediately goes to recovery.  -->
+			<treatment-type value="Major Operation" />
+		</medical-complaint>
+
+		<medical-complaint name="Appendicitis">
+			<seriousness value="60" />
+			<degrade-time value="7.0" />
+			<recovery-time min="13.0" max="15.0"/>
+
+			<!-- Random probability of this complaint occurring on its own. (required)
+				if > 0, use checkForRandomAilments() in PhysicalCondition to create this ailment,
+				regardless the situation,
+				if = 0.0, use other means -->
+			<!-- Values: 0.0 (no chance) to 100.0 (very likely) -->
+			<probability value="0.5" />
+			<performance-percent value="50.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Minor Operation" />
+
+			<!-- The next complaint changed to when this complaint exceeds its degrading time. (optional) -->
+			<!-- If no degrade-complaint is listed, this complaint causes death after degrade time. -->
+			<!-- Exception: if no treatment is listed, illness does not degrade at all. -->
+			<degrade-complaint value="Ruptured Appendix" />
+		</medical-complaint>
+
+		<!-- Suffocation is an environmentally triggered condition -->
+		<medical-complaint name="Suffocation">
+			<seriousness value="80" />
+			<degrade-time value="0.00338"/>
+			<recovery-time min="0.5" />
+			<performance-percent value="20.0" />
+			<bed-rest-recovery value="true" />
+			<environmental value="true" />
+		</medical-complaint>
+
+		<!-- Decompression is an environmentally triggered condition -->
+		<medical-complaint name="Decompression">
+			<seriousness value="70" />
+			<degrade-time value="0.0010"/>
+			<recovery-time min="0.5" />
+			<performance-percent value="30.0" />
+			<bed-rest-recovery value="true" />
+			<environmental value="true" />
+		</medical-complaint>
+
+		<!-- Heat stroke is an environmentally triggered condition -->
+		<medical-complaint name="Heat Stroke">
+			<seriousness value="40" />
+			<degrade-time value="0.2"/>
+			<recovery-time min="1" />
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="true" />
+			<environmental value="true" />
+		</medical-complaint>
+
+		<!-- Freezing is an environmentally triggered condition -->
+		<medical-complaint name="Freezing">
+			<seriousness value="50" />
+			<degrade-time value="0.250"/>
+			<recovery-time min="1" />
+			<performance-percent value="50.0" />
+			<bed-rest-recovery value="true" />
+			<environmental value="true" />
+		</medical-complaint>
+		
+		<!-- Dehydration is an environmentally triggered condition -->
+		<medical-complaint name="Dehydration">
+			<seriousness value="20" />
+			<degrade-time value="3.0"/>
+			<recovery-time min="1" />
+			<performance-percent value="80.0" />
+			<bed-rest-recovery value="true" />
+			<environmental value="true" />
+		</medical-complaint>
+
+		<!-- Starvation is an environmentally triggered condition -->
+		<medical-complaint name="Starvation">
+			<seriousness value="40" />
+			<degrade-time value="30.0"/>
+			<recovery-time min="1" />
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="false" />
+			<environmental value="true" />
+		</medical-complaint>
+
+		<!-- Meningitis is an inflammation of the membranes covering the brain and spinal cord. -->
+		<!-- If left untreated, it will cause death. -->
+		<!-- It requires antibiotics to treat it. -->
+		<medical-complaint name="Meningitis">
+			<seriousness value="90" />
+			<degrade-time value="2.0" />
+			<recovery-time min="10.0" />
+			<probability value="0.1" />
+			<performance-percent value="0.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Antibiotics" />
+		</medical-complaint>
+
+		<!-- A pulled/muscle is a minor and common medical complaint. -->
+		<!-- It affects performance but does not require medical treatment. -->
+		<medical-complaint name="Pulled Muscle/Tendon">
+			<seriousness value="1" />
+			<recovery-time min="2.0" />
+			<probability value="3.0" />
+			<performance-percent value="70.0" />
+			<bed-rest-recovery value="false" />
+			<effort-influence value="HIGH" />
+		</medical-complaint>
+
+		<!-- A cold is a minor and common medical complaint. -->
+		<!-- It affects performance but does not required medical treatment. -->
+		<medical-complaint name="Cold">
+			<seriousness value="10" />
+			<recovery-time min="3.0" max="12.0" />
+			<probability value="5.0" />
+			<performance-percent value="90.0" />
+			<bed-rest-recovery value="false" />
+		</medical-complaint>
+
+		<!-- A flu is more serious than a cold but has a shorter duration. -->
+		<medical-complaint name="Flu">
+			<seriousness value="20" />
+			<recovery-time min="3.0" max="5.0" />
+			<probability value="5.0" />
+			<performance-percent value="80.0" />
+			<bed-rest-recovery value="false" />
+		</medical-complaint>
+
+		<!-- A fever doesn't last long but reduces a person's performance quite a bit.  -->
+		<medical-complaint name="Fever">
+			<seriousness value="30" />
+			<degrade-time value="3.0" />
+			<recovery-time min="1.0" max="2.0" />
+			<probability value="5.0" />
+			<performance-percent value="70.0" />
+			<bed-rest-recovery value="true" />
+		</medical-complaint>
+
+		<!-- Gangrene is death and decay of body tissue due to lack of blood flow.  -->
+		<!-- It is extremely dangerous but can be treated by antibiotics. -->
+		<medical-complaint name="Gangrene">
+			<seriousness value="100" />
+			<degrade-time value="7.0" />
+			<recovery-time min="15.0" />			
+			<performance-percent value="40.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Antibiotics" />
+		</medical-complaint>
+
+		<!-- A broken bone can result in gangrene if left untreated. -->
+		<medical-complaint name="Broken Bone">
+			<seriousness value="60" />
+			<degrade-time value="7.0" />
+			<recovery-time min="14.0" />
+			<probability value="5.0" />
+			<performance-percent value="20.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Plaster Cast" />
+			<degrade-complaint value="Gangrene" />
+			<effort-influence value="HIGH" />
+		</medical-complaint>
+
+		<!-- A laceration is a deep cut that can result in gangrene if left untreated. -->
+		<medical-complaint name="Laceration">
+			<seriousness value="50" />
+			<degrade-time value="7.0" />
+			<recovery-time min="2.0" />
+			<probability value="3.0" />
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="false" />
+			<treatment-type value="Dressing" />
+			<degrade-complaint value="Gangrene" />
+			<effort-influence value="LOW" />
+		</medical-complaint>
+
+		<!-- Minor burns are painful but not serious and will heal in time. -->
+		<medical-complaint name="Minor Burns">
+			<seriousness value="20" />		
+			<recovery-time min="10.0" />
+			<probability value="3.0" />
+			<performance-percent value="75.0" />
+			<bed-rest-recovery value="false" />
+			<effort-influence value="LOW" />
+		</medical-complaint>
+
+		<!-- Burns are very painful but will not cause death. -->
+		<!-- They must be dressed properly to begin healing. -->
+		<medical-complaint name="Burns">
+			<seriousness value="50" />
+			<degrade-time value="5.0" />			
+			<recovery-time min="20.0" />	
+			<probability value="1.0" />
+			<performance-percent value="40.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Dressing" />
+			<effort-influence value="LOW" />
+		</medical-complaint>
+
+		<!-- Major burns involve 3rd-degree burns over much of the body. -->
+		<!-- It is very serious and can lead to death if not treated. -->
+		<medical-complaint name="Major Burns">
+			<seriousness value="100" />
+			<degrade-time value="10.0" />
+			<recovery-time min="40.0" />			
+			<performance-percent value="10.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Skin Graft" />
+		</medical-complaint>
+
+		<!-- Frostnip is damaged tissue due to exposure to freezing conditions -->
+		<!-- and possibly low air pressure. -->
+		<medical-complaint name="Frostnip">
+			<seriousness value="20" />
+			<recovery-time min="1.0" />	
+			<performance-percent value="80.0" />
+			<bed-rest-recovery value="false" />
+		</medical-complaint>
+
+		<!-- Frostbite is damaged tissue due to exposure to freezing conditions -->
+		<!-- and possibly low air pressure. It is more serious than frostnip and -->
+		<!-- can turn into gangrene if left untreated. -->
+		<medical-complaint name="Frostbite">
+			<seriousness value="50" />
+			<degrade-time value="10.0" />
+			<recovery-time min="10.0" />			
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Dressing" />
+			<degrade-complaint value="Gangrene" />
+		</medical-complaint>
+
+		<!-- 2016-06-15 A panic attack happens when a person is at high stress for too long. -->
+		<!-- It is a form of mental breakdown, reducing the person's performance on activities -->
+		<!-- to minimal and forcing them to rest.  The effects do not last -->
+		<!-- long, however. (See "stress-breakdown-chance" in people.xml.) -->
+		<medical-complaint name="Panic Attack">
+			<seriousness value="30" />
+			<degrade-time value="3.0" />
+			<recovery-time min="0.5" max="1.5" />
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="false" />
+			<treatment-type value="Anxiety Medication" />
+		</medical-complaint>
+
+		<!--2016-06-15 Depression happens usually when a person is at high stress for too long. -->
+		<!-- It reduces the person's performance on activities -->
+		<!-- to minimal and forcing them to relax and rest.  The effects do not last -->
+		<!-- long, however. (See "stress-breakdown-chance" in people.xml.) -->
+		<medical-complaint name="Depression">
+			<seriousness value="20" />
+			<degrade-time value="3.0" />
+			<recovery-time min="2.0" max="5.0" />			
+			<performance-percent value="60.0" />
+			<bed-rest-recovery value="false" />
+			<treatment-type value="Anxiety Medication" />
+		</medical-complaint>
+
+
+		<!-- 2016-03-01 The high fatigue collapse happens when a person has not been able to rest for a while. -->
+		<!-- The effects do not last long, however. (See "high-fatigue-collapse-chance" in people.xml.)-->
+		<medical-complaint name="High Fatigue Collapse">
+			<seriousness value="60" />
+			<degrade-time value="1.0" />
+			<recovery-time min="1.0" max="3.0" />			
+			<performance-percent value="20.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Hospitalization" />
+		</medical-complaint>
+
+
+		<!-- 2016-06-15 Food Poisoning occurs when a kitchen equipment malfunction -->
+		<!-- The effects do not last long, however. (See Food Contamination in malfunctions.xml.)-->
+		<medical-complaint name="Food Poisoning">
+			<seriousness value="55" />
+			<degrade-time value="2.0" />
+			<recovery-time min="3.0" />
+			<probability value="2.0" />
+			<performance-percent value="40.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Hospitalization" />
+		</medical-complaint>
+
+		<!-- 2016-06-16 Heartburn occurs in stressful situations. (This should vary according to the individual)-->
+		<!-- The effects do not last long.-->
+		<medical-complaint name="Heartburn">
+			<seriousness value="10" />
+			<degrade-time value="3.0" />
+			<recovery-time min="0.3" max="0.7"/>
+			<probability value="5.0" />
+			<performance-percent value="90.0" />
+			<bed-rest-recovery value="false" />
+		</medical-complaint>
+
+		<!-- 2017-03-09 Add Hypoxemia
+				Hypoxemia refers to insufficient oxygen in the blood. Thus any cause that influences the rate or volume
+				 of air entering the lungs (ventilation) or any cause that influences the transfer of air from the
+				 lungs to the blood may cause hypoxemia.-->
+		<!-- The effects do not last long.-->
+		<medical-complaint name="Hypoxemia">
+			<seriousness value="80" />
+			<degrade-time value="2.0" />
+			<recovery-time min="1.5" />
+			<probability value="0" />
+			<performance-percent value="20.0" />
+			<bed-rest-recovery value="true" />
+			<treatment-type value="Hospitalization" />
+		</medical-complaint>
+
+		<!-- 2017-03-09 Add Radiation Sickness
+				Radiation Sickness refers to various Acute Radiation Syndromes from SPEs, which
+				may be clinically severe, may occur due to occupational radiation exposure.-->
+		<!-- The effects may or may not last long.-->
+		<medical-complaint name="Radiation Sickness">
+			<seriousness value="30" />
+			<degrade-time value="8.0" />
+			<recovery-time min="3.0" />
+			<probability value="0" />
+			<performance-percent value="30.0" />
+			<bed-rest-recovery value="false" />
+			<treatment-type value="Radioprotective Agent" />
+		</medical-complaint>
+
+		<!-- 2023-07-21 Heart attack prones to happen in individuals who have very little exerciseb 
+		     maintain one's cardiovascular health poorly but have to cope with high stress situations 
+		     frequently. -->
+		<medical-complaint name="Heart Attack">
+			<seriousness value="90" />
+			<degrade-time value="0.25" />
+			<recovery-time min="7.0" />
+			<probability value="0.5" />
+			<performance-percent value="1.0" />
+			<bed-rest-recovery value="true" />
+		</medical-complaint>
+	</medical-complaint-list>
+
+	<!-- List of medical treatments -->
+	<treatment-list>
+
+		<!-- Wrapping a broken limb in a cast to support it. -->
+		<treatment name="Plaster Cast">
+
+            <!-- Medical skill level required. (optional) -->
+            <!-- Values: 0+ medical skill level -->
+            <skill value="2" />
+
+            <!-- Required medical tech level of facility. (optional) -->
+            <!-- (see tech_level.txt) -->
+            <!-- Values: 0 - 10 -->
+            <medical-tech-level value="1" />
+
+            <!-- Time required for the treatment. (millisols) (optional) -->
+            <treatment-time value="40.0" />
+
+			<!--  Can the treatment be self administered? (optional) -->
+			<!--  Values: true or false -->
+			<self-admin value="false" />
+
+        </treatment>
+
+        <!-- Shot of antibiotics. -->
+        <treatment name="Antibiotics">
+        	<skill value="0" />
+        	<medical-tech-level value="1" />
+        	<treatment-time value="100.0" />
+        	<self-admin value="true" />
+        </treatment>
+
+		<!-- Dressing a wound. -->
+		<treatment name="Dressing">
+			<skill value="0" />
+			<medical-tech-level value="1" />
+			<treatment-time value="50.0" />
+			<self-admin value="true" />
+		</treatment>
+
+		<!-- A relatively simple surgical operation. -->
+		<treatment name="Minor Operation">
+			<skill value="3" />
+			<medical-tech-level value="2" />
+			<treatment-time value="200.0" />
+			<self-admin value="false" />
+		</treatment>
+
+		<!-- A complex surgical operation. -->
+		<treatment name="Major Operation">
+			<skill value="4" />
+			<medical-tech-level value="4" />
+			<treatment-time value="600.0" />
+			<self-admin value="false" />
+		</treatment>
+
+		<!-- Extended bed rest in the care of a medical facility. -->
+		<treatment name="Hospitalization">
+			<skill value="2" />
+			<medical-tech-level value="3" />
+			<treatment-time value="1000.0" />
+			<self-admin value="false" />
+		</treatment>
+
+		<!-- Skin graft for extensive, third-degree burns. -->
+		<treatment name="Skin Graft">
+			<skill value="4" />
+			<medical-tech-level value="4" />
+			<treatment-time value="1000.0" />
+			<self-admin value="false" />
+		</treatment>
+        
+        <treatment name="Anxiety Medication">
+        	<skill value="0" />
+        	<medical-tech-level value="1" />
+        	<treatment-time value="100.0" />
+        	<self-admin value="true" />
+        </treatment>
+
+        <treatment name="Radioprotective Agent">
+        	<skill value="1" />
+        	<medical-tech-level value="1" />
+        	<treatment-time value="200.0" />
+        	<self-admin value="true" />
+        </treatment>        
+        
+	</treatment-list>
+
+</medical>

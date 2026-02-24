@@ -273,8 +273,22 @@ class ApiService {
 
   // ─── Simulator ──────────────────────────────────────────────────────────
 
-  async startSimulator(): Promise<{ status: string; simulator: string; pea_id: string }> {
-    const response = await this.client.post('/simulator/start')
+  async startSimulator(
+    scenarioId?: string
+  ): Promise<{
+    status: string
+    simulator: string
+    pea_id: string
+    scenario_id?: string
+    scenario_name?: string
+    started_at?: string
+    duration_s?: number
+    tick_ms?: number
+    time_ratio?: number
+  }> {
+    const response = await this.client.post('/simulator/start', null, {
+      params: scenarioId ? { scenario_id: scenarioId } : {},
+    })
     return response.data
   }
 
@@ -283,8 +297,33 @@ class ApiService {
     return response.data
   }
 
-  async getSimulatorStatus(): Promise<{ running: boolean; simulator: string; pea_id: string }> {
+  async getSimulatorStatus(): Promise<{
+    running: boolean
+    simulator: string
+    pea_id: string
+    scenario_id: string
+    scenario_name: string
+    started_at: string
+    duration_s: number
+    tick_ms: number
+    time_ratio: number
+  }> {
     const response = await this.client.get('/simulator/status')
+    return response.data
+  }
+
+  async getSimulatorScenarios(): Promise<{
+    scenarios: Array<{
+      id: string
+      name: string
+      description: string
+      duration_s: number
+      tick_ms: number
+      time_ratio: number
+    }>
+    count: number
+  }> {
+    const response = await this.client.get('/simulator/scenarios')
     return response.data
   }
 

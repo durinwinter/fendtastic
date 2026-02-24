@@ -1,0 +1,48 @@
+{{>detail-head}}
+
+## Description
+{{vehicle.description}}
+
+## Characteristics
+
+| Attribute      | Value |
+|--------:|:------|
+|Type:|{{vehicle.type.name}}|
+|Model:|{{vehicle.modelName}}|
+|Base Speed:|{{vehicle.baseSpeed}} kmph|
+|Crew Size:|{{vehicle.crewSize}}|
+|Cargo Capacity:|{{vehicle.totalCapacity}} kg|
+|Empty Mass:|{{vehicle.emptyMass}} kg|
+|Width:|{{vehicle.width}}|
+|Length:|{{vehicle.length}}|
+|Base Range:|{{vehicle.baseRange}} km|
+|Fuel Efficiency:|{{vehicle.drivetrainEfficiency}}|
+    {{#vehicle.hasLab}}
+|Lab Tech Level:|{{vehicle.labTechLevel}}|
+|Lab Specialties:|{{vehicle.labTechSpecialties}}|
+    {{/vehicle.hasLab}}
+    {{#vehicle.hasSickbay}}
+|Sickbay Tech Level:|{{vehicle.sickbayTechLevel}}|
+|Sickbay Beds:|{{vehicle.sickbayBeds}}|
+    {{/vehicle.hasSickbay}}
+|Attachment Slots:|{{vehicle.attachmentSlots}}|
+
+{{#vehicle.hasPartAttachments}}
+## Attachments
+
+  {{#vehicle.attachableParts}}
+- [{{name}}]({{partfolder}}{{#filename}}{{name}}{{/filename}})
+  {{/vehicle.attachableParts}}
+{{/vehicle.hasPartAttachments}}
+
+## Storage Capacity
+
+Total storage: {{vehicle.totalCapacity}} kg
+
+| Resource      | Amount |
+|--------:|:------|
+{{#cargo}}
+|[{{name}}]({{resourcefolder}}{{#filename}}{{name}}{{/filename}})|{{value}}|
+{{/cargo}}
+
+{{>footer}}

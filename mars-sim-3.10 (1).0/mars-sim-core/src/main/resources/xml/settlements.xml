@@ -1,0 +1,341 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<!DOCTYPE settlement-configuration [
+	<!ELEMENT settlement-configuration (mission-control, life-support-requirements,
+						essential-resources, shifts, group-activities, settlement-template-list)>
+
+	<!ELEMENT mission-control (rover-life-support-range-error-margin, rover-fuel-range-error-margin)>
+	<!ELEMENT rover-life-support-range-error-margin EMPTY>
+	<!ATTLIST rover-life-support-range-error-margin value CDATA #REQUIRED>
+	<!ELEMENT rover-fuel-range-error-margin EMPTY>
+	<!ATTLIST rover-fuel-range-error-margin value CDATA #REQUIRED>
+
+	<!ELEMENT life-support-requirements (total-pressure, partial-pressure-of-oxygen,
+	partial-pressure-of-nitrogen, partial-pressure-of-carbon-dioxide, temperature,
+	relative-humidity, ventilation)>
+	<!ELEMENT total-pressure EMPTY>
+	<!ATTLIST total-pressure min CDATA #REQUIRED>
+	<!ATTLIST total-pressure max CDATA #REQUIRED>
+	<!ELEMENT partial-pressure-of-oxygen EMPTY>
+	<!ATTLIST partial-pressure-of-oxygen min CDATA #REQUIRED>
+	<!ATTLIST partial-pressure-of-oxygen max CDATA #REQUIRED>
+	<!ELEMENT partial-pressure-of-nitrogen EMPTY>
+	<!ATTLIST partial-pressure-of-nitrogen min CDATA #REQUIRED>
+	<!ATTLIST partial-pressure-of-nitrogen max CDATA #REQUIRED>
+	<!ELEMENT partial-pressure-of-carbon-dioxide EMPTY>
+	<!ATTLIST partial-pressure-of-carbon-dioxide min CDATA #REQUIRED>
+	<!ATTLIST partial-pressure-of-carbon-dioxide max CDATA #REQUIRED>
+	<!ELEMENT temperature EMPTY>
+	<!ATTLIST temperature min CDATA #REQUIRED>
+	<!ATTLIST temperature max CDATA #REQUIRED>
+	<!ELEMENT relative-humidity EMPTY>
+	<!ATTLIST relative-humidity min CDATA #REQUIRED>
+	<!ATTLIST relative-humidity max CDATA #REQUIRED>
+	<!ELEMENT ventilation EMPTY>
+	<!ATTLIST ventilation min CDATA #REQUIRED>
+	<!ATTLIST ventilation max CDATA #REQUIRED>
+
+	<!ELEMENT essential-resources (resource*)>
+	<!ELEMENT resource EMPTY>
+	<!ATTLIST resource name CDATA #REQUIRED>
+	<!ATTLIST resource reserve CDATA #REQUIRED>
+	<!ATTLIST resource optimal CDATA #REQUIRED>
+
+	<!ELEMENT shifts (shift-pattern*)>
+	<!ELEMENT shift-pattern (shift*)>
+	<!ATTLIST shift-pattern name CDATA #REQUIRED>
+	<!ATTLIST shift-pattern rotation-sols CDATA #IMPLIED>
+	<!ATTLIST shift-pattern leave-perc CDATA #IMPLIED>
+	<!ATTLIST shift-pattern minPopulation CDATA #IMPLIED>
+	
+
+	<!ELEMENT shift EMPTY>
+	<!ATTLIST shift name CDATA #REQUIRED>
+	<!ATTLIST shift start CDATA #REQUIRED>
+	<!ATTLIST shift end CDATA #REQUIRED>
+	<!ATTLIST shift pop-percentage CDATA #REQUIRED>
+
+	<!ELEMENT group-activities (activities, schedule*)>
+
+	<!ELEMENT activities (activity*)>
+	<!ELEMENT activity (calendar, impact?, skills?)>
+	
+	<!ATTLIST activity name CDATA #REQUIRED>
+	<!ATTLIST activity type CDATA #IMPLIED>
+	<!ATTLIST activity score CDATA #IMPLIED>
+	<!ATTLIST activity population CDATA #REQUIRED>
+	<!ATTLIST activity waitDuration CDATA #REQUIRED>
+	<!ATTLIST activity duration CDATA #REQUIRED>
+	<!ATTLIST activity scope CDATA #REQUIRED>
+	<!ATTLIST activity location CDATA #IMPLIED>
+			
+	<!ELEMENT calendar EMPTY>
+	<!ATTLIST calendar eventTime CDATA #REQUIRED>
+	<!ATTLIST calendar frequency CDATA #IMPLIED>
+	<!ATTLIST calendar firstSol CDATA #IMPLIED>
+
+	<!ELEMENT impact (skills?)>
+	<!ATTLIST impact effort CDATA #IMPLIED>
+	<!ATTLIST impact stress CDATA #IMPLIED>
+				
+	<!ELEMENT skills (skill)>
+	<!ATTLIST skills experienceRatio CDATA #IMPLIED>
+	
+	<!ELEMENT skill EMPTY>
+	<!ATTLIST skill name CDATA #REQUIRED>
+	
+	<!ELEMENT schedule (meeting*)>
+	<!ATTLIST schedule name CDATA #REQUIRED>
+	<!ATTLIST schedule minPopulation CDATA #IMPLIED>
+
+	<!ELEMENT meeting EMPTY>
+	<!ATTLIST meeting name CDATA #REQUIRED>
+	<!ATTLIST meeting type CDATA #IMPLIED>
+
+	<!ELEMENT settlement-template-list (template*)>
+	<!ELEMENT template EMPTY>
+	<!ATTLIST template name CDATA #REQUIRED>
+]>
+
+<settlement-configuration>
+
+	<!-- Typical mission control parameters for a settlement -->
+	<mission-control>
+
+		<!-- This vehicle range error margin imposed on the life support/consumable. -->
+		<!-- This value will multiply with the amount of each resource needed for
+			the mission -->
+		<!-- The higher the value, the more amount of this resource a rover will
+			bring -->
+		<!-- default value : 1.5 Valid from 1.0 to 3.0 -->
+		<rover-life-support-range-error-margin
+			value="1.8" />
+
+		<!-- This vehicle range error margin imposed on the fuel of the vehicle. -->
+		<!-- This value will multiply with the amount of fuel needed for the mission -->
+		<!-- The higher the value, the more fuel a rover will bring -->
+		<!-- default value : 1.3 Valid from 1.0 to 3.0 -->
+		<rover-fuel-range-error-margin
+			value="1.25" />
+
+	</mission-control>
+
+	<!-- (NOT IMPLEMENTED YET) Typical atmospheric requirements for a closed-loop
+		habitat see http://www2.le.ac.uk/offices/safety-services/documents/pdfs/air-monitoring-guide.pdf
+		Note : a 340 mb or 34kPa indoor atmosphere is currently being implemented -->
+	<life-support-requirements>
+
+		<!-- recommended range of total air pressure in kPa -->
+		<total-pressure min="32" max="36" />
+		<!-- recommended range of partial pressure for O2 in kPa -->
+		<partial-pressure-of-oxygen min="18"
+			max="22" />
+		<!-- recommended range of partial pressure for NO2 in kPa -->
+		<partial-pressure-of-nitrogen min="10"
+			max="14" />
+		<!-- recommended range of partial pressure for CO2 in kPa -->
+		<partial-pressure-of-carbon-dioxide
+			min="0.03" max="0.07" />
+		<!-- recommended range of temperatures [in degree celsius] -->
+		<temperature min="18" max="26" />
+		<!-- humidity in % -->
+		<relative-humidity min="30" max="70" />
+		<!-- ventilation in m/s -->
+		<ventilation min="0.076" max="0.203" />
+
+	</life-support-requirements>
+
+	<!-- Define the reserve and optimal amount of essential resources per person
+		 Note: reserve is being the recommended minimum amount
+		       optimal is the being recommended level amount  
+	-->
+	<essential-resources>
+		<resource name="Food" reserve="100" optimal="1000" />
+		<resource name="Oxygen" reserve="800" optimal="8000" />
+		<resource name="Methane" reserve="800" optimal="8000" />
+		<resource name="Methanol" reserve="600" optimal="6000" />
+		<resource name="Water" reserve="800" optimal="8000" />
+		<resource name="Hydrogen" reserve="800" optimal="8000" />
+		<resource name="Nitrogen" reserve="80" optimal="800" />
+		<resource name="Carbon dioxide" reserve="40" optimal="400" />
+	</essential-resources>
+
+	<!-- The Standard patterns are the default and but always be present. 
+		The others can be added/deleted 
+		To avoid confusion of local day and night, shift names are defined as follows : 
+		- 4 shifts are termed A, B, C, D
+		- 3 shifts are termed X, Y, Z
+		- 2 shifts are termed either Early and late, or First and Second	
+		-->
+	<shifts>
+		<shift-pattern name="Standard 4 Shift" rotation-sols="2" minPopulation="96">
+			<shift name="A" start="0" end="275" pop-percentage ="25"/>
+			<shift name="B" start="250" end="525" pop-percentage ="25"/>
+			<shift name="C" start="500" end="775" pop-percentage ="25"/>
+			<shift name="D" start="750" end="25" pop-percentage ="25"/>
+		</shift-pattern>
+		<shift-pattern name="Long 4 Shift" rotation-sols="4" minPopulation="48">
+			<shift name="A" start="0" end="300" pop-percentage ="25"/>
+			<shift name="B" start="250" end="550" pop-percentage ="25"/>
+			<shift name="C" start="500" end="800" pop-percentage ="25"/>
+			<shift name="D" start="750" end="50" pop-percentage ="25"/>
+		</shift-pattern>	
+		<shift-pattern name="Standard 3 Shift" rotation-sols="2" minPopulation="24">
+			<shift name="X" start="200" end="550" pop-percentage ="40"/>
+			<shift name="Y" start="525" end="875" pop-percentage ="40"/>
+			<shift name="Z" start="850" end="225" pop-percentage ="20"/>
+		</shift-pattern>
+		<shift-pattern name="Long 3 Shift" rotation-sols="4" minPopulation="12">
+			<shift name="X" start="200" end="600" pop-percentage ="40"/>
+			<shift name="Y" start="500" end="900" pop-percentage ="40"/>
+			<shift name="Z" start="900" end="200" pop-percentage ="20"/>
+		</shift-pattern>	
+		<shift-pattern name="Standard 2 Shift" leave-perc="3" rotation-sols="4" minPopulation="4">
+			<shift name="Early" start="200" end="725" pop-percentage ="50"/>
+			<shift name="Late" start="700" end="225" pop-percentage ="50"/>
+		</shift-pattern>	
+		<shift-pattern name="Skeleton 2 Shift" leave-perc="3" rotation-sols="2" minPopulation="1">
+			<shift name="First" start="0" end="600" pop-percentage ="70"/>
+			<shift name="Second" start="500" end="100" pop-percentage ="30"/>
+		</shift-pattern>
+	</shifts>
+
+	<!-- Activities are alway scheduled for LIVING by default-->
+	<group-activities>
+		<activities>
+			<!-- 355 sols is the equivalent of 365 days-->
+			<activity name="Birthday Celebration"  score="200"
+						population="0.3" waitDuration="20" duration="100" scope="NONWORK_HOUR">
+				<calendar eventTime="700" frequency="355"/>
+			</activity>
+
+			<!-- One off Announcement to base-->
+			<activity name="Announcement" score="600"
+						population="0.9" waitDuration="20" duration="100" scope="ANY_HOUR">
+				<calendar eventTime="400" />
+			</activity>
+
+			<!-- Sky watching party starts 2nd sol into Settlement and evey 10 sols-->
+			<activity name="Night Sky Party" score="400" population="0.2" waitDuration="80"
+						duration="150" scope="NONWORK_HOUR" location="ASTRONOMY">
+				<calendar eventTime="850" firstSol="2" frequency="10"/>
+				<impact effort="false" stress="-0.1">
+					<skills experienceRatio="10">
+						<skill name="ASTRONOMY"/>
+					</skills>
+				</impact>
+			</activity>
+
+			<activity name="Team Meeting" score="500" population="0.7" waitDuration="20"
+						duration="100" scope="ANY_HOUR">
+				<calendar eventTime="500" frequency="6"/>
+			</activity>
+			<activity name="Movie Night" score="200" population="0.3" waitDuration="20"
+						duration="150" scope="NONWORK_HOUR">
+				<calendar eventTime="700" firstSol="4" frequency="20" />
+				<impact effort="false" stress="-1"/>
+			</activity>
+			<activity name="Safety Training"  score="400" population="0.3" waitDuration="20"
+						duration="10" scope="WORK_HOUR">
+				<calendar eventTime="400" firstSol="7" frequency="20"/>
+			</activity>
+			<activity name="EVA Operation Training"  score="400" population="0.3" waitDuration="20"
+						duration="15" scope="WORK_HOUR">
+				<calendar eventTime="400" firstSol="7" frequency="5"/>
+			</activity>
+		</activities>
+
+		<!-- Activities for a small settlement is just essential meetings -->
+		<schedule name="Small Settlement" minPopulation="6">
+			<meeting name="Team Meeting"/>
+			<meeting name="EVA Operation Training"/>
+		</schedule>
+
+		<!-- Activities for a large settlement include a social life and regular meetings-->
+		<schedule name="Large Settlement" minPopulation="15">
+			<meeting type="BIRTHDAY" name="Birthday Celebration"/>
+			<meeting type="Announcement" name="Announcement"/>
+
+			<meeting name="Team Meeting"/>
+			<meeting name="Movie Night"/>
+			<meeting name="Safety Training"/>
+			<meeting name="EVA Operation Training"/>
+			
+			<!-- This needs an obseratory but will be cancelled when one not available-->
+			<meeting name="Night Sky Party"/>
+		</schedule>
+	</group-activities>
+
+	<settlement-template-list>
+		<!-- Settlement template for the Zubrin Mars Direct mission plan. -->
+		<!-- See http://www.marssociety.org/home/about/mars-direct for more info. -->
+		<!-- default-population: the default population capacity for the template. -->
+		<!-- number-of-robots: the default number of robots for the template. -->
+		<!-- sponsor: the name of the sponsoring organization for the template. -->
+		
+		<!-- 5 Phase 0 templates -->
+		<template name="Phase 0-AE"/>
+		<template name="Phase 0-BO"/>
+		<template name="Phase 0-ISRA"/>
+		<template name="Phase 0-MS"/>
+		<template name="Phase 0-US"/>
+								
+		<!-- 12 Phase 1 templates -->
+		<template name="Phase 1-IT"/>
+		<template name="Phase 1-BR"/>
+		
+		<template name="Phase 1-CN"/>
+		<template name="Phase 1-DE"/>
+		<template name="Phase 1-IN"/>
+		<template name="Phase 1-MS"/>
+		
+		<template name="Phase 1-RU"/>
+		<template name="Phase 1-SA"/>
+		
+		<template name="Phase 1-SX"/>
+		<template name="Phase 1-TW"/>		
+		<template name="Phase 1-US"/>
+		<template name="Phase 1-UK"/>
+				
+		<!-- 10 Phase 2 templates -->	
+		<template name="Phase 2-BO"/>	
+		<template name="Phase 2-CN"/>	
+		<template name="Phase 2-EU"/>
+		<template name="Phase 2-IN"/>	
+		
+		<template name="Phase 2-JP"/>
+		<template name="Phase 2-KR"/>
+		<template name="Phase 2-MS"/>
+		<template name="Phase 2-RU"/>
+		
+		<template name="Phase 2-SX"/>
+		<template name="Phase 2-US"/>
+		
+		<!-- 7 Phase 3 templates -->	
+		<template name="Phase 3-CN"/>
+		<template name="Phase 3-IN"/>
+		<template name="Phase 3-ISRA"/>
+		<template name="Phase 3-MS"/>
+			
+		<template name="Phase 3-RU"/>
+		<template name="Phase 3-SX"/>
+		<template name="Phase 3-US"/>
+		
+		<!-- 2 Alpha Base (Phase 4) templates -->			
+		<template name="Alpha Base 1"/>
+		<template name="Alpha Base 2"/>
+				
+		<!-- 1 Hub Base template -->			
+		<template name="Hub Base"/>
+		
+		<!-- 1 Sector Base 1 template -->	
+		<template name="Sector Base 1"/>
+				
+		<!-- 1 trading outpost template -->			
+		<template name="Trading Outpost"/>
+	
+		<!-- 1 mining outpost template -->		
+		<template name="Mining Outpost"/>	
+																				
+	</settlement-template-list>
+	
+</settlement-configuration>

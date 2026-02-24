@@ -1,0 +1,14 @@
+{{>detail-head}}
+
+## Description
+{{crew.description}}
+
+## Members
+
+|Name|Gender|Age|Job|Country|Sponsor|
+|----|------|---|---|-------|-------|
+{{#crew.team}}
+|{{name}}|{{gender.getName}}|{{age}}|{{job}}|{{country}}|{{sponsor}}|
+{{/crew.team}}
+
+{{>footer}}

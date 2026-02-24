@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Paper, Typography, CircularProgress, Button, Chip, Fade } from '@mui/material'
+import {
+  Box,
+  Paper,
+  Typography,
+  CircularProgress,
+  Button,
+  Chip,
+  Fade,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@mui/material'
 import { PlayArrow, Stop, Agriculture } from '@mui/icons-material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
 import TimeSeriesChart from '../components/TimeSeriesChart'
@@ -14,15 +26,47 @@ const IsometricView = React.lazy(() => import('../components/IsometricView'))
 const Dashboard: React.FC = () => {
   const [simRunning, setSimRunning] = useState(false)
   const [simLoading, setSimLoading] = useState(false)
+  const [selectedScenarioId, setSelectedScenarioId] = useState('baseline_cycle')
+  const [simScenarios, setSimScenarios] = useState<Array<{
+    id: string
+    name: string
+    description: string
+    duration_s: number
+    tick_ms: number
+    time_ratio: number
+  }>>([])
 
   const checkSimStatus = useCallback(async () => {
     try {
       const status = await apiService.getSimulatorStatus()
       setSimRunning(status.running)
+      if (status.running && status.scenario_id) {
+        setSelectedScenarioId(status.scenario_id)
+      }
     } catch { /* API not available */ }
   }, [])
 
   useEffect(() => { checkSimStatus() }, [checkSimStatus])
+
+  useEffect(() => {
+    const loadScenarios = async () => {
+      try {
+        const res = await apiService.getSimulatorScenarios()
+        setSimScenarios(res.scenarios || [])
+        if (res.scenarios?.length && !res.scenarios.some(s => s.id === selectedScenarioId)) {
+          setSelectedScenarioId(res.scenarios[0].id)
+        }
+      } catch {
+        // API may be unavailable in some local setups.
+      }
+    }
+    loadScenarios()
+  }, [selectedScenarioId])
+
+  useEffect(() => {
+    const interval = setInterval(checkSimStatus, 3000)
+    return () => clearInterval(interval)
+  }, [checkSimStatus])
 
   const toggleSimulator = async () => {
     setSimLoading(true)
@@ -31,7 +75,7 @@ const Dashboard: React.FC = () => {
         await apiService.stopSimulator()
         setSimRunning(false)
       } else {
-        await apiService.startSimulator()
+        await apiService.startSimulator(selectedScenarioId)
         setSimRunning(true)
       }
     } catch (e: any) {
@@ -80,6 +124,22 @@ const Dashboard: React.FC = () => {
             border: `1px solid ${simRunning ? '#2ECC71' : '#444'}`
           }}
         />
+        <FormControl size="small" sx={{ minWidth: 240 }}>
+          <InputLabel id="scenario-select-label">Scenario</InputLabel>
+          <Select
+            labelId="scenario-select-label"
+            value={selectedScenarioId}
+            label="Scenario"
+            onChange={(e) => setSelectedScenarioId(String(e.target.value))}
+            disabled={simRunning || simLoading}
+          >
+            {(simScenarios.length > 0 ? simScenarios : [{ id: 'baseline_cycle', name: 'Baseline Work Cycle' }]).map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Button
           size="small"
           variant="contained"

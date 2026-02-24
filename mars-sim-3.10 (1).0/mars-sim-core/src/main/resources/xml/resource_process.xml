@@ -1,0 +1,1805 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<!DOCTYPE process-list [
+	<!ELEMENT process-list (process*)>
+	<!ELEMENT process (description?, input+, output+)>
+	<!ATTLIST process name CDATA #REQUIRED>
+	<!ATTLIST process power-required CDATA #REQUIRED>
+	<!ATTLIST process defaultOn (true|false) #IMPLIED>
+	<!ATTLIST process process-time CDATA #IMPLIED>
+	<!ATTLIST process work-time CDATA #IMPLIED>
+	
+	<!ELEMENT description (#PCDATA)>
+
+	<!ELEMENT input EMPTY>
+	<!ATTLIST input resource CDATA #REQUIRED>
+	<!ATTLIST input rate CDATA #REQUIRED>
+	<!ATTLIST input ambient (true|false) #IMPLIED>
+	
+	<!ELEMENT output EMPTY>
+	<!ATTLIST output resource CDATA #REQUIRED>
+	<!ATTLIST output rate CDATA #REQUIRED>
+	<!ATTLIST output waste (true|false) #IMPLIED>
+]>
+
+<process-list>
+
+	<process name="Green Polymerization of Polycarbonate Resin" power-required=".1" >
+		<description>
+		The best non-polluted method involves non-phosgene process by producing 
+		diphenyl carbonate (DPC) from carbon dioxide (CO₂) and ethylene oxide (EO). 
+		It avoids the use of highly toxic phosgene while utilizing EO production as 
+		a raw material.
+			
+		This approach significantly reduces environmental and health risks, 
+		generates fewer emissions, and produces water and carbon monoxide as 
+		by-products instead of hazardous waste.
+
+		The process is considered more environmentally friendly, with lower 
+		acidification potential and reduced energy consumption compared to 
+		the phosgene method.
+			
+		This represents the melt transesterification of bisphenol A (BPA) 
+		with diphenyl carbonate (DPC) to form polycarbonate and phenol. 
+		
+		The DPC is synthesized from CO₂ and ethylene oxide, avoiding 
+		toxic phosgene.
+		
+		Phenol (also known as carbolic acid, phenolic acid, or benzenol) is 
+		an aromatic organic compound with the molecular formula C6H5OH
+		(MW: 94.11 g/mol)
+		
+		A newer, direct "green" method synthesizes polycarbonate diols from CO₂ 
+		and diols, with the general reaction: 
+		n HO-R-OH + n CO₂ → [O-R-O-CO]ₙ + n H₂O where R is an organic chain, 
+		and water is the only by-product.
+		
+		CO₂ + 2 C₆H₅OH → C₁₃H₁₀O₃ (DPC) + H₂O
+
+		</description>
+		<input resource="bisphenol-a" rate="228.29" />
+		<input resource="carbon dioxide" rate="44.0" />
+		<!--input resource="phenol" rate="188.22" /-->
+								
+		<output resource="Polycarbonate resin" rate="254.29" />
+		<!--output resource="phenol" rate="188.22" /-->
+		<output resource="water" rate="18.0" />
+	</process>
+
+
+	<process name="Insitu Epoxidation of Triglyceride" power-required=".1"  >
+		<description>
+		A greener, non-polluting method for producing epoxy resin involves using 
+		epoxidized vegetable oils, such as epoxidized linseed or soybean oil, 
+		instead of bisphenol-A and epichlorohydrin. 
+		
+		This method avoids toxic chemicals and reduces environmental impact.
+
+		The process uses in situ epoxidation with hydrogen peroxide (H₂O₂) and a 
+		catalyst (e.g., ion-exchange resin or formic acid), where double bonds 
+		in triglycerides are converted to epoxide rings.
+		
+		Simplified Balanced Equation (using a model triglyceride with 
+		three linoleic acid chains):
+			
+		Reactants:
+			Triglyceride (e.g., linolein): C₅₇H₉₈O₆, Molar mass ≈ 875.4 g/mol
+			Hydrogen peroxide (3 mol): 3 × H₂O₂, Molar mass = 3 × 34.0 = 102.0 g/mol
+			
+		Products:
+			Epoxidized triglyceride: C₅₇H₁₀₄O₉, Molar mass ≈ 929.4 g/mol
+			Water (3 mol): 3 × H₂O, Molar mass = 3 × 18.0 = 54.0 g/mol
+			
+		This method produces water as the only byproduct, making it significantly 
+		cleaner than traditional chlorohydrin-based processes.
+		
+		</description>	
+		<input resource="Triglyceride" rate="875.4"  />
+		<input resource="Hydrogen peroxide" rate="102.0"  />
+		
+		<output resource="Epoxy resin" rate="929.4" />
+		<output resource="Water" rate="54.0" />
+	</process>
+	
+	<process name="Photosynthetic Conversion of CO2 to Ethylene" power-required="0.1" >
+		<description>
+		The direct conversion of carbon dioxide to ethylene using cyanobacteria involves an engineered 
+		photosynthetic process. While natural photosynthesis produces glucose and oxygen from carbon 
+		dioxide and water, the engineered system described in research allows cyanobacteria to use 
+		electricity and light to convert carbon dioxide into ethylene (C₂H₄) or acetate.
+		
+ 		The specific chemical reaction for ethylene production is not a standard natural photosynthetic
+ 		equation but results from a modified pathway.
+ 		
+	    2CO2 + 4H+ + 2e- + light energy -> C2H4 + 2O2 
+	     g/mol :                 88 + 4 -> 2*12+ 4 + 2 * 32 
+	                                         28  + 64
+	        
+	    This reaction is driven by an artificial system that replaces photosystem II, allowing electrons 
+	    from an external source (electricity) and light to power the reduction of CO₂ to ethylene via 
+	    photosystem I in engineered cyanobacteria.
+	    
+ 		This approach bypasses the inefficiencies of natural photosynthesis, such as overlapping light 
+ 		absorption spectra and competition between oxygen and carbon dioxide for the carbon-fixing enzyme.
+	    
+	    Note: it could check for solar irradiance, instead of providing artificial light that
+	          uses up power.
+	 
+		</description>						
+		<input resource="carbon dioxide" rate="88.0" ambient="true" />
+		<input resource="hydrogen" rate="4.0" />
+		
+		<output resource="ethylene" rate="28.0" />
+		<output resource="oxygen" rate="64.0" />
+	</process>
+	
+	<process name="Glucose Fermentation by Cyanobacteria" power-required="0.0" >
+		<description>
+         This reaction is not catalysed by single micro-organisms but by syntrophic 
+         associations of micro-organisms. First the glucose is fermented to acetate, 
+         C02 and H2 or to acetate, formate and H2:
+         
+	     C6H12O6 + 2H2O -> 2CH3COOH (acetic acid) + 2CO2 + 4H2
+	     180 g/mol,  2*18 g/mol ->  2 * 60g/mol, 2*44 g/mol + 4 *2 g/mol
+	     
+	     see https://www.microbiologyresearch.org/content/journal/micro/10.1099/00221287-144-9-2377
+	     
+	     -215.7 kJ / mol
+	     
+		</description>						
+		<input resource="Glucose" rate="180.0" />
+		<input resource="Water" rate="36.0" />	
+
+		<output resource="Acetic acid" rate="120.0" />
+		<output resource="Carbon dioxide" rate="88.0" />
+		<output resource="Hydrogen" rate="8.0" />
+	</process>
+
+	<process name="Photo Fermentation by Chlorella" power-required="0.0" >
+		<description>
+                  
+		 The formula given is a general representation of photofermentation, 
+		 commonly associated with certain photosynthetic bacteria or microalgae,
+		 potentially Chlorella vulgaris.          
+				                    
+	     C6H12O6 + 6H2O -> 6CO2 + 12H2
+	     180 g/mol,  6*18 g/mol ->  6*44 g/mol + 12*2 g/mol
+	     
+		</description>						
+		<input resource="Glucose" rate="180.0" />
+		<input resource="water" rate="108.0" />	
+
+		<output resource="Carbon dioxide" rate="264.0" />
+		<output resource="Hydrogen" rate="24.0" />
+	</process>
+
+	<process name="Cellulolysis of Fiber into Glucose" power-required="0.0" >
+		<description>
+		 The chemical process for converting fiber into glucose involves breaking down 
+		 the complex carbohydrate structures of fiber into simpler sugar molecules.	
+	     
+	     Cellulose (C6H10O5)n 162.14 g/mol
+	     
+	     Glucose C6H12O6 
+	     
+	     The term "fibres" mostly means cellulose, which is a polysaccharide molecule, 
+	     i.e. it is composed of hundreds or thousands of glucose molecules connected to 
+	     each other by glycosidic bonds.
+	     
+	     Cow has intestinal flora that contain bacterias that can break down β(1→4) bonds,
+	     live on the energy these bonds contain, and as a consequence provide the host 
+	     with the resulting glucose.
+
+		 Cellulase is a group of enzymes (amylase, lipase and protease) that break down 
+		 cellulose into its component glucose molecules.
+
+		</description>						
+		<input resource="Crop waste" rate="162.0" />
+		<input resource="Water" rate="18.0" />
+		
+		<output resource="Glucose" rate="180.0" />
+
+	</process>
+
+	<process name="Methanogenesis by Archaea" power-required="0.0" >
+		<description>
+		Methanogenesis is the only way that methanogenic archaea can obtain energy 
+		for growth and these are the only organisms known to produce methane as a catabolic end product.
+		
+	     CH3OH + H2 -> CH4 + H2O 
+	     g/mol : 32 + 2 -> 16 + 18 
+	     
+	     see https://www.microbiologyresearch.org/content/journal/micro/10.1099/00221287-144-9-2377
+	     
+	     -112.5 kJ / mol
+	     
+		</description>						
+		<input resource="Methanol" rate="320.0" />
+		<input resource="Hydrogen" rate="20.0" />	
+
+		<output resource="Methane" rate="160.0" />
+		<output resource="Water" rate="180.0" />
+	</process>
+
+	<process name="Oxidation of Methane into Methanol by Methanotrophs" power-required="0.0" >
+		<description>
+
+		 Naturally occurring methane-oxidizing microorganisms are known as 
+		 methanotrophs. 
+		 
+		 Methanotrophs can be either bacteria or archaea. Which methanotroph species is 
+		 present is mainly determined by the availability of electron acceptors. 
+		 
+		 Many types of methane oxidizing bacteria (MOB) are known.
+		 	 		 
+		 Some methanotrophs possess an added advantage of sequestering CO2 as 
+		 substrate for enzymatic hydrogenation into methanol, and thereby qualify
+		 as suitable candidates for CO2 sequestration.
+		 
+		 Owing to their ability to utilize methane as the source of carbon and energy, 
+		 methanotrophs serve as excellent candidates for methane sequestration. 
+
+		 The use of microorganisms as biocatalysts for the sequestration of CH4 
+		 and CO2 is an attractive alternative as they require milder operating 
+		 conditions and do not release any toxic by-products. 
+
+		 Assuming the following balanced equation for this 'hypothetical' reaction : 
+		 3 CH4 + CO2 + 2 H2O -> Ch3OH
+		 
+		   48g   44g   36g   -> 128g
+		  
+		 See 
+		 1. https://en.wikipedia.org/wiki/Methanotroph
+		 2. https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2021.636486/full
+		 3. https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2021.678057/full
+		 
+		</description>						
+		<input resource="Methane" rate="48.0" />
+		<input resource="Carbon dioxide" rate="44.0" ambient="true" />
+		<input resource="Water" rate="36.0" />
+		
+		<output resource="Methanol" rate="128.0" />
+
+	</process> 
+		<!-- "Oxidation of Methane into Methanol by Methanotrophs" -->
+		
+	<process name="Sabatier RWGS Reactor" power-required="0.12" defaultOn="true">
+	<description> 
+	 A. Sabatier process :
+
+		CO2 + 4H2 -> CH4 + 2H2O, exothermic heat = -165 kJ/mol
+
+		CO2 : 44 g/mol
+		4H2 : 8 g/mol
+		CH4 : 16 g/mol
+		2H2O : 36 g/mol
+
+		B. The Reverse Water Gas Shift (RWGS) process is a
+		candidate technology for water and oxygen production
+		on Mars. RWGS uses carbon dioxide and hydrogen as
+		reactants to produce oxygen and carbon monoxide with a
+		copper on alumina catalyst, or in the precsence of an
+		iron-chrome catalyst.
+
+		CO2 + H2 = CO + H2O
+
+		Because the RWGS reaction is only mildly endothermic (at 400 deg C,
+		9 kcal/mole for RWGS compared to 57 kcal/mole for water electrolysis),
+		it's better than just having the water electrolysis alone.
+
+		Moreover, since the thermal power required by the RWGS is less than that
+		produced by the Sabatier reactor and their operating temperatures are comparable, a
+		Sabatier reactor can be used to provide the heat required to drive the RWGS
+		reactor.
+	
+	 B. Sabatier with Reverse Water Gas Shift (RWGS) :
+
+		3CO2 + 6H2 -> CH4 + 2CO + 4H2O, exothermic heat = -83 kJ/mol
+
+		3CO2 : 132 g/mol
+		6H2 : 12 g/mol
+		CH4 : 16 g/mol
+		2CO : 56 g/mol
+		4H2O : 72 g/mol
+
+		The primary disadvantage of the Sabatier process is that twice
+		as much hydrogen is consumed as can be recovered by the
+		electrolysis of the produced water.
+
+		In one in-situ propellant prooduction system (ISPP), it uses
+		Sabatier and Reverse Water Gas Shift (RWGS) to convert H2
+		and CO2 into OX and CH4 (with CO as waste).  It requires 470 W
+		to produce 1 kg of propellant per sol, per Zurin's paper on
+		"Integrated Mars In-Situ Propellant Production System.
+
+	</description>
+	<!-- rate: the input/output resource rate [in kg/sol] -->
+		<input resource="carbon dioxide" rate="396" ambient="true" />
+		<input resource="hydrogen" rate="36" />
+		
+		<output resource="methane" rate="48" />
+		<output resource="carbon monoxide" rate="168" />
+		<output resource="water" rate="216" />
+	</process> <!-- "Sabatier RWGS Reactor" -->
+
+		
+	<process name="Continuous Bosch Reactor (C-Bosch)" power-required="0.01" >
+		<description> 						
+		In recent years, under the SpaceCraft Oxygen Recovery (SCOR) program, 
+		NASA seeks to increase oxygen recovery beyond the state of the art (42%) 
+		to at least 75% and approaching 100%.
+				
+		1. Space oxygen recovery technologies implemented include carbon formation reactors (CFR) 
+		and methane plasma pyrolysis assembly (PPA) reactors. 
+				
+		2. The Continuous Bosch Reactor (C-Bosch) - aims to produce water and 
+		elemental carbon from hydrogen and carbon dioxide. Highly efficient for 
+		utilization of hydrogen, it would replace the current state-of-the-art 
+		Sabatier reactor.
+		
+		3. Hydrogen Recovery by Carbon Vapor Deposition aims to do what Sabatier
+		lacks, namely, recovering hydrogen. The Sabatier is limited in its ability 
+		to recover oxygen from carbon dioxide due to an insufficient amount of hydrogen. 
+		
+		The Sabatier requires additional hydrogen due to the production of the 
+		byproduct methane. If hydrogen can be recovered from this byproduct, it 
+		can be sent back to the Sabatier to react with carbon dioxide and produce 
+		additional oxygen.
+		
+		- A high-temperature solid oxide co-electrolyzer (SOCE) is to be combined 
+		with a carbon formation reactor.
+		
+		C-Bosch Reactor reduces CO2 to C and H20 using H2: 
+					CO2 + 2H2 ->  C + 2H2O
+					44g   4g     12g  36g
+					
+				1.	CO2 + H2 -> CO + H2O
+					44g   2g     28g  18g
+				2.  CO + H2  -> C + H2O
+					28g   2g    12g  18g
+											
+	
+		While the core reaction is exothermic, net energy input is still required to:
+
+		1. Heat reactants to reaction temperature,
+		2. Power gas compression and recycling,
+		3. Run auxiliary systems (e.g., CO₂ adsorption pumps, water electrolysis).
+		
+		</description> 
+		<!-- Note: Set ambient to false to reduce the probability of 
+				overusing hydrogen to produce methanol -->
+		<input resource="carbon dioxide" rate="44.0" ambient="true" />
+		<input resource="hydrogen" rate="4.0"  />
+		
+		<output resource="water" rate="36.0"  />
+		<output resource="carbon" rate="12.0"  />
+		
+	</process> <!-- "Continuous Bosch Reactor (C-Bosch)" -->
+	
+	<process name="Carbon Monoxide Hydrogenation" power-required="0.01" >
+		<description> 						
+        The carbon monoxide hydrogenation step in the Bosch process is
+        exothermic. It releases energy rather than requiring a net input.	
+        
+				  CO + H2  -> C + H2O
+				  28g   2g    12g  18g					
+		This reaction releases approximately 2.3 × 10³ joules per gram 
+		of CO₂ reacted at 650 °C
+		
+		However, initial energy input is still required to:
+		1. Heat the reactor to 450–730 °C,
+		2. Maintain reaction conditions,
+		3. Overcome activation energy barriers.
+
+		While the reaction itself produces heat, the high operating 
+		temperatures and catalyst maintenance (due to carbon fouling) 
+		make the process energy-intensive in practice.
+		
+		</description> 
+		<input resource="carbon monoxide" rate="140.0" />
+		<input resource="hydrogen" rate="10.0"  />
+		
+		<output resource="water" rate="90.0"  />
+		<output resource="carbon" rate="60.0"  />
+		
+	</process> <!-- "Carbon Monoxide Hydrogenation" -->
+		
+	<process name="Plasma Pyrolysis Assembly (PPA) Reactor" power-required="0.01" >
+		<description>
+			By partial pyrolysis in microwave generated plasma, methane is converted to 
+			hydrogen and acetylene:					  
+						2CH4 -> 3H2 + C2H2
+						32g     6g    26g
+						
+				3C2H4 +	2CH4 -> 3H2 + C2H2 + 2C3H6
+				 3*28g	32g     6g    26g	  2*42g
+						
+			Hydrogen separation carried out with electrochemical cell stack. 
+			
+			H2 recovered from CH4 and sent to Sabatier to recover additional O2 from CO2
+			- ~50% O2 recovery with Sabatier
+			- Potentially >85% total O2 recovery with PPA
+			- Acetylene C2H2 and propylene C3H6 are formed from ethylene C2H4 via radical 
+			  chain dehydrogenation and radical chain methylation reactions, respectively.  
+			- Acetylene must be removed from PPA outlet stream before hydrogen 
+			  can be sent to Sabatier
+
+			References: 
+			1. https://pubs.acs.org/doi/10.1021/acs.iecr.1c01679  
+		</description> 
+		<input resource="methane" rate="32.0" />
+		<input resource="ethylene" rate="84.0" />
+		
+		<output resource="hydrogen" rate="6.0" />
+		<output resource="acetylene" rate="26.0" />
+		<output resource="propylene" rate="84.0" />
+	</process> <!-- "Plasma Pyrolysis Assembly (PPA) Reactor" -->
+
+	
+	<!-- Convert ethane C2H6 to ethylene C2H4 and H2 using CO2 as mild oxidation agent 
+	
+	C2H6 -> C2H4 + H2
+	30g     28g    2g
+	
+	2CH4 + 0.5O2 -> C2H6 + H2O
+	
+	C2H6 + 0.5O2 -> C2H4 + H2O
+	
+	Reference : 
+	1. https://www.sciencedirect.com/science/article/abs/pii/S0360319920335904
+	2. https://www.sciencedirect.com/science/article/abs/pii/S0016236102000741
+	-->
+	
+	<process name="Produce Oxygen and Acetylene with Chloride and Carbides" power-required="0.01" >
+		<description>
+			This reaction produces acetylene utilizing the electrochemical reduction
+			of CO2 by high-temperature molten salts, namely chloride melts. 
+			
+			Acetylene is generated by the reaction between water and metal carbides, 
+			which are formed by the reduction of CO2 and cations in the melts. 
+			
+			CO2 is first converted to metallic carbides such as CaC2 and Li2C2, 
+			which deposit onto one of the electrodes during the electrochemical process.
+					
+			This conversion occurs within a high-temperature molten salt environment, 
+			specifically a NaCl−KCl−CaCl2−CaO melt saturated with additional CaCl2, 
+			where CO2 is transformed into calcium carbide (CaC2) around the cathode.
+			
+			The key reaction for the formation of calcium carbide from CO₂ and the 
+			molten salt components is:
+			
+			(1) CaO + 3C + CO2 -> CaC2 + 2CO
+
+			The first reaction occurs within the molten salt system where CO₂ is reduced, 
+			and calcium carbide is selectively formed around the cathode.
+			
+ 			The calcium carbide (CaC₂) produced is then used to generate acetylene (C₂H₂)
+ 			when it reacts with water:
+
+			(2) CaC2 + 2H2O -> Ca(OH)2 + C2H2
+			
+			The second reaction is a well-known hydrolysis process where calcium carbide 
+			reacts with water to produce calcium hydroxide and acetylene gas.
+			
+			The overall process, therefore, converts CO₂ and water into acetylene, with 
+			the intermediate formation of calcium carbide in the molten salt environment.
+			
+ 			The method leverages metal carbides as a pivotal point in the conversion process, 
+ 			with the deposited carbides subsequently reacting with water to generate acetylene gas.	
+ 				
+			This process is more sustainable than "Plasma Pyrolysis Assembly (PPA) Reactor"
+			for making Acetylene as it does not consume methane and utilizes 
+			cardon dioxide and water as inputs.
+	
+			  2CO2 + H2O → C2H2 + 2.5O2			
+			 2*44g   18g    26g   2.5*32g	
+			
+			Reference: 
+			1. https://phys.org/news/2024-03-advancing-sustainability-carbon-dioxide-acetylene.html
+			2. https://pubs.acs.org/doi/epdf/10.1021/acssuschemeng.3c08139
+ 
+		</description> 
+		<input resource="Carbon dioxide" rate="88.0" ambient="true"/>
+		<!-- Assume rock salt contains CaCl2 (molecular weight : 111 g/mol)-->
+		<input resource="Rock salt" rate="11.0" />
+		<!-- Assume lime contains CaO (molecular weight : 56 g/mol)-->
+		<input resource="lime" rate="5.6" />
+		<input resource="Water" rate="18.0"  />
+				
+		<output resource="Acetylene" rate="26.0"  />
+		<output resource="Oxygen" rate="80.0"  />
+		<output resource="Rock salt" rate="11.1" />
+		<output resource="lime" rate="5.6" />
+		
+	</process> <!--"Produce Oxygen and Acetylene with Chloride and Carbides"-->
+
+	<process name="Selective Partial Oxidation (SPO) of Methane to Methanol" power-required="0.01" >
+		<description>
+		Requires oxidant : O2 in the presence of very small amount of H2O2. 
+		Catalyst : Colloidal Au-Pd nanop-articles (3-5nm)
+		
+		Au-Pd catalysts form Methyl radicals, which break the C-H bond, leading to 
+		successful methanol production. High selectivity of 92% 
+		
+		2 Ch4 + O2 -> 2 CH3OH
+		32g ,  32 g , 64 g (or 58.88 at 92%)
+		
+		See
+		1. https://pubs.acs.org/doi/suppl/10.1021/jacs.5c11683/suppl_file/ja5c11683_si_001.pdf
+		2. https://pubs.acs.org/doi/10.1021/jacs.5c11683
+		
+		
+		Alternatively, consider 
+		"Direct photo-oxidation of methane to methanol over a mono-iron hydroxyl site"
+		1. https://www.nature.com/articles/s41563-022-01279-1
+		2. https://neutrons.ornl.gov/content/found-%E2%80%98holy-grail-catalysis%E2%80%99-%E2%80%94-turning-methane-methanol-under-ambient-conditions-using-light
+
+		
+		</description> 
+		<input resource="methane" rate="32"  />
+		<input resource="oxygen" rate="32"  />
+		
+		<output resource="methanol" rate="64"  />
+	</process> <!--"Selective Partial Oxidation (SPO) of Methane to Methanol"-->
+		
+ <!-- 
+	<process name="Catalytic Partial Oxidation of Methane (CPOM) to Produce Hydrogen" power-required="0.00" >
+	<description>
+
+		In partial oxidation, the methane and other hydrocarbons in natural gas react with a 
+		limited amount of oxygen (typically from air) that is not enough to completely oxidize 
+		the hydrocarbons to carbon dioxide and water. 
+		
+		This process is considered more cost-effective than SMR and Dry Reforming Methane (DMR) because it requires 
+		neither catalyst nor external heat, both of which significantly contribute to the 
+		operating costs.
+		
+		With less than the stoichiometric amount of oxygen available, the reaction products 
+		contain primarily hydrogen and carbon monoxide (and nitrogen, if the reaction is 
+		carried out with air rather than pure oxygen), and a relatively small amount of 
+		carbon dioxide and other compounds. 
+		
+		Partial oxidation is an exothermic process—it gives off heat. The process is, 
+		typically, much faster than steam reforming and requires a smaller reactor vessel. 
+		As can be seen in chemical reactions of partial oxidation, this process initially 
+		produces less hydrogen per unit of the input fuel than is obtained by steam reforming 
+		of the same fuel.
+		
+		Among the supports, alumina (Al₂O₃) and ceria (CeO₂) have shown the best performance due 
+		to their high surface area, which promotes high nickel dispersion, and the presence of 
+		oxygen vacancies in CeO₂ that enhance oxygen adsorption and mobility, aiding in 
+		carbon removal.
+		
+ 		Nickel supported on lanthanum oxide (La₂O₃) also exhibits low carbon deposition, 
+ 		attributed to the formation of lanthanum oxycarbonate (La₂O₂CO₃), which gasifies 
+ 		carbon deposits.
+ 		
+		For improved stability and activity, catalysts like Ni/MgO, where a cubic (Mg, Ni)O 
+		solid solution forms, offer high stability against reduction at high temperatures.
+		
+		CH4 + .5O2 -> CO + 2H2 + heat  at 298K. -35 kJ/mol
+		 16    16      28    4  
+		 
+	</description>
+
+		<input resource="Methane" rate="160.0" />
+		<input resource="Oxygen" rate="160.0"  />				
+		
+		<output resource="Carbon monoxide" rate="280.0" />
+		<output resource="Hydrogen" rate="40.0"  />
+	</process> "Catalytic Partial Oxidation of Methane (CPOM) to Produce Hydrogen" -->
+
+ <!-- 
+	<process name="Oxidative Dry Reforming of Methane (ODRM) to Produce Hydrogen" power-required="0.00" >
+	<description>
+
+		This process maintains high methane conversion by integrating exothermic partial oxidation of 
+		methane (POM), which provides the necessary heat for the endothermic dry reforming reaction,
+		thereby enabling self-heating and avoiding the need for an external energy source.
+		 
+		Studies have shown that catalysts like rhodium and ruthenium supported on mixed magnesium 
+		and aluminum oxides achieve steady methane conversion of up to 95% under ODRM conditions, 
+		with stable H₂/CO ratios close to 2, which is favorable for downstream fuel synthesis.
+		
+		The balanced addition of oxygen helps prevent catalyst deactivation by coke formation, 
+		a common issue in pure dry reforming, while maintaining high conversion efficiency.
+		
+		CH4 + CO2  + .5O2 -> 2CO + 2H2 
+		 16    44     16     56     4 
+		 
+	</description>
+
+		<input resource="Methane" rate="160.0" />
+		<input resource="Carbon dioxide" rate="440.0" />
+		<input resource="Oxygen" rate="160.0"  />				
+		
+		<output resource="Carbon monoxide" rate="560.0" />
+		<output resource="Hydrogen" rate="40.0"  />
+	</process> "Oxidative Dry Reforming of Methane (ODRM) to Produce Hydrogen" -->
+	
+	<process name="Steam Methane Reforming (SMR) to Produce Hydrogen" power-required="0.01" >
+	<description>
+
+		Methane steam reforming (MSR) is defined as a process that reacts methane with steam 
+		to produce hydrogen and carbon monoxide as a by-product, representing the most 
+		cost-efficient method for hydrogen production from fossil fuels. It operates 
+		at high temperatures and pressures, and is responsible for over 95% of the 
+		hydrogen supply in the United States.
+		
+		CH4 + H2O -> CO + 2H2	Endothermic process; 800 - 900C;  at 15–50 bar, 251 kJ/mol 
+		 16    18     28    4  
+		 
+		Water Gas Shift reaction  Exothermic reaction; -41.2 kJ/mol  
+		CO + H2O -> CO2 + H2		
+		28   18     44    2  
+
+
+		In overall,
+
+		CH4 + 2H2O -> CO2 + 3H2		206 kJ/mol
+		 16    36      44    6  
+
+
+	</description>
+		<input resource="Methane" rate="160.0" />
+		<input resource="Water" rate="360.0"  />				
+		
+		<output resource="Carbon dioxide" rate="440.0" />
+		<output resource="Hydrogen" rate="60.0"  />
+	</process> <!-- "Steam Methane Reforming (SMR) to Produce Hydrogen" -->
+
+	<process name="Dry Methane Reforming (DMR) to Produce Hydrogen" power-required="0.01" >
+	<description>
+
+		Dry methane reforming (DMR) or CO2 reforming is the third common form of reforming process.
+		
+		Optimizing DRM for lower energy consumption involves using catalysts that enable self-heating 
+		(e.g., via oxidative reforming), designing highly active and stable catalysts with interfacial
+		sites (e.g., Ir/CeO₂₋ₓ) or promoters (e.g., Li in Ni–Al LDH), and integrating process 
+		innovations like pressurized operation and CO₂ recycling to minimize external energy demands.
+
+		CH4 + CO2 -> 2CO + 2H2		; 247 kJ/mol
+		 16   44      56    4  
+
+
+	</description>
+		<input resource="Methane" rate="160.0" />
+		<input resource="Carbon dioxide" rate="440.0" ambient="true"  />				
+		
+		<output resource="Carbon monoxide" rate="560.0" />
+		<output resource="Hydrogen" rate="40.0"  />
+	</process> <!-- "Dry Methane Reforming (DMR) to Produce Hydrogen" -->
+
+
+	<process name="Water-Gas Shift Reaction (WGSR)" power-required="0.0" >
+	<description>
+		
+		CO + H2O -> CO2 + H2 ;  Exothermic reaction; -41.2 kJ/mol
+		28   18     44    2
+		
+		This reaction is a key step in hydrogen production, particularly 
+		in conjunction with steam reforming of methane or other hydrocarbons, 
+		where carbon monoxide is a primary product that is then converted to 
+		hydrogen via the WGSR.
+		
+		The reaction is moderately exothermic and its equilibrium favors higher 
+		hydrogen production at lower temperatures, leading to the use of 
+		high-temperature shift (HTS) and low-temperature shift (LTS) reactors 
+		in industrial applications.
+		
+	</description>
+
+		<input resource="carbon monoxide" rate="28" ambient="false" />
+		<input resource="water" rate="18.0"  />				
+		
+		<output resource="carbon dioxide" rate="44.0" />
+		<output resource="hydrogen" rate="2.0"  />
+	</process> <!-- "Water-Gas Shift Reaction (WGSR)" -->
+
+
+
+	<process name="Oxygen Generation System (OGS)" power-required="0.625" defaultOn="true">
+	<description> 
+	
+		Oxygen Generation System can split water into H2 and O2.
+	
+		NASA's Oxygen Generation System is designed to generate
+		oxygen from 5 to 20 pounds (2.3 to 9 kg) of oxygen per day
+		during continuous operation and a normal rate of 12 pounds
+		(5.4 kg) of oxygen per day during cyclic operation.
+	
+		The Oxygen Generation System will accommodate the testing
+		of an experimental Carbon Dioxide Reduction Assembly
+		(CReA). Once deployed, the reduction assembly will cause
+		hydrogen produced by the Oxygen Generation Assembly to
+		react with carbon dioxide removed from the cabin atmosphere
+		to produce water and methane.
+	
+		It uses 1312 W of power.
+	
+		Available water electrolysis units using solid polymer
+		electrolytes are highly efficient (>90%) and extremely rugged,
+		as they have been designed for nuclear submarine use with
+		specifications that include resistance to depth charge attack,
+		per Zubrin, et al.
+	
+		During normal operations on the ISS, approximately 23 L water
+		per day is used by the OGS with a constant current of 50 ampere
+		to each electrolytic cell in the OGS system
+	
+		2H2O -> 2H2 + O2
+	
+		2H2O : 36 g/mol
+		2H2 : 4 g/mol
+		O2 : 32 g/mol
+	
+		50A * 120 = 6kW
+	
+		We assume by use of nanosheet and synthesizing appropriate electrocatalyst, 
+		a much lower power usage of 31.25W system is required for splitting 18 kg water 
+		into 2 kg H2 and 16 kg O2.
+		
+		Reference: 
+		1. https://www.nasa.gov/centers/marshall/pdf/104840main_eclss.pdf
+		2. https://www.quora.com/How-is-oxygen-generated-on-the-ISS
+		3. https://www.nasa.gov/pdf/570243main_OxygenGen_CHEM_ST.pdf
+		4. https://www.sciencedaily.com/releases/2021/03/210317141722.htm
+		5. https://www.researchgate.net/publication/265608781_Decoupled_catalytic_hydrogen_evolution_from_a_molecular_metal_oxide_redox_mediator_in_water_splitting
+		
+	</description> 
+		<input resource="water" rate="360" />
+		<!-- it needs 2.5 kW -->
+		<output resource="hydrogen" rate="40" />
+		<output resource="oxygen" rate="320"  />
+	</process> <!-- Oxygen Generator System (OGS) -->
+	
+	<process name="Low Temperature Plasma CO2 Decomposition" power-required="0.01" defaultOn="true">
+		<description> 
+			The atmosphere is mainly CO2, so there is no need to capture it and plasma can 
+			be ignited in ambient Martian atmosphere. 
+			
+			The traces of Ar and N2 present can only help: argon aids shaping the electron 
+			energy distribution to higher energies, contributing to an increased efficiency
+			of this decomposition process.
+			
+			The pressure on Mars – of 600 Pa (4.5 Torr), about 150 times lower than on Earth 
+			– is close to the ideal for advantageous plasma operation, so there is no need 
+			to use vacuum pumps or compressors on the first steps of the process.
+			
+			See https://www.europhysicsnews.org/articles/epn/pdf/2018/03/epn2018493p15.pdf
+		</description>
+		<input resource="carbon dioxide" rate="70.4" ambient="true" />
+		
+		<output resource="carbon monoxide" rate="22.4" />
+		<output resource="oxygen" rate="25.6" />
+	</process> <!-- "Low Temperature Plasma CO2 Decomposition" -->
+	
+	     
+	<process name="Atmospheric Processing" power-required="0.02" >
+		<description> 
+		 
+		 It is likely that all the nitrogen obtain through atmospheric processing will 
+	     become part of the colony atmosphere, at least in the early stages. 
+	     
+	     If the nitrogen is obtained though CO2 compression to 520 kPa (about 5 atmosphere,
+	     or 75 psi) it can remain a liquid if cooled to about -170°C. To keep the nitrogen
+	     liquid at a room temperature of 23°C requires a pressure of about 1500 kPa (220 psi).
+	     
+	     This can be easily maintained in small pressure vessels but requires extremely 
+	     strong and heavy vessels in large volumes.
+	
+	     https://marspedia.org/Atmospheric_processing 
+	     https://marspedia.org/Nitrogen 
+		 
+		</description> 			
+		<input resource="carbon dioxide" rate="100.0" ambient="true" />
+		
+		<output resource="nitrogen" rate="2.7"  />	
+		<output resource="oxygen" rate="0.161"  />	
+		<output resource="argon" rate="1.94"  />
+		<output resource="water" rate="0.03"  />
+		<output resource="carbon monoxide" rate=".058"  />
+		<output resource="carbon dioxide" rate="95.111" />
+	</process> <!-- "Atmospheric Processing" -->
+	
+
+
+	<process name="Methanol Synthesis with Syngas" power-required="0.1" >
+	<description>
+		Synthesis gas (or Syngas) is used to produce methanol as in the following reaction :
+				CO2 + 3 H2 -> H2O + CH3OH	
+			   44 g,  6 g    18 g,   32 g			
+		
+		Assume the use of heterogeneous catalysts such as Cu/ZnO 
+
+		Assume 1000 kWh per 1000 kg, or 1 kWh per 1 kg, 50 kWh per 50 kg
+		Power required: 50 kWh / 24 h = ~2 kW
+		
+		Assume catalysts are used to reduce power usage by 20x
+		
+		Reference: 
+		1. https://www.essentialchemicalindustry.org/chemicals/methanol.html
+		2. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6926878/
+		3. https://www.biogreen-energy.com/syngas
+	</description>
+		<!-- Note: May set ambient to false to reduce the probability of 
+				overusing hydrogen to produce methanol -->
+		<input resource="carbon dioxide" rate="44" ambient="true" />
+		<input resource="hydrogen" rate="6.0"  />				
+		
+		<output resource="water" rate="18.0"  />
+		<output resource="methanol" rate="32.0"  />
+	</process> <!-- "Methanol Synthesis with Syngas" -->
+
+
+	<process name="Excavate Ice" power-required="0.5" >
+	<description>
+		This process works hand in hand with the "Melt Ice" resource process.
+		
+		Assumptions :		
+		1. Drilling has been performed at specific site and reach subsurface water ice layer.
+		2. Reinforced well casing has been installed on the side of the well to prevent 
+		   contamination and blockages.
+		3. A robotic excavator is below ground to further locate ice pockets and 
+		   and excavate chunks of ice. It melts the subsurface ice.
+		4. A mud pump would pump the liquid water back to the surface through the well.
+		5. An insulated reservoir tank at the well will feed and distribute the water 
+		   to the settlement.
+		     
+	</description>
+	
+		<input resource="hydraulic fluid" rate="0.1" />			
+		<input resource="rock salt" rate="1.0" />
+		
+		<output resource="ice" rate="4000.0"  />
+		
+	</process> <!-- "Excavate Ice" -->
+	
+	<process name="Melt Ice" power-required="0.18" >
+		<description> This process melts permafrost ice into brine water 
+		
+		a.	Specific heat capacity of ice is 2.09 (or 2.108) J/g/C			
+			e.g. For 1 mol of ice, from -25 C to 0 C
+			      = 18 g * 2.09 * (0 -(-25)) = 0.941 kJ	
+			      
+			e.g. For 1 kg ice from -30 C to 0C :
+			     Q = m * c * dT = 1 kg * 2.108 kJ / kg / C * 30C = 63.24 kJ
+			     	      	
+				
+		b.	At 0 degree C, to transition from ice to liquid, it takes a total of 6.02 kJ/mol			
+			Specific heat capacity of water is 4.18 J/g/C	
+			
+			Latent heat of fusion of water : 334 kJ/kg ( or 80 calories per gram)
+			
+		c.  Combining (a) and (b) above,
+		    
+		    For 1 kg ice, 63.24	kJ + 334 kJ = 397.24 kJ ~ 400 kJ
+		    If heating it for a whole sol (1000 millsol), the power req :
+		          400 kJ / 88.7 millisols per sec / 1000 millisols = 4.5 W
+		          
+		    To melt 400 kg of ice from - 30C in 1000 millisol: 
+		           4.5 W  * 400 = 1.8 kW
+							
+			See "Water and Brines on Mars: Current Evidence and 
+			Implications for MSL", 2013	
+												
+			Notes: 
+			1. May consider using vacuum chamber, microwaving, or field effects, 
+			electrocatalysis, exposing to warmer temperature outside, etc. to 
+			reduce power usage of ice melting by ~10-fold.	
+			2. Exposing ice sunlight is the most economic way of melting ice.
+			3. Ice melts when outside temperature is above zero deg Celsius 
+				 
+		</description>
+		<input resource="ice" rate="400.0"  />
+		
+		<output resource="brine water" rate="380.0"  />
+		<output resource="regolith" rate="15.0"  />
+		<!-- Amount of rock salt or Halite is arbitrary. Need more research -->
+		<output resource="rock salt" rate="5.0"  />
+	</process>
+
+
+	<process name="Filter Brine Water" power-required="0.01" >
+		<description> 
+			Removing perchlorate from a Martian settlement's water supply can be done 
+			in a number of ways. Methods to remove perchlorates from water include 
+			reverse osmosis membranes, TSSE, biological remediation or 
+			photochemically via UV light on a metallic iron catalyst.
+			See https://marspedia.org/Perchlorate
+		</description>
+		<input resource="brine water" rate="400.0"  />
+		
+		<output resource="water" rate="384.0"  />
+		<output resource="sand" rate="1.8"  />
+		<output resource="magnesium" rate="0.9"  />	
+		<output resource="manganese" rate="0.1"  />	
+		<output resource="calcium" rate="0.5"  />			
+		<output resource="calcium carbonate" rate="1.5"  />
+		<output resource="lime" rate="1.0"  />	
+		<output resource="perchlorate" rate="0.4"  />	
+		<output resource="aluminum oxide" rate="0.8"  />	
+		<output resource="iron oxide" rate="1.6"  />	
+		<output resource="nickel" rate="0.5"  />	
+		<output resource="silica" rate="1.2"  />	
+		<output resource="sulfur" rate="0.2" />	
+		<output resource="copper" rate="1.0" />	
+				
+		<output resource="hematite" rate="1.5"  />	
+		<output resource="goethite" rate="1.5"  />	
+		<output resource="gypsum" rate="1.5"  />			
+				
+	</process>
+
+
+	<process name="Convert Regolith to Ores with Sand" power-required="0.02" >
+		<description> A Mars Aqueous Regolith Extract (MARE) was prepared from the Phoenix
+		analogue regolith and analyzed by ion chromatography. The MARE contained (mg/L) 
+		Nitrogen-containing species NO3- has 773 and NO2- has 6.9 
+		</description>
+		<input resource="regolith" rate="100.0" />
+
+		<output resource="basaltic" rate="10.0" />
+		<output resource="smectite" rate="10.0" />
+		<output resource="allophane" rate="10.0" />
+		<output resource="akaganeite" rate="10.0" />
+		<output resource="bassanite" rate="10.0" />
+		<output resource="gypsum" rate="30.0" />
+		
+		<output resource="rock samples" rate="5.0" />
+		<output resource="sand" rate="15.0" />
+	</process>
+
+
+	<process name="Extract Nitrogen Compounds from Regolith" power-required="0.005" >
+		<description> 
+			According to https://newatlas.com/nitrates-nitrogen-mars-curiosity-nasa/36700/, 
+			Nitrates are widespread on Mars with concentrations of 1,100 parts per million at the drill sites.
+			
+			According to https://marspedia.org/Nitrogen, 
+			Nitrates with a concentration of ~100 ppm have been found in typical Martian soils.
+			Curiosity found Nitrate deposits in Gale Crater from ~110 to ~300 ppm. In Mudstone deposits, 
+			this value ranged from 300 to 1,100 ppm. They speculate that these compounds were formed from thermal shock from impacts, or from lightning.
+		</description> 
+		<input resource="regolith" rate="25.0"  />
+		
+		<output resource="nitrate" rate="0.5"  />
+		<output resource="nitrite" rate="0.5"  />
+		<output resource="nitrogen" rate="0.5"  />
+		<output resource="ammonia" rate="0.5"  />
+		<output resource="argon" rate="0.5"  />
+		<output resource="sand" rate="20"  />
+		<output resource="iron powder" rate="1.0" />	
+		<output resource="iron oxide" rate="1.5" />
+	</process>
+
+
+	<process name="Process Regolith-B rich in Poly-Hydrated Sulfate"
+		power-required="0.03" >
+		<description>
+			Gypsum is CaSO&lt;sub&gt;4&lt;/sub&gt; * 2H&lt;sub&gt;2&lt;/sub&gt;O.
+
+			This is Case B (Deposit Type : Poly-hydrated) in NASA Mars ISRU Water Study,
+					40% gypsum;
+					3% allophane;
+					3% akaganeite;
+					3% smectite;
+		</description>
+			<input resource="regolith-B" rate="50.0"  />
+			
+			<output resource="gypsum" rate="20.0"  />
+			<output resource="allophane" rate="1.5"  />
+			<output resource="akaganeite" rate="1.5"  />
+			<output resource="smectite" rate="1.5"  />
+			<output resource="sand" rate="20.0"  />
+	</process>
+
+	<process name="Process Regolith-C rich in Phyllo-Silicate" power-required="0.03" >
+		<description>
+			This is Case C (Deposit Type : Clay) in NASA Mars ISRU Water Study,
+					40% smectite;
+					3% allophane;
+					3% akaganeite;
+					3% bassanite;
+		</description>
+			<input resource="regolith-C" rate="50.0" />
+			
+			<output resource="smectite" rate="20.0" />
+			<output resource="allophane" rate="1.5" />
+			<output resource="akaganeite" rate="1.5" />
+			<output resource="bassanite" rate="1.5" />
+			<output resource="sand" rate="20.0" />
+	</process>
+
+
+	<process name="Process Regolith-D rich in Basaltic" power-required="0.03" >
+		<description>
+			This is Case D (Deposit Type : typical regolith) in NASA Mars ISRU Water Study,
+					23.5% basaltic;
+					3% allophane;
+					3% akaganeite;
+					3% bassanite;
+					3% smectite;
+		</description>
+			<input resource="regolith-D" rate ="50.0" />
+			
+			<output resource="basaltic" rate="11.75" />
+			<output resource="smectite" rate="1.5" />
+			<output resource="allophane" rate="1.5" />
+			<output resource="akaganeite" rate="1.5" />
+			<output resource="bassanite" rate="1.5" />
+			<output resource="sand" rate="25.0" />
+			<!-- According to http://canada.marssociety.org/winnipeg/soil.html
+			regolith is estimated to contain 11.3% sodium bicarbonate (baking
+			soda) and 1.15% of sodium chloride (table salt) -->
+			<output resource="baking soda" rate="4.0" />
+			<output resource="table salt" rate="0.4" />
+	</process>
+
+	<!-- https://geologyscience.com/minerals/hematite/ -->
+	<process name="Do Hematite smelting" power-required="0.1" >
+		<input resource="hematite" rate="25.0"  />
+		<input resource="carbon monoxide" rate="0.5" />
+		
+		<output resource="iron powder" rate="6.0" />
+		<output resource="iron oxide" rate="15.0" />
+		<output resource="nickel" rate="2.0" />
+		<output resource="manganese" rate="2.0" />						
+		<output resource="carbon dioxide" rate=".5" />
+	</process>
+
+	<process name="Do Magnetite smelting" power-required="0.1" >
+			<input resource="magnetite" rate="25.0" />
+			<input resource="carbon monoxide" rate=".5" />
+			
+			<output resource="iron powder" rate="1.0" />
+			<output resource="iron oxide" rate="18.0" />	
+			<output resource="nickel" rate="2.0" />							
+			<output resource="oxygen" rate="2.0" />
+			<output resource="titanium" rate="2.0" />	
+			<output resource="carbon dioxide" rate=".5"/>			
+	</process>
+
+	<!-- https://geologyscience.com/minerals/goethite/ -->
+	<process name="Do Goethite smelting" power-required="0.1" >
+			<input resource="goethite" rate="50.0" />
+			<input resource="carbon monoxide" rate=".5" />
+			
+			<output resource="iron powder" rate="2.0" />
+			<output resource="iron oxide" rate="18.0" />	
+			<output resource="iron hydroxide" rate="5.0" />											
+			<output resource="magnesium" rate="2.0" />						
+			<output resource="carbon dioxide" rate="1.0" />
+	</process>
+
+	<process name="Do Olivine smelting" power-required="0.1" >
+			<input resource="olivine" rate="50.0" />
+			<input resource="carbon monoxide" rate="32.5" />
+			
+			<output resource="magnesium" rate="11.6" />
+			<output resource="iron powder" rate="11.6" />
+			<output resource="silicon" rate="8.1" />
+			<output resource="carbon dioxide" rate="51.2" />
+	</process>
+
+	<process name="Do Magnesite smelting" power-required="0.1" >
+			<input resource="magnesite" rate="50.0" />
+			<input resource="carbon monoxide" rate="16.6" />
+			
+			<output resource="magnesium" rate="14.4" />
+			<output resource="carbon dioxide" rate="52.2" />
+			<output resource="silica" rate="5" />
+	</process>
+
+	<process name="Do Kamacite smelting" power-required="0.1" >
+			<input resource="kamacite" rate="50.0" />
+			
+			<output resource="iron powder" rate="45.0" />
+			<!-- kamacite is a naturally occurring, homogeneous 
+			 mixture of iron and nickel that forms under 
+			 specific extraterrestrial condition -->
+			<output resource="nickel" rate="5.0" />
+	</process>
+
+
+	<process name="Do Chalcopyrite smelting" power-required="0.1" >
+			<input resource="chalcopyrite" rate="50.0" />
+			
+			<output resource="copper" rate="17.3" />
+			<output resource="iron powder" rate="15.2" />
+			<output resource="sulfur" rate="17.5" />
+	</process>
+
+	<process name="Do Malachite smelting" power-required="0.1" >
+			<input resource="malachite" rate="50.0" />
+			<input resource="carbon" rate="2.7" />
+			
+			<output resource="copper" rate="28.7" />
+			<output resource="carbon dioxide" rate="19.9" />
+			<!--output resource="hydroxide" rate="  "  /-->
+			<output resource="brine water" rate="4.1" />
+	</process>
+	
+	<process name="Do Pyroxene smelting" power-required="0.1" >
+			<input resource="pyroxene" rate="50.0" />
+		
+			<output resource="calcium" rate="2" />	
+			<output resource="sodium oxide" rate="2" />
+			<output resource="iron powder" rate="2" />	
+			<output resource="magnesium" rate="2" />
+
+			<output resource="Chromium" rate="2" />
+			<output resource="Lithium" rate="2" />	
+			<output resource="Manganese" rate="2" />	
+					
+			<output resource="titanium" rate="2" />	
+			<output resource="zinc" rate="2" />
+			<output resource="scandium" rate="2" />	
+			<output resource="vanadium" rate="2" />	
+			
+			<output resource="aluminum" rate="2" />		
+			<output resource="silicon" rate="4" />				
+			
+			<output resource="oxygen" rate="22" />
+	</process>
+	
+	<process name="Do Sylvite smelting" power-required="0.1" >
+			<input resource="sylvite" rate="50.0" />
+			
+			<output resource="potassium" rate="26.2" />
+			<output resource="chlorine" rate="23.8" />
+	</process>
+
+	<process name="Do Taenite smelting" power-required="0.1" >
+			<input resource="taenite" rate="50.0" />
+			
+			<output resource="iron powder" rate="20.0" />
+			<output resource="nickel" rate="30.0" />
+	</process>
+	
+	<process name="Process Basaltic deposits" power-required="0.1" >
+		<description>
+			http://www.psrd.hawaii.edu/May09/Mars.Basaltic.Crust.html
+		</description>
+			<input resource="basaltic" rate="50.0" />
+			
+			<output resource="aluminum oxide" rate="6.0" />
+			<output resource="magnesium" rate="6.0" />
+			<output resource="manganese" rate="2.0" />						
+			<output resource="sodium oxide" rate="5.0" />
+			<output resource="potassium" rate="3.0" />
+			<output resource="titanium" rate="3.0" />
+			<output resource="iron oxide" rate="3.0" />
+			<output resource="nickel" rate="2.0" />
+			<output resource="sand" rate="5.0" />
+			<output resource="brine water" rate="10.0" />
+	</process>
+
+	<process name="Process Smectite deposits" power-required="0.1" >
+			<input resource="smectite" rate="50.0" />
+			
+			<output resource="aluminum oxide" rate="9.0" />
+			<output resource="lithium" rate="0.5" />
+			<output resource="magnesium" rate="4.0" />
+			<output resource="manganese" rate="2.0" />						
+			<output resource="sodium oxide" rate="2.0" />
+			<output resource="potassium" rate="2.0" />
+			<output resource="calcium" rate="4.0" />
+			<output resource="iron oxide" rate="2.0" />
+			<output resource="rock salt" rate="4.0" />
+			<output resource="sand" rate="10.0" />
+			<output resource="brine water" rate="2.0" />
+	</process>
+
+	<process name="Process Allophane deposits" power-required="0.1" >
+			<input resource="allophane" rate="50.0" />
+			
+			<output resource="aluminum oxide" rate="37.0" />
+			<output resource="silica" rate="1.0" />
+			<!-- May have some nickel -->
+			<output resource="nickel" rate="1.0" />
+			<output resource="sand" rate="6.0" />
+			<output resource="brine water" rate="5.0" />
+	</process>
+
+	<!-- http://www.handbookofmineralogy.org/pdfs/akaganeite.pdf 
+		https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2018JE005630 -->
+	<process name="Process Akaganeite deposits" power-required="0.1" >
+			<input resource="akaganeite" rate="50.0" />
+			
+			<output resource="iron powder" rate="3.0" />
+			<output resource="iron oxide" rate="23.0" />					
+			<output resource="iron hydroxide" rate="10.0" />
+			<output resource="iron chloride" rate="2.0" />
+			<!-- Akaganeite (β-FeOOH): Can incorporate zinc up to 10 wt.% during 
+			 formation in chloride-rich environments, with Zn substituting 
+			 for Fe in the structure. -->
+			<output resource="zinc" rate="3.0" />
+			<output resource="manganese" rate="0.2" />	
+			<output resource="potash lye" rate="0.1" />
+			<output resource="brine water" rate="1.0" />
+	</process>
+			
+	<process name="Process Bassanite deposits" power-required="0.1" >
+		<input resource="bassanite" rate="50.0" />
+			
+		<output resource="gypsum" rate="45.0" />
+		<output resource="calcium sulfate" rate="3.0" />
+		<output resource="brine water" rate="2.0" />
+	</process>
+		
+	<process name="Make glass from sand" power-required="0.1" >
+		<description> Assume Mars sand has most (if not all) ingredients for making glass.
+			Typically, manufactured glass contains around 15% sodium oxide, 70% silica
+			(silicon dioxide) and 9% lime (calcium oxide). The sodium carbonate (soda) or sodium oxide
+			serves as a flux to lower the temperature at which the silica melts.
+			https://en.wikipedia.org/wiki/Sodium_oxide
+			https://www.nasa.gov/sites/default/files/atoms/files/isru-isfr-mrs-nr.pdf
+		</description>
+		<input resource="sand" rate="45" />					
+		<input resource="sodium oxide" rate="2.0" />
+		<input resource="lime" rate="1.0" />
+
+		<output resource="carbon dioxide" rate="1.5" />
+		<output resource="aluminum oxide" rate="3.5" />
+		<output resource="iron powder" rate="1.0" />	
+		<output resource="iron oxide" rate="3.5" />			
+		<output resource="sulfur" rate="4.0" />					
+		<output resource="silica" rate="13.0" />
+		<output resource="silicon" rate="2.0" />
+		<output resource="glass" rate="21.5" />	
+	</process>
+
+	<!-- Process for reducing gypsum to calcium carbonate using carbon. -->
+	<!-- Wrapping two processes: -->
+	<!-- CaSO4*2H2O (gypsum) + 2C -> CaS + 2CO2 + 2H2O -->
+	<!-- CaS + H2O + CO2 -> CaCO3 (calcium carbonate) + H2S -->
+	<!-- Note: ignoring hydrogen sulfide as waste for now. -->
+	<!--process name="Reduce Gypsum to Calcium Carbonate with Carbon" power-required="0.03" >
+		<description>
+			Reducing gypsum to calcium carbonate using carbon. Gypsum on earth has up to 8.6 % water. Wrapping two processes below:
+			CaSO&lt;sub&gt;4&lt;/sub&gt; * 2H&lt;sub&gt;2&lt;/sub&gt;O (gypsum) + 2C -> CaS + 2CO&lt;sub&gt;2&lt;/sub&gt; + 2H&lt;sub&gt;2&lt;/sub&gt;O
+			CaS + H&lt;sub&gt;2&lt;/sub&gt;O + CO&lt;sub&gt;2&lt;/sub&gt; -> CaCO&lt;sub&gt;3&lt;/sub&gt; (calcium carbonate) + H&lt;sub&gt;2&lt;/sub&gt;S
+			Note: ignoring hydrogen sulfide as waste for now. 
+		</description>
+		<input resource="gypsum" rate="50.0" />
+		<input resource="carbon" rate="7.0" />
+
+		<output resource="lime" rate="2" />
+		<output resource="calcium sulfate" rate="2.0" />
+		<output resource="calcium carbonate" rate="25.0" />
+		<output resource="carbon dioxide" rate="12.7" />
+		<output resource="brine water" rate="5.2" />
+	</process-->
+
+	<process name="Reduce Gypsum with Carbon Monoxide" power-required="0.03" >
+		<description>
+			Process for reducing gypsum to calcium carbonate using carbon monoxide.
+			Wrapping two processes:
+			CaSO4*2H2O (gypsum) + 4CO -> CaS + 4CO2 + 2H2O
+			CaS + H2O + CO2 -> CaCO3 (calcium carbonate) + H2S
+			Note: ignoring hydrogen sulfide as waste for now.
+		</description>
+		<input resource="gypsum" rate="50.0" />
+		<input resource="carbon monoxide" rate="32.5" />
+		
+		<output resource="lime" rate="2.0" />
+		<output resource="sulfur" rate="1.0" />
+		<output resource="calcium sulfate" rate="2.0" />
+		<output resource="calcium carbonate" rate="24.0" />
+		<output resource="carbon dioxide" rate="38.1" />
+		<output resource="brine water" rate="5.2" />
+	</process>
+
+
+	<process name="Reduce Gypsum with Hydrogen" power-required="0.03" >
+		<description>
+			Process for reducing gypsum to calcium carbonate using hydrogen.
+			Wrapping two processes:
+			CaSO4*2H2O (gypsum) + 4H2 -> CaS + 6H2O
+			CaS + H2O + CO2 -> CaCO3 (calcium carbonate) + H2S
+			Note: ignoring hydrogen sulfide as waste for now.
+		</description>					
+		<input resource="gypsum" rate="50.0" />
+		<input resource="hydrogen" rate="2.3" />
+		<input resource="carbon dioxide" rate="12.8" ambient="true" />
+
+		<output resource="lime" rate="2.0" />
+		<output resource="sulfur" rate="1.0" />
+		<output resource="calcium sulfate" rate="2.0" />					
+		<output resource="calcium carbonate" rate="24.0" />
+		<output resource="brine water" rate="26.0" />
+	</process>
+			
+	<process name="Make Gypsum Plaster via Calcination" power-required="0.02" >
+		<description>
+			Calcination is a controlled heating process for making gypsum plaster.
+			The core ingredient of gypsum plaster is gypsum rock–hydrous calcium sulfate, 
+			which has a water content of about 20% in chemical combination.
+		</description>					
+		<input resource="gypsum" rate="6.0" />
+
+		<output resource="lime" rate="2.0" />
+		<output resource="gypsum plaster" rate="3.0" />
+		<output resource="brine water" rate="1.0" />
+	</process>
+					
+	<process name="Make quartz from silica" power-required="0.05" >
+		<input resource="silica" rate="45.0" />
+		<input resource="calcium carbonate" rate="1.0" />
+		<input resource="sodium carbonate" rate="1.0" />
+		
+		<output resource="quartz" rate="40.0" />
+	</process>
+
+
+	<process name="Make soda from sodium oxide" power-required=".03" >
+		<description>
+			Soda is sodium carbonate. That is a salt. Sodium exists in Martian regolith as an
+			oxide or super oxide and can be converted into soda. Dissolve the sodium oxide
+			in water, then bubble carbon dioxide through the water. Oxygen will be released and soda created.
+			Boil down the result to extract the water and you have soda.
+			
+			NaCl: 58.44 g/mol
+			Na: 23 g/mol
+			Cl: 35.44 g/mol
+			Na2CO3: 106 g/mol
+			CO2: 44 g/mol
+			
+			Alternatively, 
+			1. Labnac Process: Another method for producing sodium carbonate is the Labnac process, which involves the reaction of sodium chloride (NaCl) with ammonia (NH3) and carbon dioxide (CO2). This process is similar to the Solvay process but uses a different sequence of reactions:
+			2. Ammoniation: Sodium chloride (NaCl) is dissolved in water and mixed with ammonia (NH3) to form sodium ammonium chloride (NaNH4Cl).
+			3. Carbonation: Carbon dioxide (CO2) is bubbled through the solution to convert sodium ammonium chloride to sodium hydrogen carbonate (NaHCO3) and ammonium chloride (NH4Cl).
+			4. Calcination: The resulting precipitate is filtered, washed, and then calcined (heated) to produce anhydrous sodium carbonate (Na2CO3).
+			
+		</description>	
+		<input resource="sodium oxide" rate="11.688" />
+		<input resource="water" rate="1.8" />	
+		<input resource="carbon dioxide" rate="4.4" ambient="true" />
+
+		<output resource="sodium carbonate" rate="10.6" />
+	</process>
+
+	<process name="Make cement" power-required=".05" >
+		<input resource="regolith" rate="30.0" />
+		<input resource="gypsum" rate="5.0" />
+		<input resource="calcium carbonate" rate="5.0" />
+		<input resource="aluminum oxide" rate="2.5" />
+		<input resource="iron oxide" rate="2.5" />
+		<input resource="silica" rate="5.0" />
+
+		<output resource="cement" rate="50.0" />
+	</process>
+
+<!-- 
+	https://marspedia.org/Concrete
+-->
+
+	<process name="Mix concrete 1" power-required="0.2" >
+		<description>
+	     Use cement as binder to make concrete
+		</description>						
+		<input resource="sand" rate="60.0" />
+		<input resource="cement" rate="34.0" />
+		<input resource="polyethylene" rate="0.5" />
+		<input resource="water" rate="5.0" />		
+
+		<output resource="concrete" rate="100.0" />
+	</process>
+
+	<process name="Mix concrete 2" power-required="0.2" >
+		<description>
+	     Replace water with brine water
+		</description>
+		<input resource="sand" rate="60.0" />
+		<input resource="cement" rate="34.0" />
+		<input resource="polyethylene" rate="0.5" />
+		<input resource="brine water" rate="5.0" />		
+
+		<output resource="concrete" rate="100.0" />
+	</process>
+	
+	<process name="Mix sulfur concrete" power-required="0.2" >
+		<description>
+		Makes sulfur concrete using sulfur as the cement, with sand and regolith as aggregates.	
+		The sulfur concrete making process involves heating sulfur to 240 C, over twice its melting point. 
+		This liquid sulfur is mixed with the abundant Martian soil, then left to cool. 
+		The sulfur and soil bind together to create solid concrete. 	
+		Cement and water, important compounds in normal concrete, are not part of sulfur concrete. 
+		
+		A mixture of 50 percent sulfur and 50 percent Martian soil with a particle size of 1 mm resulted 
+		in a compressive strength of 50 MPa that's twice the regular concrete. 
+		
+		It also had about twice the compressive strength of sulfur concrete made with sand aggregate.
+			
+		1. https://www.fastcompany.com/3055172/why-martian-concrete-might-be-the-best-building-material-in-the-solar-system
+		2. https://www.frontiersin.org/articles/10.3389/fmats.2019.00083/full
+		3. https://www.howden.com/en-us/articles/cement/how-is-cement-made
+		4. https://www.cnet.com/news/concrete-for-mars-shelters-made-from-martian-materials/
+		5. https://phys.org/news/2016-01-martian-concrete-materials-red-planet.html
+		6. [Construction by Contour Crafting using Sulfur Concrete with Planetary Applications](http://utw10945.utweb.utexas.edu/sites/default/files/2015/2015-141-Khoshnevis.pdf)
+		7. https://cen.acs.org/articles/96/i1/build-settlements-Mars-ll-need.html
+		8. https://pubs.acs.org/doi/pdf/10.1021/acscentsci.7b00538
+		9. https://www.technologyreview.com/2016/01/05/109321/materials-scientists-make-martian-concrete/
+		10. https://www.azom.com/news.aspx?newsID=43710
+		11. [This is Concrete, Feb 2019]()https://www.sustainableconcrete.org.uk/MPA-ACP/media/SustainableCon-Media-Library/Pdfs%20-%20Performance%20reports/TIC_innovation_Feb19.pdf)
+		12. [Facile preparation of sulfur polymer cement via low-temperature curing](https://repository.hanyang.ac.kr/bitstream/20.500.11754/112544/1/Facile%20preparation%20of%20sulfur%20polymer%20cement%20via%20lowtemperature%20curing.pdf)
+		13. [Characterization of a sustainable sulfur polymer concrete using activated fillers](https://www.researchgate.net/publication/290653757_Characterization_of_a_sustainable_sulfur_polymer_concrete_using_activated_fillers)
+		14. [A Novel Material for In Situ Construction on Mars: Experiments and Numerical Simulations](https://arxiv.org/abs/1512.05461)
+		15. [A Home Away from Home](https://pubs.acs.org/doi/10.1021/acscentsci.7b00538)
+		</description>
+		<input resource="sulfur" rate="50.0" />
+		<input resource="sand" rate="25.0" />
+		<input resource="regolith" rate="24.0" />
+		<input resource="polyethylene" rate="0.5" />	
+
+		<output resource="concrete" rate="100.0" />
+	</process>
+
+	
+	<process name="Mix limecrete 1" power-required="0.2" >
+		<description>
+	       Same as concrete mixing but using lime in place of cement. 
+		</description>	
+		<input resource="sand" rate="60.0" />
+		<input resource="lime" rate="34.0" />
+		<input resource="polyethylene" rate="0.5" />
+		<input resource="water" rate="5.0" />		
+
+		<output resource="concrete" rate="100.0" />
+	</process>
+
+	<!-- Same as concrete mixing but using lime in place of cement. -->
+	<process name="Mix limecrete 2" power-required="0.2" >
+		<description>
+	     Replace water with brine water
+		</description>	
+		<input resource="sand" rate="60.0" />
+		<input resource="lime" rate="34.0" />
+		<input resource="polyethylene" rate="0.5" />
+		<input resource="brine water" rate="5.0" />		
+
+		<output resource="concrete" rate="100.0" />
+	</process>
+	
+	<process name="Make magnesium-based concrete 1" power-required="0.2" >
+		<description> 
+			Serpentinization : olivine (Mg,Fe)2 + SiO4 produces H2 and Mg(OH)2, 
+			which in terms produce water 
+			
+			Decarbonation : MgCO3 at 670 C gives CO2 and MgO. Use Mg silica hydrate as binder
+
+			63 kg of [(Mg Fe)2 SiO4] + 9 kg of H2O -> 1 kg of H2 + 71 kg * [2 MgO + 2 FeO + SiO2]
+
+			SiO2 - amorphous silica
+			MgO:Si paste - Mg Silicate Hydrate (MSH) binder
+			
+			See 'Constructing Mars: Concrete and Energy Production from Serpentinization Products' 
+			https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2017EA000353 
+		</description>
+		<input resource="olivine" rate="20.0" />
+		<input resource="sand" rate="33.0" />
+		<input resource="magnesium" rate="10.0" />		
+		<input resource="water" rate="9.0"  />
+
+		<output resource="hydrogen" rate="1.0" />
+		<output resource="concrete" rate="71.0" />
+	</process>
+
+	<process name="Make magnesium-based concrete 2" power-required="0.2" >
+		<description> 
+			Replace water with brine water
+		</description>
+		<input resource="olivine" rate="20.0" />
+		<input resource="sand" rate="61.0" />
+		<input resource="magnesium" rate="10.0" />		
+		<input resource="brine water" rate="9.0" />
+
+		<output resource="hydrogen" rate="1.0" />
+		<output resource="concrete" rate="94.0" />
+	</process>
+	
+	<process name="Produce Ethylene" power-required="0.05" >
+		<description>
+			See https://www.sciencedaily.com/releases/2020/09/200917084058.htm
+			
+			2CO2 + 6H2 → C2H4 + 4H2O
+			2*(12+32) , 12 , 24+4 , 18*4
+			88 , 12 , 28 , 72
+			
+			Requires iron catalyst.
+			
+		</description>
+		<input resource="carbon dioxide" rate="88.0" ambient="true" />
+		<input resource="hydrogen" rate="12.0" />
+		<input resource="iron powder" rate="0.04" />
+		
+		<output resource="ethylene" rate="28.0" />
+		<output resource="water" rate="72.0"/>
+		<output resource="iron powder" rate="0.03" />
+	</process>
+
+	<process name="Produce Polyethylene from Ethylene" power-required="0.01" >
+		<description>
+			This reaction occurs when ethylene (aka ethene) is heated 
+			and put under pressure in the presence of a catalyst. 
+			Assuming 10% loss during production.
+		</description>
+		<input resource="ethylene" rate="50" />
+		
+		<output resource="polyethylene" rate="45" />
+	</process>
+
+	<process name="Produce Styrene from Ethylene" power-required=".05" >
+		<description>
+			Wrapping four processes into one as follows: 
+			3C + CaO -> CaC2 + CO
+			CaC2 + H2O -> C2H2 (acetylene) + CaO
+			3C2H2 (acetylene) -> (condensed) C6H6 (benzene)
+			C6H6 (benzene) + C2H4 (ethylene) -> C2H3C6H5 (styrene)
+		</description>	
+		<input resource="carbon" rate="32.12" />
+		<input resource="lime" rate="2.0" />
+		<input resource="water" rate="16.05" />
+		<input resource="ethylene" rate="8.34" />
+		
+		<output resource="carbon monoxide" rate="24.97" />
+		<output resource="styrene" rate="30.95" />
+	</process>
+
+	<process name="Produce Polystyrene from Styrene" power-required=".01" >
+		<input resource="styrene" rate="50" />
+		<output resource="polystyrene" rate="45" />
+	</process>
+
+	<process name="Produce Polypropylene from Propylene" power-required=".01" >
+		<input resource="Propylene" rate="50" />
+		<output resource="Polypropylene" rate="45" />
+	</process>
+	
+	<process name="Methanol-to-olefin (MTO) process" power-required=".05" >
+		<description> The chemical formula of Methanol-to-olefin (MTO) process is 
+			not a single chemical formula.
+			
+			Overall reaction can be represented as:
+			
+			1. Ethylene production: 
+			CH3OH  → C2H4 + 4H2O 
+			(need to balance it)
+			2. Propylene production: 
+			CH3OH → 2C3H6 + 6H2O 
+			(need to balance it)
+						
+			One MTO base case mass distribution produces 39% propylene, 41% ethylene,
+			14% ethane, 5% tailgas  
+			
+		</description>	
+		<input resource="methanol" rate="100" />
+		
+		<output resource="ethane" rate="14" />
+		<output resource="water" rate="5" />
+		<output resource="ethylene" rate="42" />
+		<output resource="propylene" rate="39" />
+	</process> <!-- "Methanol-to-olefin (MTO) process" -->
+
+	<process name="Esterification into BHET" power-required=".05" >
+		<description> 
+		
+		C₈H₆O₄ + C₂H₆O₂ → C10H10O5 + H₂O
+		
+		Terephthalic acid + Ethylene glycol → 
+		166 g/mol           62 g/mol
+		
+		  Bis(2-hydroxyethyl) terephthalate + Water
+			210 g/mol                          18 g/mol
+			
+		Bis(2-hydroxyethyl) terephthalate (BHET) is an organic compound 
+		that serves as a key intermediate in the production of polyethylene 
+		terephthalate (PET) polyester resin.		
+		
+		Esterification: Typically carried out at 250–300 °C under pressure. 
+		Requires ~300–500 kJ/kg of reaction energy, mainly for heating 
+		and water removal.
+		
+		</description>	
+		<input resource="Terephthalic acid" rate="166" />
+		<input resource="Ethylene glycol" rate="62" />
+		
+		<output resource="Bis(2-hydroxyethyl) terephthalate" rate="210" />
+		<output resource="water" rate="18" />
+	</process> <!-- "Esterification into BHET" -->
+
+
+	<process name="Polycondensation of BHET" power-required=".05" >
+		<description> 
+		
+		n C10H10O5 → [C10H8O4]ₙ + n H20 + (some n C₂H₆O₂)
+		
+		This shows n molecules of BHET (C₁₀H₁₀O₅) forming a PET 
+		polymer chain with repeating units (C₁₀H₈O₄) and releasing 
+		n molecules of water (and some ethylene glycol (C₂H₆O₂)) as a byproduct.
+		
+		Polycondensation: Conducted at 270–290 °C under vacuum. 
+		Requires ~800–1200 kJ/kg, with higher energy input due to 
+		vacuum systems and longer residence times.
+		
+		"Esterification into BHET" and "Polycondensation of BHET" 
+		are a part of the "Polyester Resin (PET) Synthesis"
+
+		Most energy is used for heating, inert gas purging, and 
+		vacuum generation, not the reactions themselves.
+		
+		</description>	
+		<input resource="Bis(2-hydroxyethyl) terephthalate" rate="210" />
+		
+		<output resource="Polyester resin" rate="192" />
+		<output resource="water" rate="18" />
+		<!--output resource="Ethylene glycol" rate="62" /-->
+		
+	</process> <!-- "Polycondensation of BHET" -->
+	
+	<process name="Produce Ethylene Glycol" power-required="0.0" >
+		<description> 
+		
+		Ethylene glycol is primarily produced industrially via the hydrolysis of ethylene oxide. 
+		Ethylene oxide reacts with water under high temperature (150–200 °C) and pressure (1–2 MPa), 
+		often with a small amount of acid or base catalyst:
+		
+		Thus, Ethylene glycol is produced from ethylene (ethene), via the intermediate ethylene oxide. 
+			
+		Ethylene oxide is derived from the oxidation of ethylene using oxygen over a silver catalyst. 
+		
+		The reaction is highly exothermic and requires precise control.	
+		
+				C2H4O + H2O → C₂H₆O₂ or  HO−CH2CH2−OH
+				44 g   18 g    62 g
+	
+		</description>	
+		<input resource="Ethylene" rate="88" />
+		<input resource="water" rate="36" />
+			
+		<output resource="Ethylene Glycol" rate="124" />
+
+	</process> <!-- "Produce Ethylene Glycol" -->
+	
+
+	<process name="Bake calcium carbonate to lime" power-required=".1"  >
+		<description>
+			CaCO3 (calcium carbonate) -> CaO (lime) + CO2 
+		</description>	
+		<input resource="calcium carbonate" rate="50.0"  />
+		
+		<output resource="lime" rate="27.8" />
+		<output resource="carbon dioxide" rate="21.8" />
+	</process>
+
+	<!-- NASA's Regenerative ECLSS Water Recovery System (WRS)
+	consumes a time averaged 743 W-hr/hr in overall.
+
+	NASA's Waste Processing Assembly (WPA) removes free gas
+	and solid materials such as hair and lint, before the water
+	goes through a series of multifiltration beds for further
+	purification. It consumes about 320 W-hr/hr aboard ISS.
+
+	https://www.nasa.gov/centers/marshall/pdf/104840main_eclss.pdf
+	https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20090033097.pdf
+
+	It uses the state-of-the-art forward osmosis secondary treatment
+	system (FOST) as well as Synthetic Biological Membrane (SBM)
+	developed at NASA Ames.
+
+	-->
+	<!-- Grey Water Recycling process for cleaning grey water. -->
+	<process name="Grey Water Processor" power-required=".04" >
+		<!-- Input: grey water, oxygen, chlorine  -->
+		<!-- resource: the resource added to the process. -->
+		<!-- See resources.xml -->
+		<!-- rate: the rate (kg/sol) the resource is added -->
+		<!-- ambient: true if resource is freely available from outside -->
+		<!--          false if supplied from settlement's inventory. -->
+
+		<input resource="grey water" rate="40.0" />
+		<!-- Residual requirement for using chlorine in water treatment
+				is 0.25 to 1 mg of Cl gas per kg of water. Thus 40 kg water
+				requires 10 mg of Cl gas -->
+		<input resource="chlorine" rate=".00001" />
+
+		<!-- Output : clean water, solid waste -->
+		<!-- resource: the resource resulting from the process. -->
+		<!-- See resources.xml -->
+		<!-- rate: the rate (kg/sol) the resource is produced -->
+		<!-- ambient: true if resource is vented outside -->
+		<!--          false if kept by settlement's inventory. -->
+		<output resource="nitrogen" rate=".2" />
+		<output resource="nitrite" rate=".2" />
+		<output resource="nitrate" rate=".2" />
+		<output resource="ammonia" rate=".2" />
+		<output resource="phosphorus" rate=".2" />
+		<output resource="water" rate="39" />
+
+	</process>
+
+	<!-- NASA's Urine Processor Assembly (UPA) uses low pressure
+	vacuum distillation process is used to recover water from
+	urine. The entire process occurs within a rotating
+	distillation assembly that compensates for the absence
+	of gravity and therefore aids in the separation of liquids
+	and gases in space.
+
+	UPA is designed to process a nominal load of 9 kg/day
+	(19.8 lbs/day) of wastewater consisting of urine and flush.
+	It uses a time average of 315 W-hr/hr
+
+	Product water from the Urine Processor is combined with
+	all other wastewaters and delivered to the Water Processor
+	for treatment.
+
+	We assume a urine/fece processor capable of daily processsing
+	20 kg black water and generate 17 kg grey water and
+	2 kg of toxic waste. There is a lost of 1 kg of water.
+	-->
+	<process name="Black Water Processor" power-required=".015" >
+		<input resource="black water" rate="10" />
+		<!-- Residual requirement for using chlorine in water treatment
+				is 0.25 to 1 mg of Cl gas per kg of water. Thus 20 kg water
+				requires 20 mg of Cl gas -->
+		<input resource="chlorine" rate=".00001" />
+		<input resource="nitrospira spp" rate="0.02" />
+		<input resource="nitrosomonas spp" rate="0.02" />
+
+		<output resource="grey water" rate="7" />
+		<output resource="solid waste" rate="2" />
+		<output resource="toxic waste" rate="1" />
+	</process>
+
+	<!-- For Waste Management
+	https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20160003882.pdf
+	http://www.nasa.gov/audience/foreducators/k-4/features/F_Recycling_for_Moon.html
+	-->
+	<process name="Solid Waste Management" power-required=".02" >
+		<input resource="solid waste" rate="5" />
+		
+		<output resource="compost" rate="1" />
+		<output resource="toxic waste" rate="1" />
+		<output resource="nitrogen" rate=".5" />
+		<output resource="nitrite" rate=".5" />
+		<output resource="nitrate" rate=".5" />
+		<output resource="phosphorus" rate=".5" />
+		<output resource="potassium" rate=".05" />		
+		<output resource="carbon" rate="1" />
+	</process>				
+
+	<process name="Food Waste Management" power-required=".01" >
+		<input resource="food waste" rate="4" />
+		
+		<output resource="compost" rate=".5" />
+		<output resource="nitrogen" rate=".5" />
+		<output resource="nitrite" rate=".5" />
+		<output resource="nitrate" rate=".5" />
+		<output resource="phosphorus" rate=".5" />
+		<output resource="potassium" rate=".05" />
+		<output resource="carbon" rate="1" />				
+	</process>		
+
+	<process name="Hazard Waste Incineration" power-required=".05" >
+		<input resource="toxic waste" rate="10" />
+		<output resource="carbon" rate="10" />					
+	</process>		
+
+	<process name="Electronic Waste Disposal" power-required=".05" >
+		<input resource="electronic waste" rate="10" />
+		<output resource="carbon" rate="10" />					
+	</process>
+
+	<process name="Soil Generation from Compost" power-required=".01" >
+		<input resource="compost" rate="100" />
+		<output resource="soil" rate="100" />					
+	</process>
+	
+	<process name="Soil Generation from Crop Waste" power-required=".01" >	
+		<input resource="crop waste" rate="100" />
+		<output resource="soil" rate="20" />	
+		<output resource="carbon" rate="80" />				
+	</process>
+	
+
+</process-list>

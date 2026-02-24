@@ -1,0 +1,165 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="settlement.xsd"
+    name="Trading Outpost" default-population="4" description="Base for a trading outpost"
+    number-of-robots="4" sponsor="MS" objective="TRADE_CENTER">
+    
+    <building id="00" type="Outpost Hub" xloc="0.0" yloc="0.0"
+        facing="0.0">
+        <connection-list>
+            <connection id="1" xloc="-5.0" yloc="2.5" />
+            <connection id="3" xloc="-5.0" yloc="-2.5" />
+            <connection id="5" xloc="5.0" yloc="2.5" />
+            <connection id="9" xloc="5.0" yloc="-2.5" />
+            <connection id="13" xloc="0.0" yloc="-5.0" />
+        </connection-list>
+    </building>
+    <building id="1" type="Tunnel" length="3.0" xloc="-6.5"
+        yloc="2.5" facing="270.0">
+        <connection-list>
+            <connection id="00" xloc="0.0" yloc="1.5" />
+            <connection id="2" xloc="0.0" yloc="-1.5" />
+        </connection-list>
+    </building>
+    <building id="2" type="Bunkhouse" xloc="-10.5" yloc="2.5"
+        facing="270.0">
+        <connection-list>
+            <connection id="1" xloc="0.0" yloc="2.5" />
+        </connection-list>
+    </building>
+    <building id="3" type="Tunnel" length="3.0" xloc="-6.5"
+        yloc="-2.5" facing="270.0">
+        <connection-list>
+            <connection id="00" xloc="0.0" yloc="1.5" />
+            <connection id="4" xloc="0.0" yloc="-1.5" />
+        </connection-list>
+    </building>
+    <building id="4" type="Bunkhouse" xloc="-10.5" yloc="-2.5"
+        facing="270.0">
+        <connection-list>
+            <connection id="3" xloc="0.0" yloc="2.5" />
+        </connection-list>
+    </building>
+    <building id="5" type="Tunnel" length="2.0" xloc="6.0"
+        yloc="2.5" facing="90.0">
+        <connection-list>
+            <connection id="00" xloc="0.0" yloc="1.0" />
+            <connection id="6" xloc="0.0" yloc="-1.0" />
+        </connection-list>
+    </building>
+    <building id="6" type="Storage Shed" xloc="9.5" yloc="2.5"
+        facing="90.0">
+        <connection-list>
+            <connection id="5" xloc="0.0" yloc="2.5" />
+            <connection id="7" xloc="0.0" yloc="-2.5" />
+            <connection id="10" xloc="-2.5" yloc="0.0" />
+        </connection-list>
+    </building>
+    <building id="7" type="Tunnel" length="2.0" xloc="13.0"
+        yloc="2.5" facing="90.0">
+        <connection-list>
+            <connection id="6" xloc="0.0" yloc="1.0" />
+            <connection id="8" xloc="0.0" yloc="-1.0" />
+        </connection-list>
+    </building>
+    <building id="8" type="Storage Shed" xloc="16.5" yloc="2.5"
+        facing="90.0">
+        <connection-list>
+            <connection id="7" xloc="0.0" yloc="2.5" />
+            <connection id="12" xloc="-2.5" yloc="0.0" />
+        </connection-list>
+    </building>
+    <building id="9" type="Tunnel" length="2.0" xloc="6.0"
+        yloc="-2.5" facing="90.0">
+        <connection-list>
+            <connection id="00" xloc="0.0" yloc="1.0" />
+            <connection id="10" xloc="0.0" yloc="-1.0" />
+        </connection-list>
+    </building>
+    <building id="10" type="Storage Shed" xloc="9.5" yloc="-2.5"
+        facing="90.0">
+        <connection-list>
+            <connection id="9" xloc="0.0" yloc="2.5" />
+            <connection id="11" xloc="0.0" yloc="-2.5" />
+            <connection id="6" xloc="2.5" yloc="0.0" />
+            <connection id="02" hatch-facing="south" />
+        </connection-list>
+    </building>
+    <building id="11" type="Tunnel" length="2.0" xloc="13.0"
+        yloc="-2.5" facing="90.0">
+        <connection-list>
+            <connection id="10" xloc="0.0" yloc="1.0" />
+            <connection id="12" xloc="0.0" yloc="-1.0" />
+        </connection-list>
+    </building>
+    <building id="12" type="Storage Shed" xloc="16.5"
+        yloc="-2.5" facing="90.0">
+        <connection-list>
+            <connection id="11" xloc="0.0" yloc="2.5" />
+            <connection id="8" xloc="2.5" yloc="0.0" />
+        </connection-list>
+    </building>
+    <building id="13" type="Tunnel" length="4.0" xloc="0.0"
+        yloc="-7.0" facing="0.0">
+        <connection-list>
+            <connection id="00" xloc="0.0" yloc="2.0" />
+            <connection id="14" xloc="0.0" yloc="-2.0" />
+        </connection-list>
+    </building>
+    <building id="14" type="Loading Dock Garage" xloc="0.0"
+        yloc="-18.0" facing="180.0">
+        <connection-list>
+            <connection id="13" xloc="0.0" yloc="-9.0" />
+        </connection-list>
+    </building>
+
+    <!-- EVA Airlock is attached to the Storage Shed 1 -->
+    <building id="02" type="EVA Airlock" xloc="9.5" yloc="-8.0" facing="270.0">
+        <connection-list>
+            <connection id="10" hatch-facing="north" />
+        </connection-list>
+    </building>
+
+
+    <!-- Building Packages -->
+    <building-package name="Storage Set 1"/>   
+   	<building-package name="ERV Set 1"/>
+   	<building-package name="Air Set 1 - 1x2"/>
+    <building-package name="Sabatier Set 1 - 1x2"/>
+	<building-package name="Syngas Set 1 - 1x1"/>
+ 	<building-package name="Wind Set 1 - 1x9"/>   
+	<building-package name="Solar Thermal Set 1 - 1x9"/>
+	<building-package name="Methane Set 1 - 1x2"/> 
+
+
+    <vehicle type="Cargo Rover" number="2" />
+    <vehicle type="Light Utility Vehicle" number="1" />
+    <vehicle type="Delivery Drone" number="1" />
+
+    <equipment type="EVA Suit" number="8" />
+
+    <!-- Containers-->
+	<equipment type="barrel" number="40" />
+	<equipment type="bag" number="40" />
+	<equipment type="gas canister" number="40" />		
+	<equipment type="large bag" number="40" />
+	<equipment type="specimen box" number="40" />
+    <equipment type="thermal bottle" number="8" />	
+ 	<equipment type="wheelbarrow" number="12" />
+    
+    <!-- Life Support Resources -->
+	<resource type="food" amount="2880" />
+	<resource type="water" amount="7200" />
+	<resource type="oxygen" amount="7200" />
+	<resource type="hydrogen" amount="7200" />
+	<resource type="methane" amount="7200" />
+	<resource type="methanol" amount="7200" />
+	
+    <part-package name="Standard Part Package 1" number="1" />
+ 
+    <resupply>
+       	<resupply-mission name="Quarterly Delivery" manifest-name="Standard Resupply 1">
+            <schedule firstSol="11" frequency="160" />
+        </resupply-mission>
+    </resupply>
+    
+</template>

@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use crate::state::{AppState, SimulatorRun, SimulatorTask};
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Utc;
 use serde::Deserialize;
@@ -148,7 +148,7 @@ pub async fn undeploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>)
     {
         let mut sims = state.running_sims.write().await;
         if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.abort();
+            handle.handle.abort();
         }
     }
 
@@ -227,11 +227,22 @@ pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) ->
         let mut sims = state.running_sims.write().await;
         // Stop existing sim if any
         if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.abort();
+            handle.handle.abort();
         }
-        let handle =
-            crate::simulator::spawn_simulator(state.zenoh_session.clone(), pea_id_str.clone());
-        sims.insert(pea_id_str.clone(), handle);
+        let run = SimulatorRun {
+            scenario_id: "baseline_cycle".to_string(),
+            scenario_name: "Baseline Work Cycle".to_string(),
+            started_at: chrono::Utc::now().to_rfc3339(),
+            duration_s: u64::MAX,
+            tick_ms: 1000,
+            time_ratio: 128.0,
+        };
+        let handle = crate::simulator::spawn_simulator(
+            state.zenoh_session.clone(),
+            pea_id_str.clone(),
+            Some("baseline_cycle"),
+        );
+        sims.insert(pea_id_str.clone(), SimulatorTask { handle, run });
     }
 
     // Publish running status directly
@@ -282,7 +293,7 @@ pub async fn stop_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> 
     {
         let mut sims = state.running_sims.write().await;
         if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.abort();
+            handle.handle.abort();
             info!("Simulator stopped for PEA: {}", pea_id_str);
         }
     }

@@ -1,0 +1,55 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<country xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="country.xsd"
+        name="Portugal">
+     <economics-data>
+		 <GDP value="251,945"/>
+		 <PPP value="430,227"/>
+		 <population value="10.270865"/>
+		 <GDP-growth value="6.69"/>
+	</economics-data>
+	
+	<!-- Taken from 
+  	  	https://en.wikipedia.org/wiki/List_of_countries_by_median_age
+    	https://www.worlddata.info/average-bodyheight.php -->
+    <characteristics median-age-male="42.7" median-age-female="46.5" 	
+    			average-male-height="174" average-female-height="161"
+	            average-male-weight="79.5" average-female-weight="65.8"/>	
+	            
+    <first-name-list>
+        <first-name value="João" gender="male" />
+        <first-name value="Martim" gender="male" />
+        <first-name value="Rodrigo" gender="male" />
+        <first-name value="Santiago" gender="male" />
+        <first-name value="Francisco" gender="male" />
+        <first-name value="Afonso" gender="male" />
+        <first-name value="Tomás" gender="male" />
+        <first-name value="Miguel" gender="male" />
+        <first-name value="Guilherme" gender="male" />
+        <first-name value="Gabriel" gender="male" />
+
+        <first-name value="Maria" gender="female" />
+        <first-name value="Leonor" gender="female" />
+        <first-name value="Matilde" gender="female" />
+        <first-name value="Beatriz" gender="female" />
+        <first-name value="Carolina" gender="female" />
+        <first-name value="Mariana" gender="female" />
+        <first-name value="Ana" gender="female" />
+        <first-name value="Inês" gender="female" />
+        <first-name value="Margarida" gender="female" />
+        <first-name value="Sofia" gender="female" />
+    </first-name-list>
+    <last-name-list>
+        <!-- 10 most common Portuguese surnames -->
+
+        <last-name value="Costa" />
+        <last-name value="Ferreira" />
+        <last-name value="Jesus" />
+        <last-name value="Martins" />
+        <last-name value="Oliveira" />
+        <last-name value="Pereira" />
+        <last-name value="Rodrigues" />
+        <last-name value="Santos" />
+        <last-name value="Silva" />
+        <last-name value="Sousa" />
+    </last-name-list>
+</country>

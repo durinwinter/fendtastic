@@ -1,0 +1,147 @@
+<?xml version = "1.0" encoding = "UTF-8" standalone = "yes" ?>
+<!DOCTYPE simulation-configuration [
+	<!ELEMENT simulation-configuration (time-configuration, mission-configuration)>
+	<!ELEMENT time-configuration (base-time-ratio, min-simulated-pulse, max-simulated-pulse, default-time-pulse,
+	accuracy-bias, earth-start-date-time, mars-start-date-time, autosave-interval, autosave-number, average-transit-time,
+	executor-type)>
+	<!ATTLIST simulation-configuration content-url CDATA #IMPLIED>
+	<!ELEMENT base-time-ratio EMPTY>
+	<!ATTLIST base-time-ratio value CDATA #REQUIRED>
+	<!ELEMENT min-simulated-pulse EMPTY>
+	<!ATTLIST min-simulated-pulse value CDATA #REQUIRED>
+	<!ELEMENT max-simulated-pulse EMPTY>
+	<!ATTLIST max-simulated-pulse value CDATA #REQUIRED>
+	<!ELEMENT default-time-pulse EMPTY>
+	<!ATTLIST default-time-pulse value CDATA #REQUIRED>
+	<!ELEMENT accuracy-bias EMPTY>
+	<!ATTLIST accuracy-bias value CDATA #REQUIRED>
+	<!ELEMENT earth-start-date-time EMPTY>
+	<!ATTLIST earth-start-date-time value CDATA #REQUIRED>
+	<!ELEMENT mars-start-date-time EMPTY>
+	<!ATTLIST mars-start-date-time value CDATA #REQUIRED>
+	<!ELEMENT autosave-interval EMPTY>
+	<!ATTLIST autosave-interval value CDATA #REQUIRED>
+	<!ELEMENT autosave-number EMPTY>
+	<!ATTLIST autosave-number value CDATA #REQUIRED>
+	<!ELEMENT average-transit-time EMPTY>
+	<!ATTLIST average-transit-time value CDATA #REQUIRED>
+	<!ELEMENT executor-type EMPTY>
+	<!ATTLIST executor-type value CDATA #REQUIRED>
+	<!ELEMENT mission-configuration (min-eva-light)>
+	<!ELEMENT min-eva-light EMPTY>
+	<!ATTLIST min-eva-light value CDATA #REQUIRED>
+]>
+
+<simulation-configuration>
+
+	<!-- Time related configuration -->
+	<time-configuration>
+
+		<!-- The base time ratio (TR) is the default simulation time ratio : the ratio of real time to sim time prior to modification
+			Note 1 : It denotes the initial speed of the simulation.
+			     2 : Value must be a positive integer between 16 and 2048 and cannot be zero.
+			     3 : The calculated TR is dependent upon the # of cpu threads available on users machine.
+			     4 : The base TR value below will be overridden by the calculated TR at the start of the sim.
+		-->
+		<!-- Default: 128. Min is 1.  -->
+		<base-time-ratio value="128" />
+		<!-- 1. The time ratio (TR) will be re-scaled according to available # of threads (not # of cpu cores).
+			 2. The time ratio (TR) can be a multiple of 
+			    - 2 (1x, 2x, 4x, 8x, 16x, 32x, 64x, 128x, 256x)
+			    - 1.5 (384x, 576x, 864x, 1296x, 1944x, 2916x, 4374x, 6561x)
+			    - 1.25 (8201x, 10,251x, 12,813x, 16,016x, 20,020x, 25,025x, 31,281x, 39,101x)
+			    - 1.125 (48,876x, 54,985x, 61,858x, 69,590x, 78,288x, 88,074x, 99,083x, 111,468x)
+		-->
+
+		<!-- The time span covered by each simulation pulse is defined below. These are defined in terms of
+		     milliSols. The lower the value, the more accurate the simulation but the more pulses & more expensive
+		     to calculate. Note both values can be adjusted if the processing becomes too excessive.
+		     
+		     Notes: 
+		     SECONDS_PER_MILLISOL = 88.775244 
+		     MINUTES_PER_MILLISOL = 1.4795874 (Thus, 1 earth minute has 1.4795874 millisols)
+		     HOURS_PER_MILLISOL = 0.02465979
+		     
+		     MILLISOLS_PER_MINUTE = 0.6758640956255778 
+		     MILLISOLS_PER_HOUR = 40.55184573753467
+	  
+		     1 earth minute has 1.4795874 millisols
+		     10 earth minute has 14.7959 millisols
+		     15 earth minutes has 22.1938 millisols
+		     30 earth minutes has 44.3876 millisols
+	     	 45 earth minutes has 66.5814 millisols
+		-->
+		
+		<!-- Default: 0.01126440159375963 millisols or 1 earth second.
+		     Must be smaller than max-simulated-pulse   -->
+		<min-simulated-pulse value="0.01126440159375963"/>
+
+		<!-- Default: 30 earth minutes has 44.3876 millisols 
+		     Must be greater than min-simulated-pulse   -->
+		<max-simulated-pulse value="44.3876"/>
+
+		<!-- The simulation creates a pulse periodically to execution the simulation. This integer value defines the
+		maximum wait between pulses in terms of millisecs. The simulation will attempt to generate pulses more
+		frequently depending on the time ratio and the accuracy as well as the machine power. -->
+		<!-- Default is 1000 (must be an integer. 1000 milisecs equals to 1 sec). Min is 1. Max is 2048. -->
+		<default-time-pulse value="1000"/>
+
+		<!-- The accuracy bias influences whether the simulation goes for smaller timespans to give an accurate
+		simulation but more costly or larger timespans to reduce the processing load. This values chooses the actual
+		pulse rate between the calculated min & max pulse durations.
+		This value must be between 0 & 1 with 1 being most accurate. -->
+		<!-- Default is 0.5 -->
+		<accuracy-bias value="0.5"/>
+
+		<!-- Earth start date/time -->
+		<!-- "yyyy-MM-dd hh:mm:ss" format -->
+		<!-- Previously designated as "2043-09-30 00:00:00.000" (iso8601 String: "2043-09-30T00:0:00.000Z") -->
+		<!-- Default: 2028-08-16 17:50:22.000 -->
+		<!-- Other Value 1: 1609-03-12 02:45:00.000 (when L_s is ~0) -->
+		<!-- Other Value 2: 2043-09-03 12:45:51.000 (when L_s is ~0) -->
+		<!-- See https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_ZONED_DATE_TIME -->
+		<earth-start-date-time value="2028-08-16 17:50:22.000"/>
+
+		<!-- Mars start date/time -->
+		<!-- "orbit-month-sol:millisol" format -->
+		<!-- Previously designated as "0015-Adir-01:000.000" -->		
+		<!-- Default: 01-Adir-01:000.000 -->
+		<mars-start-date-time value="01-Adir-01:000.000" />
+
+		<!-- autosave-interval is the number of minutes the simulation will wait between two successive autosave events -->
+		<!-- Value must be a positive number between 1 and 360 and cannot be zero -->
+		<!-- In minutes. Min : 1 ; Max : 360 -->
+		<!-- Default: 15 -->
+		<autosave-interval value="15" />
+
+		<!-- autosave-number is the number of autosave files retained -->
+		<!-- Min : 1 ; Max : 360 -->
+		<!-- Default: 5 -->
+		<autosave-number value="5" />
+
+		<!-- average transit-time is the number of sols to send payload/cargo from Earth to Mars -->
+		<!-- Assume an engine with a speed of 18,564,800 m/s, 
+			 travel time is 525 hours 51 minutes and 23 seconds, or roughly 22 days. 
+			 
+		     Assume the acceleration would stay within a tolerable 1G force onboard,
+		     travel time is 1577 hours 34 minutes and 8 seconds, or roughly 66 days.	          
+		 -->
+		<!-- See https://www.quora.com/How-do-I-calculate-the-time-taken-to-travel-to-Mars-What-are-the-values-I-have-to-consider
+		-->
+		<!-- Min : 1 ; Max : 430 -->
+		<!-- Default: 66 -->
+		<average-transit-time value="66" />
+
+		<!-- executor-type governs the type of temporal executor can be used in a Unitmanager -->
+		<!-- Default: shared : Shared thread model using a Callable -->
+		<!-- thread : Each Temporal runs on a permenant dedicated Thread -->
+		<executor-type value="thread" />
+	</time-configuration>
+
+	<!-- Lists configuration for missions -->
+	<mission-configuration>
+		<!-- minEVALight is in "flux" where the max is 717 -->
+		<min-eva-light value="7.0"/>
+	</mission-configuration>
+
+</simulation-configuration>
