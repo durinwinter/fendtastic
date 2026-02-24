@@ -21,6 +21,7 @@ PORT_ZENOH_TCP=7447
 PORT_ZENOH_WS=8000
 PORT_API=8080
 PORT_FRONTEND=3000
+PORT_MCP=8765
 
 # Set after IP selection
 BIND_IP=""
@@ -289,6 +290,7 @@ check_port $PORT_ZENOH_TCP "Zenoh TCP"       || PORT_CONFLICT=1
 check_port $PORT_ZENOH_WS  "Zenoh WebSocket" || PORT_CONFLICT=1
 check_port $PORT_API       "API Server"       || PORT_CONFLICT=1
 check_port $PORT_FRONTEND  "Frontend Dev"     || PORT_CONFLICT=1
+check_port $PORT_MCP       "EVA-ICS MCP"      || PORT_CONFLICT=1
 
 if [ "$PORT_CONFLICT" -ne 0 ]; then
     echo ""
@@ -364,16 +366,25 @@ if docker image inspect altertech/eva-ics:latest >/dev/null 2>&1; then
         --name fendtastic-eva-ics-dev \
         -p "${BIND_IP}:7727:7727" \
         -p "${BIND_IP}:4840:4840" \
+        -p "${BIND_IP}:${PORT_MCP}:8765" \
         -v eva-ics-runtime:/opt/eva4/runtime \
+        -v "${SCRIPT_DIR}/config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro" \
+        -v "${SCRIPT_DIR}/config/eva-ics/entrypoint.sh:/mcp-config/entrypoint.sh:ro" \
+        --entrypoint /bin/bash \
         altertech/eva-ics:latest \
+        /mcp-config/entrypoint.sh \
         >/dev/null 2>&1 && {
-        log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840)${NC}"
+        log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840, MCP :${PORT_MCP})${NC}"
     } || log_warn "EVA-ICS container failed to start — PEA deploy will not work"
 else
     log_warn "EVA-ICS image not found — run: docker pull altertech/eva-ics:latest"
-    log_info "PEA deployment and OPC UA will be unavailable without EVA-ICS"
+    log_info "PEA deployment, OPC UA, and MCP will be unavailable without EVA-ICS"
 fi
 sleep 1
+
+# Wait for MCP service to be ready (entrypoint deploys it async)
+log_info "Waiting for MCP service deployment..."
+sleep 5
 
 # --- Backend build ---
 
@@ -429,6 +440,7 @@ URL_API="http://${DISPLAY_IP}:${PORT_API}"
 URL_HEALTH="http://${DISPLAY_IP}:${PORT_API}/health"
 URL_WS_API="ws://${DISPLAY_IP}:${PORT_API}/api/v1/ws"
 URL_OPCUA="opc.tcp://${DISPLAY_IP}:4840"
+URL_MCP="http://${DISPLAY_IP}:${PORT_MCP}"
 
 echo ""
 echo ""
@@ -444,6 +456,31 @@ echo -e "  ${BOLD}Health Check:${NC}    ${UNDERLINE}${CYAN}${URL_HEALTH}${NC}"
 echo -e "  ${BOLD}WebSocket:${NC}       ${UNDERLINE}${CYAN}${URL_WS_API}${NC}"
 echo -e "  ${BOLD}OPC UA:${NC}          ${UNDERLINE}${CYAN}${URL_OPCUA}${NC}"
 
+# MCP Server credentials box
+echo ""
+echo -e "${BOLD}${YELLOW}  ┌───────────────────────────────────────────────────────────┐${NC}"
+echo -e "${BOLD}${YELLOW}  │            MCP SERVER (Model Context Protocol)             │${NC}"
+echo -e "${BOLD}${YELLOW}  └───────────────────────────────────────────────────────────┘${NC}"
+echo ""
+echo -e "  ${BOLD}MCP Endpoint:${NC}    ${UNDERLINE}${CYAN}${URL_MCP}${NC}"
+echo -e "  ${BOLD}Transport:${NC}       ${CYAN}SSE (Server-Sent Events)${NC}"
+echo -e "  ${BOLD}Service ID:${NC}      ${CYAN}eva.mcp.1${NC}"
+echo -e "  ${BOLD}Container:${NC}       ${CYAN}fendtastic-eva-ics-dev${NC}"
+echo ""
+echo -e "  ${DIM}Add to MCP clients with:${NC}"
+echo ""
+echo -e "  ${BOLD}Claude Code:${NC}"
+echo -e "    ${DIM}claude mcp add eva-ics --transport sse ${URL_MCP}${NC}"
+echo ""
+echo -e "  ${BOLD}VS Code (settings.json):${NC}"
+echo -e "    ${DIM}\"mcp\": { \"servers\": { \"eva-ics\": { \"url\": \"${URL_MCP}/sse\" } } }${NC}"
+echo ""
+echo -e "  ${BOLD}Claude Desktop (claude_desktop_config.json):${NC}"
+echo -e "    ${DIM}{ \"mcpServers\": { \"eva-ics\": { \"url\": \"${URL_MCP}/sse\" } } }${NC}"
+echo ""
+echo -e "  ${BOLD}Manual deploy:${NC}"
+echo -e "    ${DIM}docker exec fendtastic-eva-ics-dev eva svc create eva.mcp.1 /mcp-config/svc-tpl-mcp.yml${NC}"
+
 # If bound to all interfaces, show every reachable address
 if [ "$BIND_IP" = "0.0.0.0" ]; then
     echo ""
@@ -451,6 +488,7 @@ if [ "$BIND_IP" = "0.0.0.0" ]; then
     for ip in "${IP_LIST[@]}"; do
         if [ "$ip" != "0.0.0.0" ]; then
             echo -e "    ${DIM}•${NC} ${UNDERLINE}${CYAN}http://${ip}:${PORT_FRONTEND}${NC}"
+            echo -e "    ${DIM}  MCP:${NC} ${UNDERLINE}${CYAN}http://${ip}:${PORT_MCP}${NC}"
         fi
     done
 fi

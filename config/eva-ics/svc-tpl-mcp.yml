@@ -1,0 +1,12 @@
+# EVA ICS MCP service — deployed automatically by fendtastic
+# Exposes Model Context Protocol (MCP) over SSE for AI agent integration
+command: svc/eva-mcp
+workers: 1
+bus:
+  path: var/bus.ipc
+config:
+  # Bind to 0.0.0.0 so it is reachable from outside the container
+  listen: 0.0.0.0:8765
+  # Allow all EAPI methods (restrict in production)
+  allow: "*"
+user: nobody

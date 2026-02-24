@@ -22,6 +22,7 @@ zenoh.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 tokio-postgres.workspace = true
+reqwest.workspace = true
 
 shared = { path = "../shared" }
 

@@ -32,10 +32,14 @@ services:
     ports:
       - "7727:7727"
       - "4840:4840"
+      - "8765:8765"   # MCP (Model Context Protocol) SSE server
     volumes:
       - eva-ics-data:/opt/eva4/runtime
+      - ./config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro
+      - ./config/eva-ics/entrypoint.sh:/mcp-config/entrypoint.sh:ro
     environment:
       - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
+    entrypoint: ["/bin/bash", "/mcp-config/entrypoint.sh"]
     restart: unless-stopped
 
   backend:

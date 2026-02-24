@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Heptapod from './pages/Heptapod'
 import PEALauncher from './pages/PEALauncher'
 import HeptapodMesh from './pages/HeptapodMesh'
+import MarsHabitat from './pages/MarsHabitat'
 import './App.css'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/heptapod" element={<Heptapod />} />
           <Route path="/pea-launcher" element={<PEALauncher />} />
           <Route path="/heptapod-mesh" element={<HeptapodMesh />} />
+          <Route path="/mars-habitat" element={<MarsHabitat />} />
         </Routes>
       </Router>
       <Snackbar

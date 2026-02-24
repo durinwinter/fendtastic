@@ -47,12 +47,15 @@ const COLOR_PALETTE = [
   { border: '#00BCD4', bg: 'rgba(0, 188, 212, 0.1)' },
 ]
 
-/** Extract a short display label from a Zenoh key like "murph/habitat/nodes/node1/pea/reactor1/data/temp" */
+/** Extract a short display label from a Zenoh key like "fendtastic/pea/fendt-vario-1001/data/engine_temp" */
 function keyToLabel(key: string): string {
   const parts = key.split('/')
-  // Show last few parts (e.g. reactor1/temp)
-  if (parts.length >= 7) return `${parts[5]}/${parts[7]}`
-  return parts.slice(-2).join('/')
+  // For fendtastic/pea/{id}/data/{tag} pattern, return just the tag
+  const dataIdx = parts.indexOf('data')
+  if (dataIdx >= 0 && dataIdx < parts.length - 1) {
+    return parts[dataIdx + 1].replace(/_/g, ' ')
+  }
+  return parts.slice(-1)[0]
 }
 
 /** Try to extract a numeric value from a Zenoh payload */
@@ -93,11 +96,21 @@ const TimeSeriesChart: React.FC = () => {
   const [rawValues, setRawValues] = useState<Record<string, (number | null)[]>>({})
   const [loading, setLoading] = useState(true)
 
-  // Discover available keys on mount
+  // Discover available keys — filter to sensor data keys only
   useEffect(() => {
-    apiService.getTsKeys()
-      .then(res => setKeys(res.keys || []))
-      .catch(() => { })
+    let active = true
+    const discover = () => {
+      apiService.getTsKeys()
+        .then(res => {
+          if (!active) return
+          const dataKeys = (res.keys || []).filter((k: string) => k.includes('/data/'))
+          setKeys(dataKeys)
+        })
+        .catch(() => { })
+    }
+    discover()
+    const interval = setInterval(discover, 5000)
+    return () => { active = false; clearInterval(interval) }
   }, [])
 
   const fetchData = useCallback(async () => {

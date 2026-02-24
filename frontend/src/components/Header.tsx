@@ -95,6 +95,11 @@ const Header: React.FC = () => {
             onClick={() => navigate('/heptapod-mesh')}
             color={location.pathname === '/heptapod-mesh' ? 'primary' : 'default'}
           />
+          <NavChip
+            label="MARS HABITAT"
+            onClick={() => navigate('/mars-habitat')}
+            color={location.pathname === '/mars-habitat' ? 'primary' : 'default'}
+          />
         </Box>
 
         {/* Right: Status & Clock */}

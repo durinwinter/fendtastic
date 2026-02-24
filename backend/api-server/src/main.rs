@@ -187,6 +187,39 @@ async fn main() -> std::io::Result<()> {
         });
     }
 
+    // Publish periodic status heartbeats so the frontend knows services are alive.
+    {
+        let session = app_state.zenoh_session.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
+            loop {
+                interval.tick().await;
+                let now = chrono::Utc::now().to_rfc3339();
+
+                // Check EVA-ICS connectivity
+                let eva_url = std::env::var("EVA_ICS_URL")
+                    .unwrap_or_else(|_| "http://localhost:7727".to_string());
+                let eva_online = reqwest::Client::new()
+                    .get(format!("{}/jrpc", eva_url))
+                    .timeout(std::time::Duration::from_secs(1))
+                    .send()
+                    .await
+                    .is_ok();
+
+                let _ = session
+                    .put(
+                        "murph/status/eva-ics",
+                        serde_json::json!({
+                            "online": eva_online,
+                            "timestamp": &now,
+                        })
+                        .to_string(),
+                    )
+                    .await;
+            }
+        });
+    }
+
     // Keep alarm and topology state synchronized with Zenoh bus.
     {
         let session = app_state.zenoh_session.clone();

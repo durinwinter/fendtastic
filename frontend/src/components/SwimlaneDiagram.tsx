@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Box, Typography } from '@mui/material'
+import { Box, Typography, Tooltip } from '@mui/material'
 import apiService from '../services/apiService'
 
 interface SwimlanEvent {
@@ -29,7 +29,7 @@ const ALARM_COLORS: Record<string, string> = {
 }
 
 const POLL_INTERVAL = 2000
-const WINDOW_MS = 5 * 60_000 // 5-minute sliding window
+const WINDOW_MS = 5 * 60_000
 
 function extractField(v: unknown, field: string): string | undefined {
   if (v && typeof v === 'object' && field in (v as Record<string, unknown>)) {
@@ -40,8 +40,8 @@ function extractField(v: unknown, field: string): string | undefined {
 
 const SwimlaneDiagram: React.FC = () => {
   const [lanes, setLanes] = useState<LaneData[]>([
-    { id: 'machine-state', label: 'MACHINE STATE', color: '#6EC72D', events: [] },
-    { id: 'user-actions', label: 'USER ACTIONS', color: '#3498DB', events: [] },
+    { id: 'machine-state', label: 'STATE', color: '#6EC72D', events: [] },
+    { id: 'user-actions', label: 'ACTIONS', color: '#3498DB', events: [] },
     { id: 'alarms', label: 'ALARMS', color: '#E74C3C', events: [] },
   ])
   const [windowStart, setWindowStart] = useState(Date.now() - WINDOW_MS)
@@ -55,9 +55,9 @@ const SwimlaneDiagram: React.FC = () => {
 
     try {
       const keys = await apiService.getTsKeys()
-      const stateKey = (keys.keys || []).find(k => k.includes('/swimlane/state'))
-      const actionKey = (keys.keys || []).find(k => k.includes('/swimlane/action'))
-      const alarmKey = (keys.keys || []).find(k => k.includes('/swimlane/alarm'))
+      const stateKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/state'))
+      const actionKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/action'))
+      const alarmKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/alarm'))
 
       const results = await Promise.all([
         stateKey ? apiService.queryTimeSeries(stateKey, start, now) : null,
@@ -65,7 +65,6 @@ const SwimlaneDiagram: React.FC = () => {
         alarmKey ? apiService.queryTimeSeries(alarmKey, start, now) : null,
       ])
 
-      // Build state spans from consecutive state points
       const stateEvents: SwimlanEvent[] = []
       if (results[0]?.points?.length) {
         const pts = results[0].points
@@ -85,7 +84,6 @@ const SwimlaneDiagram: React.FC = () => {
             spanStart = pts[i].t
           }
         }
-        // Close the current span at now
         stateEvents.push({
           startMs: spanStart,
           endMs: now,
@@ -94,15 +92,14 @@ const SwimlaneDiagram: React.FC = () => {
         })
       }
 
-      // Build action events (point-in-time, shown as short bars)
       const actionEvents: SwimlanEvent[] = []
       if (results[1]?.points?.length) {
         for (const pt of results[1].points) {
           const action = extractField(pt.v, 'action')
           if (action) {
             actionEvents.push({
-              startMs: pt.t - 2000,
-              endMs: pt.t + 2000,
+              startMs: pt.t - 1500,
+              endMs: pt.t + 1500,
               label: action,
               color: '#3498DB',
             })
@@ -110,7 +107,6 @@ const SwimlaneDiagram: React.FC = () => {
         }
       }
 
-      // Build alarm events
       const alarmEvents: SwimlanEvent[] = []
       if (results[2]?.points?.length) {
         const pts = results[2].points
@@ -139,7 +135,6 @@ const SwimlaneDiagram: React.FC = () => {
             alarmStart = null
           }
         }
-        // If alarm still active, close at now
         if (alarmStart !== null) {
           alarmEvents.push({
             startMs: alarmStart,
@@ -151,8 +146,8 @@ const SwimlaneDiagram: React.FC = () => {
       }
 
       setLanes([
-        { id: 'machine-state', label: 'MACHINE STATE', color: '#6EC72D', events: stateEvents },
-        { id: 'user-actions', label: 'USER ACTIONS', color: '#3498DB', events: actionEvents },
+        { id: 'machine-state', label: 'STATE', color: '#6EC72D', events: stateEvents },
+        { id: 'user-actions', label: 'ACTIONS', color: '#3498DB', events: actionEvents },
         { id: 'alarms', label: 'ALARMS', color: '#E74C3C', events: alarmEvents },
       ])
     } catch {
@@ -168,9 +163,9 @@ const SwimlaneDiagram: React.FC = () => {
 
   const range = windowEnd - windowStart
 
-  // Build time axis labels (every minute)
+  // Time axis labels (every minute)
   const timeLabels: { pct: number; label: string }[] = []
-  const step = 60_000 // 1 minute
+  const step = 60_000
   const firstTick = Math.ceil(windowStart / step) * step
   for (let t = firstTick; t <= windowEnd; t += step) {
     const pct = ((t - windowStart) / range) * 100
@@ -178,13 +173,9 @@ const SwimlaneDiagram: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', px: 2, py: 1 }}>
       {/* Time axis */}
-      <Box sx={{
-        position: 'relative',
-        height: 20,
-        mb: 1,
-      }}>
+      <Box sx={{ position: 'relative', height: 16, mb: 0.5, flexShrink: 0 }}>
         {timeLabels.map((tick, i) => (
           <Typography
             key={i}
@@ -193,8 +184,9 @@ const SwimlaneDiagram: React.FC = () => {
               position: 'absolute',
               left: `${tick.pct}%`,
               transform: 'translateX(-50%)',
-              fontSize: '0.7rem',
+              fontSize: '0.65rem',
               color: 'text.secondary',
+              userSelect: 'none',
             }}
           >
             {tick.label}
@@ -202,30 +194,34 @@ const SwimlaneDiagram: React.FC = () => {
         ))}
       </Box>
 
-      {/* Lanes */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {/* Compact lanes */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         {lanes.map((lane) => (
-          <Box key={lane.id}>
+          <Box key={lane.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Inline lane label */}
             <Typography
               variant="caption"
               sx={{
                 color: lane.color,
                 fontWeight: 700,
-                fontSize: '0.7rem',
+                fontSize: '0.6rem',
                 letterSpacing: '0.05em',
-                mb: 0.5,
-                display: 'block'
+                width: 52,
+                flexShrink: 0,
+                textAlign: 'right',
               }}
             >
               {lane.label}
             </Typography>
+            {/* Lane track */}
             <Box sx={{
               position: 'relative',
-              height: 32,
+              flex: 1,
+              height: 22,
               backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              borderRadius: 1,
+              borderRadius: 0.5,
               overflow: 'hidden',
-              border: '1px solid rgba(255, 255, 255, 0.05)'
+              border: '1px solid rgba(255, 255, 255, 0.04)',
             }}>
               {lane.events.map((event, idx) => {
                 const left = Math.max(0, ((event.startMs - windowStart) / range) * 100)
@@ -234,43 +230,43 @@ const SwimlaneDiagram: React.FC = () => {
                 if (width <= 0) return null
 
                 return (
-                  <Box
-                    key={idx}
-                    sx={{
-                      position: 'absolute',
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      height: '100%',
-                      backgroundColor: event.color,
-                      opacity: 0.8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'opacity 0.2s',
-                      '&:hover': {
-                        opacity: 1,
-                        zIndex: 10,
-                      }
-                    }}
-                  >
-                    {width > 3 && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#000',
-                          fontWeight: 700,
-                          fontSize: '0.65rem',
-                          textAlign: 'center',
-                          px: 0.5,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {event.label}
-                      </Typography>
-                    )}
-                  </Box>
+                  <Tooltip key={idx} title={event.label} arrow placement="top">
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        height: '100%',
+                        backgroundColor: event.color,
+                        opacity: 0.85,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'default',
+                        transition: 'opacity 0.15s',
+                        '&:hover': { opacity: 1 },
+                      }}
+                    >
+                      {width > 5 && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: '#000',
+                            fontWeight: 700,
+                            fontSize: '0.55rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.03em',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            px: 0.5,
+                          }}
+                        >
+                          {event.label}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Tooltip>
                 )
               })}
             </Box>

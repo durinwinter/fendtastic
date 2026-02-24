@@ -168,28 +168,23 @@ const Dashboard: React.FC = () => {
           overflow: 'hidden'
         }}>
           {/* System Timeline */}
-          <Paper sx={{ flex: '0 0 32%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A' }}>
-              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
+          <Paper sx={{ flex: '0 0 auto', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 0.5, borderBottom: '1px solid #2A2A2A', display: 'flex', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em', fontSize: '0.65rem' }}>
                 SYSTEM TIMELINE
               </Typography>
             </Box>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <Box sx={{ height: 120, overflow: 'hidden' }}>
               <SwimlaneDiagram />
             </Box>
           </Paper>
 
           {/* Telemetry */}
-          <Paper sx={{ flex: '0 0 30%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
+          <Paper sx={{ flex: '1 1 35%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: 0.5, borderBottom: '1px solid #2A2A2A' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em', fontSize: '0.65rem' }}>
                 TELEMETRY
               </Typography>
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                {['1M', '5M', '15M', '1H', '6H', '24H'].map(t => (
-                  <Chip key={t} label={t} size="small" sx={{ height: 18, fontSize: '0.6rem', borderRadius: 0.5, backgroundColor: t === '5M' ? 'primary.main' : 'transparent', border: '1px solid #444' }} />
-                ))}
-              </Box>
             </Box>
             <Box sx={{ flex: 1, overflow: 'hidden', p: 1 }}>
               <TimeSeriesChart />

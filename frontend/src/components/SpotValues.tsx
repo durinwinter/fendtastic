@@ -33,6 +33,12 @@ function extractNumeric(v: unknown): number | null {
     const n = parseFloat(v)
     return isNaN(n) ? null : n
   }
+  if (v && typeof v === 'object') {
+    const obj = v as Record<string, unknown>
+    for (const field of ['value', 'v', 'data', 'val']) {
+      if (field in obj) return extractNumeric(obj[field])
+    }
+  }
   return null
 }
 
@@ -49,6 +55,8 @@ const SpotValues: React.FC = () => {
 
         const updates: Record<string, number> = {}
         for (const [key, entry] of Object.entries(latest)) {
+          // Only look at /data/ keys for sensor values
+          if (!key.includes('/data/')) continue
           const tag = key.split('/').pop() || ''
           if (tag in LABEL_MAP) {
             const num = extractNumeric(entry.v)
