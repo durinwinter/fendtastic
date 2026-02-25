@@ -22,6 +22,7 @@ PORT_ZENOH_WS=8000
 PORT_API=8080
 PORT_FRONTEND=3000
 PORT_MCP=8765
+PORT_POSTGRES=5432
 
 # Set after IP selection
 BIND_IP=""
@@ -40,6 +41,19 @@ log_step()  { echo -e "\n${BOLD}${CYAN}━━ $* ━━${NC}"; }
 
 # ─── Cleanup on exit ─────────────────────────────────────────────────────────
 
+COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.dev.yml"
+
+# Detect docker compose command (plugin v2 vs standalone v1)
+if docker compose version &>/dev/null; then
+    COMPOSE_CMD="docker compose"
+elif command -v docker-compose &>/dev/null; then
+    COMPOSE_CMD="docker-compose"
+else
+    echo "ERROR: Neither 'docker compose' nor 'docker-compose' found."
+    echo "Install: sudo apt install docker-compose-plugin  OR  pip install docker-compose"
+    exit 1
+fi
+
 cleanup() {
     echo ""
     log_step "Shutting down"
@@ -51,13 +65,8 @@ cleanup() {
         fi
     done
 
-    for cname in fendtastic-zenoh-dev fendtastic-eva-ics-dev; do
-        if docker ps -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
-            log_info "Stopping container: ${cname}"
-            docker stop "$cname" >/dev/null 2>&1 || true
-            docker rm "$cname" >/dev/null 2>&1 || true
-        fi
-    done
+    log_info "Stopping infrastructure containers..."
+    $COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null || true
 
     log_ok "All services stopped"
     exit 0
@@ -144,9 +153,17 @@ log_step "Cleaning up old instances"
 
 CLEANED=0
 
-for cname in fendtastic-zenoh-dev fendtastic-eva-ics-dev fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
+# Stop any running dev compose stack
+if $COMPOSE_CMD -f "$COMPOSE_FILE" ps -q 2>/dev/null | grep -q .; then
+    log_info "Stopping previous dev compose stack..."
+    $COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null || true
+    CLEANED=1
+fi
+
+# Also clean up any leftover containers from old naming convention or production compose
+for cname in fendtastic-zenoh-dev fendtastic-eva-ics-dev fendtastic-postgres-dev fendtastic-zenoh-router fendtastic-backend fendtastic-frontend fendtastic-postgres fendtastic-eva-ics; do
     if docker ps -a -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
-        log_info "Removing container: ${cname}"
+        log_info "Removing old container: ${cname}"
         docker stop "$cname" >/dev/null 2>&1 || true
         docker rm   "$cname" >/dev/null 2>&1 || true
         CLEANED=1
@@ -291,6 +308,7 @@ check_port $PORT_ZENOH_WS  "Zenoh WebSocket" || PORT_CONFLICT=1
 check_port $PORT_API       "API Server"       || PORT_CONFLICT=1
 check_port $PORT_FRONTEND  "Frontend Dev"     || PORT_CONFLICT=1
 check_port $PORT_MCP       "EVA-ICS MCP"      || PORT_CONFLICT=1
+check_port $PORT_POSTGRES  "PostgreSQL"       || PORT_CONFLICT=1
 
 if [ "$PORT_CONFLICT" -ne 0 ]; then
     echo ""
@@ -341,50 +359,98 @@ fi
 # 7. Launch services
 # =============================================================================
 
-# --- Zenoh Router ---
+# --- Infrastructure via Docker Compose ---
 
-log_step "Starting Zenoh router"
+log_step "Starting infrastructure (PostgreSQL, Zenoh, EVA-ICS)"
 
-docker run -d \
-    --name fendtastic-zenoh-dev \
-    -p "${BIND_IP}:${PORT_ZENOH_TCP}:7447" \
-    -p "${BIND_IP}:${PORT_ZENOH_WS}:8000" \
-    -v "${SCRIPT_DIR}/config/zenoh-router.json5:/etc/zenoh/config.json5:ro" \
-    eclipse/zenoh:latest \
-    -c /etc/zenoh/config.json5 \
-    >/dev/null
+PGDB="${POSTGRES_DB:-fendtastic}"
+PGUSER="${POSTGRES_USER:-fendtastic}"
+PGPASS="${POSTGRES_PASSWORD:-fendtastic}"
 
-log_ok "Zenoh router ${DIM}(${BIND_IP}:${PORT_ZENOH_TCP}, :${PORT_ZENOH_WS})${NC}"
-sleep 2
+# Export vars for docker-compose.dev.yml interpolation
+export BIND_IP PORT_POSTGRES PORT_ZENOH_TCP PORT_ZENOH_WS PORT_MCP
+export POSTGRES_DB="${PGDB}" POSTGRES_USER="${PGUSER}" POSTGRES_PASSWORD="${PGPASS}"
 
-# --- EVA-ICS (optional — start if image available) ---
-
-log_step "Starting EVA-ICS v4"
-
-if docker image inspect altertech/eva-ics:latest >/dev/null 2>&1; then
-    docker run -d \
-        --name fendtastic-eva-ics-dev \
-        -p "${BIND_IP}:7727:7727" \
-        -p "${BIND_IP}:4840:4840" \
-        -p "${BIND_IP}:${PORT_MCP}:8765" \
-        -v eva-ics-runtime:/opt/eva4/runtime \
-        -v "${SCRIPT_DIR}/config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro" \
-        -v "${SCRIPT_DIR}/config/eva-ics/entrypoint.sh:/mcp-config/entrypoint.sh:ro" \
-        --entrypoint /bin/bash \
-        altertech/eva-ics:latest \
-        /mcp-config/entrypoint.sh \
-        >/dev/null 2>&1 && {
-        log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840, MCP :${PORT_MCP})${NC}"
-    } || log_warn "EVA-ICS container failed to start — PEA deploy will not work"
-else
-    log_warn "EVA-ICS image not found — run: docker pull altertech/eva-ics:latest"
-    log_info "PEA deployment, OPC UA, and MCP will be unavailable without EVA-ICS"
+log_info "Starting containers via docker compose..."
+if ! $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --wait 2>&1 | while IFS= read -r line; do
+    echo -e "    ${DIM}${line}${NC}"
+done; then
+    log_err "docker compose up failed — check output above"
+    exit 1
 fi
-sleep 1
 
-# Wait for MCP service to be ready (entrypoint deploys it async)
-log_info "Waiting for MCP service deployment..."
-sleep 5
+# Verify each service came up
+if $COMPOSE_CMD -f "$COMPOSE_FILE" ps --status running -q 2>/dev/null | grep -q .; then
+    log_ok "PostgreSQL ${DIM}(${BIND_IP}:${PORT_POSTGRES}, db=${PGDB}, user=${PGUSER})${NC}"
+    log_ok "Zenoh router ${DIM}(${BIND_IP}:${PORT_ZENOH_TCP}, :${PORT_ZENOH_WS})${NC}"
+    log_ok "EVA-ICS v4 ${DIM}(${BIND_IP}:7727, OPC UA :4840, MCP :${PORT_MCP})${NC}"
+else
+    log_err "Some infrastructure containers failed to start"
+    $COMPOSE_CMD -f "$COMPOSE_FILE" ps 2>&1 | while IFS= read -r line; do
+        echo -e "    ${DIM}${line}${NC}"
+    done
+    exit 1
+fi
+
+# --- Deploy EVA-ICS services (core starts with no services pre-deployed) ---
+
+log_info "Waiting for EVA-ICS core to be ready..."
+EVA_READY=0
+for i in $(seq 1 30); do
+    # Use eva CLI which gives human-readable output
+    if docker exec fendtastic-eva-ics eva item list 2>/dev/null; then
+        EVA_READY=1
+        break
+    fi
+    # Fallback: check if IPC socket exists AND core log shows ready
+    if docker exec fendtastic-eva-ics test -S /opt/eva4/var/bus.ipc 2>/dev/null; then
+        if docker logs fendtastic-eva-ics 2>&1 | grep -q "ready (regular mode)"; then
+            EVA_READY=1
+            break
+        fi
+    fi
+    sleep 2
+done
+
+if [ "$EVA_READY" -eq 1 ]; then
+    log_ok "EVA-ICS core is ready ${DIM}(${i}s)${NC}"
+
+    # Deploy standard services (ACL, auth, file manager, HMI) if not already present
+    log_info "Deploying EVA-ICS base services..."
+    docker exec -i fendtastic-eva-ics eva -T30 cloud deploy https://pub.bma.ai/eva4/docker/deploy/standard.yml 2>&1 | while IFS= read -r line; do
+        echo -e "    ${DIM}${line}${NC}"
+    done
+
+    # Deploy MCP service
+    log_info "Deploying MCP service..."
+    if docker exec fendtastic-eva-ics eva svc create eva.mcp.1 /mcp-config/svc-tpl-mcp.yml 2>&1 | while IFS= read -r line; do
+        echo -e "    ${DIM}${line}${NC}"
+    done; then
+        # Wait for MCP port to be listening
+        MCP_READY=0
+        for j in $(seq 1 30); do
+            if docker exec fendtastic-eva-ics sh -c \
+                "ss -tln 2>/dev/null | grep -q ':8765 ' || netstat -tln 2>/dev/null | grep -q ':8765 '" 2>/dev/null; then
+                MCP_READY=1
+                break
+            fi
+            sleep 1
+        done
+
+        if [ "$MCP_READY" -eq 1 ]; then
+            log_ok "MCP service is listening on port ${PORT_MCP}"
+        else
+            log_warn "MCP service deployed but port ${PORT_MCP} not yet listening"
+            log_info "  Check: docker logs fendtastic-eva-ics"
+        fi
+    else
+        log_warn "MCP service deployment failed"
+        log_info "  Manual deploy: docker exec fendtastic-eva-ics eva svc create eva.mcp.1 /mcp-config/svc-tpl-mcp.yml"
+    fi
+else
+    log_warn "EVA-ICS core did not become ready within 60s"
+    log_info "  Check: docker logs fendtastic-eva-ics"
+fi
 
 # --- Backend build ---
 
@@ -405,6 +471,7 @@ export EVA_ICS_URL="http://${BIND_IP}:7727"
 export EVA_ICS_API_KEY="${EVA_ICS_API_KEY:-default-key}"
 export PEA_CONFIG_DIR="${SCRIPT_DIR}/data/pea-configs"
 export RECIPE_DIR="${SCRIPT_DIR}/data/recipes"
+export DATABASE_URL="postgres://${PGUSER}:${PGPASS}@${BIND_IP}:${PORT_POSTGRES}/${PGDB}"
 
 (cd backend && cargo run --bin api-server 2>&1 &)
 PIDS+=($!)
@@ -465,21 +532,54 @@ echo ""
 echo -e "  ${BOLD}MCP Endpoint:${NC}    ${UNDERLINE}${CYAN}${URL_MCP}${NC}"
 echo -e "  ${BOLD}Transport:${NC}       ${CYAN}SSE (Server-Sent Events)${NC}"
 echo -e "  ${BOLD}Service ID:${NC}      ${CYAN}eva.mcp.1${NC}"
-echo -e "  ${BOLD}Container:${NC}       ${CYAN}fendtastic-eva-ics-dev${NC}"
+echo -e "  ${BOLD}Container:${NC}       ${CYAN}fendtastic-eva-ics${NC}"
 echo ""
 echo -e "  ${DIM}Add to MCP clients with:${NC}"
 echo ""
-echo -e "  ${BOLD}Claude Code:${NC}"
-echo -e "    ${DIM}claude mcp add eva-ics --transport sse ${URL_MCP}${NC}"
+echo -e "  ${BOLD}Claude Code CLI:${NC}"
+echo -e "    ${DIM}claude mcp add eva-ics --transport sse ${URL_MCP}/sse${NC}"
 echo ""
-echo -e "  ${BOLD}VS Code (settings.json):${NC}"
+
+# --- Generate full JSON configs ---
+
+MCP_JSON_CLAUDE=$(cat <<ENDJSON
+{
+  "mcpServers": {
+    "eva-ics": {
+      "type": "sse",
+      "url": "${URL_MCP}/sse"
+    }
+  }
+}
+ENDJSON
+)
+
+MCP_JSON_ANTIGRAVITY=$(cat <<ENDJSON
+{
+  "mcpServers": {
+    "eva-ics": {
+      "serverUrl": "${URL_MCP}/sse"
+    }
+  }
+}
+ENDJSON
+)
+
+echo -e "  ${BOLD}Claude Code / Claude Desktop ${DIM}(.mcp.json / claude_desktop_config.json)${NC}${BOLD}:${NC}"
+echo -e "${DIM}"
+echo "$MCP_JSON_CLAUDE" | sed 's/^/    /'
+echo -e "${NC}"
+
+echo -e "  ${BOLD}Google Antigravity ${DIM}(mcp_config.json → Manage MCP Servers → View raw config)${NC}${BOLD}:${NC}"
+echo -e "${DIM}"
+echo "$MCP_JSON_ANTIGRAVITY" | sed 's/^/    /'
+echo -e "${NC}"
+
+echo -e "  ${BOLD}VS Code ${DIM}(settings.json)${NC}${BOLD}:${NC}"
 echo -e "    ${DIM}\"mcp\": { \"servers\": { \"eva-ics\": { \"url\": \"${URL_MCP}/sse\" } } }${NC}"
 echo ""
-echo -e "  ${BOLD}Claude Desktop (claude_desktop_config.json):${NC}"
-echo -e "    ${DIM}{ \"mcpServers\": { \"eva-ics\": { \"url\": \"${URL_MCP}/sse\" } } }${NC}"
-echo ""
 echo -e "  ${BOLD}Manual deploy:${NC}"
-echo -e "    ${DIM}docker exec fendtastic-eva-ics-dev eva svc create eva.mcp.1 /mcp-config/svc-tpl-mcp.yml${NC}"
+echo -e "    ${DIM}docker exec fendtastic-eva-ics eva svc create eva.mcp.1 /mcp-config/svc-tpl-mcp.yml${NC}"
 
 # If bound to all interfaces, show every reachable address
 if [ "$BIND_IP" = "0.0.0.0" ]; then

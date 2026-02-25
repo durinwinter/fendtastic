@@ -27,7 +27,7 @@ services:
     command: -c /etc/zenoh/config.json5
 
   eva-ics:
-    image: altertech/eva-ics:latest
+    image: bmauto/eva-ics4
     container_name: fendtastic-eva-ics
     ports:
       - "7727:7727"

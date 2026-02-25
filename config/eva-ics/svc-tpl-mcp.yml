@@ -1,5 +1,5 @@
 # EVA ICS MCP service — deployed automatically by fendtastic
-# Exposes Model Context Protocol (MCP) over SSE for AI agent integration
+# See: https://info.bma.ai/en/actual/eva4/svc/eva-mcp.html#setup
 command: svc/eva-mcp
 workers: 1
 bus:
@@ -9,4 +9,13 @@ config:
   listen: 0.0.0.0:8765
   # Allow all EAPI methods (restrict in production)
   allow: "*"
+  #allow:
+  #  eva.core:
+  #    - test
+  #    - item.list
+  #    - item.state
+  #  eva.repl.default:
+  #    - test
+  #    - node.list
+  #  eva.svc.test: "*"
 user: nobody

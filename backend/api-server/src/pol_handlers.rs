@@ -298,23 +298,6 @@ pub async fn delete_blackout(
     HttpResponse::NoContent().finish()
 }
 
-pub fn load_alarms(dir: &str) -> std::collections::HashMap<String, crate::state::AlarmRecord> {
-    let path = format!("{}/{}", dir, ALARMS_FILE);
-    match std::fs::read_to_string(&path) {
-        Ok(content) => match serde_json::from_str::<
-            std::collections::HashMap<String, crate::state::AlarmRecord>,
-        >(&content)
-        {
-            Ok(alarms) => alarms,
-            Err(e) => {
-                error!("Failed to parse alarms file {}: {}", path, e);
-                std::collections::HashMap::new()
-            }
-        },
-        Err(_) => std::collections::HashMap::new(),
-    }
-}
-
 pub fn persist_alarms(
     dir: &str,
     alarms: &std::collections::HashMap<String, crate::state::AlarmRecord>,
@@ -331,14 +314,6 @@ pub fn persist_alarms(
             }
         }
         Err(e) => error!("Failed to serialize alarms: {}", e),
-    }
-}
-
-pub fn load_topology(dir: &str) -> PolTopology {
-    let path = format!("{}/{}", dir, TOPOLOGY_FILE);
-    match std::fs::read_to_string(&path) {
-        Ok(content) => serde_json::from_str::<PolTopology>(&content).unwrap_or_default(),
-        Err(_) => PolTopology::default(),
     }
 }
 

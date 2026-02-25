@@ -15,7 +15,10 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^6.28.0",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "@oicl/openbridge-webcomponents": "^0.0.17",
+    "@oicl/openbridge-webcomponents-react": "^0.0.17",
+    "@lit/react": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

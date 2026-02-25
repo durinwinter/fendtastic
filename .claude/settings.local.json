@@ -10,7 +10,11 @@
       "Bash(gh api:*)",
       "Bash(python3:*)",
       "Bash(npx tsc:*)",
-      "Bash(/home/earthling/.cargo/bin/cargo check --manifest-path /home/earthling/Documents/fendtastic/backend/Cargo.toml)"
+      "Bash(/home/earthling/.cargo/bin/cargo check --manifest-path /home/earthling/Documents/fendtastic/backend/Cargo.toml)",
+      "Bash(bash -n /home/earthling/Documents/fendtastic/dev.sh)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm info:*)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }

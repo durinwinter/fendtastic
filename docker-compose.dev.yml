@@ -1,0 +1,50 @@
+# =============================================================================
+# Fendtastic Development Infrastructure
+# Used by dev.sh — infrastructure containers only (no backend/frontend).
+# Backend and frontend run natively for hot-reload.
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fendtastic-postgres
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${PORT_POSTGRES:-5432}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-fendtastic}
+      - POSTGRES_USER=${POSTGRES_USER:-fendtastic}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fendtastic}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fendtastic} -d ${POSTGRES_DB:-fendtastic}"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  zenoh-router:
+    image: eclipse/zenoh:latest
+    container_name: fendtastic-zenoh-router
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${PORT_ZENOH_TCP:-7447}:7447"
+      - "${BIND_IP:-127.0.0.1}:${PORT_ZENOH_WS:-8000}:8000"
+    volumes:
+      - ./config/zenoh-router.json5:/etc/zenoh/config.json5:ro
+    command: -c /etc/zenoh/config.json5
+
+  eva-ics:
+    image: bmauto/eva-ics4
+    container_name: fendtastic-eva-ics
+    ports:
+      - "${BIND_IP:-127.0.0.1}:7727:7727"
+      - "${BIND_IP:-127.0.0.1}:4840:4840"
+      - "${BIND_IP:-127.0.0.1}:${PORT_MCP:-8765}:8765"
+    volumes:
+      - eva-ics-runtime:/opt/eva4/runtime
+      - ./config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro
+    # Use the image's default entrypoint — it starts the EVA-ICS core.
+    # MCP service is deployed after startup via docker exec in dev.sh.
+
+volumes:
+  postgres-data:
+  eva-ics-runtime:

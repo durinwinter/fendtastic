@@ -1,0 +1,43 @@
+/* =============================================================================
+ * OpenBridge Mars Theme Override
+ * Themes OpenBridge web components for the Fendtastic Mars dark palette.
+ * Import this in App.tsx or MarsHabitat.tsx to apply.
+ * ============================================================================= */
+
+/* Override OpenBridge CSS custom properties for dark Mars theme */
+:root,
+.obc-dark {
+  /* Instrument frame & backgrounds */
+  --instrument-frame-primary-color: #1a1a1a;
+  --instrument-frame-secondary-color: #121212;
+  --instrument-enhanced-primary-color: #B7410E;
+
+  /* Automation medium colors (tank fill) */
+  --automation-medium-water: #00D1FF;
+  --automation-medium-fuel: #FFBF00;
+  --automation-medium-cargo: #2ECC71;
+  --automation-medium-ballast: #3498DB;
+
+  /* Text and label colors */
+  --element-active-color: #ffffff;
+  --element-neutral-color: #888888;
+  --element-inactive-color: #444444;
+
+  /* Alert/status colors */
+  --alert-1-color: #E74C3C;
+  --alert-2-color: #F39C12;
+  --alert-3-color: #FFBF00;
+  --status-ok-color: #2ECC71;
+  --status-running-color: #00D1FF;
+}
+
+/* Tank component dark theme adjustments */
+obc-automation-tank {
+  --instrument-frame-primary-color: #1a1a1a;
+  color: #ffffff;
+}
+
+/* Readout component dark theme */
+obc-automation-readout {
+  color: #ffffff;
+}

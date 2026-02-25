@@ -1,44 +1,27 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React from 'react'
+import { Box, Typography } from '@mui/material'
 
 interface PumpProps {
-    name: string;
-    isRunning: boolean;
+  name: string
+  isRunning: boolean
 }
 
+/**
+ * OpenBridge-inspired pump indicator.
+ * Circle with directional triangle, colored by running state.
+ */
 const Pump: React.FC<PumpProps> = ({ name, isRunning }) => {
-    return (
-        <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
-        }}>
-            <Box
-                sx={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    border: `4px solid ${isRunning ? '#4caf50' : '#757575'}`,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    bgcolor: 'white'
-                }}
-            >
-                <Box
-                    sx={{
-                        width: '0',
-                        height: '0',
-                        borderTop: '8px solid transparent',
-                        borderBottom: '8px solid transparent',
-                        borderLeft: `12px solid ${isRunning ? '#4caf50' : '#757575'}`,
-                        marginLeft: '4px'
-                    }}
-                />
-            </Box>
-            <Typography variant="caption" sx={{ mt: 0.5 }}>{name}</Typography>
-        </Box>
-    );
-};
+  const color = isRunning ? '#2ECC71' : '#555'
 
-export default Pump;
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+      <svg width="32" height="32" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="13" fill="none" stroke={color} strokeWidth="2" />
+        <polygon points="12,9 12,23 24,16" fill={color} opacity="0.8" />
+      </svg>
+      <Typography sx={{ color: '#888', fontSize: '0.5rem', fontWeight: 600 }}>{name}</Typography>
+    </Box>
+  )
+}
+
+export default Pump
