@@ -3,17 +3,18 @@ import {
   Paper, Typography, Box, Button, Select, MenuItem, Alert, Chip
 } from '@mui/material'
 import apiService from '../../services/apiService'
-import { PeaConfig } from '../../types/mtp'
+import { ZENOH_TOPICS } from '../../types/mtp'
 import zenohService from '../../services/zenohService'
 
 type NodePos = { x: number; y: number }
 type Edge = { from: string; to: string }
+type DiscoveredPea = { id: string; name: string }
 
 const CANVAS_WIDTH = 900
 const CANVAS_HEIGHT = 460
 
 const PeaConnectionsDesigner: React.FC = () => {
-  const [peas, setPeas] = useState<PeaConfig[]>([])
+  const [peas, setPeas] = useState<DiscoveredPea[]>([])
   const [nodePos, setNodePos] = useState<Record<string, NodePos>>({})
   const [edges, setEdges] = useState<Edge[]>([])
   const [source, setSource] = useState('')
@@ -22,23 +23,43 @@ const PeaConnectionsDesigner: React.FC = () => {
   const [dragOffset, setDragOffset] = useState<NodePos>({ x: 0, y: 0 })
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const list = await apiService.listPeas()
-        setPeas(list)
-        const seeded: Record<string, NodePos> = {}
-        list.forEach((p, idx) => {
-          seeded[p.id] = {
+    const upsertPea = (payload: any) => {
+      if (!payload || !payload.pea_id) return
+      setPeas(prev => {
+        const map = new Map(prev.map(p => [p.id, p]))
+        map.set(payload.pea_id, {
+          id: payload.pea_id,
+          name: payload.name || payload.pea_id,
+        })
+        return Array.from(map.values())
+      })
+
+      // Seed a position once when a new PEA is discovered.
+      setNodePos(prev => {
+        if (prev[payload.pea_id]) return prev
+        const idx = Object.keys(prev).length
+        return {
+          ...prev,
+          [payload.pea_id]: {
             x: 70 + (idx % 4) * 200,
             y: 70 + Math.floor(idx / 4) * 120,
-          }
-        })
-        setNodePos(seeded)
-      } catch {
-        setPeas([])
-      }
+          },
+        }
+      })
     }
-    load()
+
+    const unsubAnnounce = zenohService.subscribe(
+      ZENOH_TOPICS.peaDiscoveryWildcard,
+      upsertPea
+    )
+    const unsubStatus = zenohService.subscribe(
+      ZENOH_TOPICS.peaStatusWildcard,
+      upsertPea
+    )
+    return () => {
+      unsubAnnounce()
+      unsubStatus()
+    }
   }, [])
 
   useEffect(() => {
@@ -61,7 +82,7 @@ const PeaConnectionsDesigner: React.FC = () => {
     }
     void loadTopology()
 
-    const unsubscribe = zenohService.subscribe('fendtastic/pol/topology', (msg: any) => {
+    const onTopology = (msg: any) => {
       const incoming = msg?.edges
       if (Array.isArray(incoming)) {
         const normalized = incoming
@@ -69,8 +90,14 @@ const PeaConnectionsDesigner: React.FC = () => {
           .map((e: any) => ({ from: e.from, to: e.to }))
         setEdges(normalized)
       }
-    })
-    return () => unsubscribe()
+    }
+    const unsubscribeMurph = zenohService.subscribe('murph/pol/topology', onTopology)
+    // Legacy bridge support.
+    const unsubscribeLegacy = zenohService.subscribe('fendtastic/pol/topology', onTopology)
+    return () => {
+      unsubscribeMurph()
+      unsubscribeLegacy()
+    }
   }, [])
 
   const idToName = useMemo(() => {

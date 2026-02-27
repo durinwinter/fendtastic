@@ -5,8 +5,9 @@ import {
 } from '@mui/material'
 import { PlayArrow, Delete, Add, Save } from '@mui/icons-material'
 import apiService from '../../services/apiService'
+import zenohService from '../../services/zenohService'
 import { Recipe, RecipeStep } from '../../types/recipe'
-import { PeaConfig, ServiceCommand, ServiceState } from '../../types/mtp'
+import { ServiceCommand, ServiceState, ZENOH_TOPICS } from '../../types/mtp'
 
 type RecipeExecution = {
   execution_id: string
@@ -18,6 +19,12 @@ type RecipeExecution = {
   state: 'running' | 'completed' | 'failed' | 'aborted' | 'pending'
   started_at: string
   updated_at: string
+}
+
+type DiscoveredPea = {
+  id: string
+  name: string
+  services: Array<{ tag: string; name: string }>
 }
 
 const emptyRecipe = (): Recipe => ({
@@ -41,7 +48,7 @@ const newStep = (order: number): RecipeStep => ({
 
 const RecipeManager: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [peas, setPeas] = useState<PeaConfig[]>([])
+  const [peas, setPeas] = useState<DiscoveredPea[]>([])
   const [executions, setExecutions] = useState<RecipeExecution[]>([])
   const [selected, setSelected] = useState<Recipe>(emptyRecipe())
   const [saving, setSaving] = useState(false)
@@ -57,15 +64,6 @@ const RecipeManager: React.FC = () => {
     }
   }, [selected.id])
 
-  const loadPeas = useCallback(async () => {
-    try {
-      const list = await apiService.listPeas()
-      setPeas(list)
-    } catch (e) {
-      console.error('Failed to load PEAs:', e)
-    }
-  }, [])
-
   const loadExecutions = useCallback(async () => {
     try {
       const list = await apiService.listRecipeExecutions()
@@ -75,11 +73,51 @@ const RecipeManager: React.FC = () => {
     }
   }, [])
 
-  useEffect(() => { loadRecipes(); loadPeas(); loadExecutions() }, [loadRecipes, loadPeas, loadExecutions])
+  useEffect(() => { loadRecipes(); loadExecutions() }, [loadRecipes, loadExecutions])
   useEffect(() => {
     const t = setInterval(loadExecutions, 2000)
     return () => clearInterval(t)
   }, [loadExecutions])
+
+  // First POL migration step: use discovered PEAs from UNS topics instead of local PEA config API.
+  useEffect(() => {
+    const upsertPea = (payload: any) => {
+      if (!payload || !payload.pea_id) return
+      setPeas(prev => {
+        const map = new Map(prev.map(p => [p.id, p]))
+        const existing = map.get(payload.pea_id)
+
+        const services = Array.isArray(payload.services)
+          ? payload.services
+            .map((svc: any) => ({
+              tag: String(svc?.tag ?? '').trim(),
+              name: String(svc?.name ?? svc?.tag ?? '').trim(),
+            }))
+            .filter((svc: { tag: string; name: string }) => svc.tag.length > 0)
+          : []
+
+        map.set(payload.pea_id, {
+          id: payload.pea_id,
+          name: payload.name || existing?.name || payload.pea_id,
+          services: services.length > 0 ? services : (existing?.services ?? []),
+        })
+        return Array.from(map.values())
+      })
+    }
+
+    const unsubscribeAnnounce = zenohService.subscribe(
+      ZENOH_TOPICS.peaDiscoveryWildcard,
+      upsertPea
+    )
+    const unsubscribeStatus = zenohService.subscribe(
+      ZENOH_TOPICS.peaStatusWildcard,
+      upsertPea
+    )
+    return () => {
+      unsubscribeAnnounce()
+      unsubscribeStatus()
+    }
+  }, [])
 
   const handleSelectRecipe = (recipe: Recipe) => setSelected({ ...recipe })
 

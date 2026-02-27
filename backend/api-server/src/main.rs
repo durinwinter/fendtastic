@@ -8,6 +8,7 @@ use tracing::{error, info, Level};
 
 mod db;
 mod handlers;
+mod i3x_handlers;
 mod mesh_handlers;
 mod pea_handlers;
 mod pol_handlers;
@@ -561,6 +562,47 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/scenarios/running",
                         web::get().to(scenario_handlers::list_running_scenarios),
+                    )
+                    // I3X RFC 4.1 - Exploratory (Discovery)
+                    .route("/namespaces", web::get().to(i3x_handlers::get_namespaces))
+                    .route(
+                        "/objecttypes",
+                        web::get().to(i3x_handlers::get_object_types),
+                    )
+                    .route(
+                        "/objecttypes/{elementId}",
+                        web::get().to(i3x_handlers::get_object_type_by_id),
+                    )
+                    .route(
+                        "/relationshiptypes",
+                        web::get().to(i3x_handlers::get_relationship_types),
+                    )
+                    .route(
+                        "/relationshiptypes/{elementId}",
+                        web::get().to(i3x_handlers::get_relationship_type_by_id),
+                    )
+                    .route("/objects", web::get().to(i3x_handlers::get_objects))
+                    .route(
+                        "/objects/{elementId}",
+                        web::get().to(i3x_handlers::get_object_by_id),
+                    )
+                    .route(
+                        "/objects/{elementId}/related",
+                        web::get().to(i3x_handlers::get_related_objects),
+                    )
+                    // I3X RFC 4.2.1 - Values (Read)
+                    .route(
+                        "/objects/{elementId}/value",
+                        web::get().to(i3x_handlers::get_current_value),
+                    )
+                    .route(
+                        "/objects/{elementId}/history",
+                        web::get().to(i3x_handlers::get_historical_values),
+                    )
+                    // I3X RFC 4.2.2 - Values (Write)
+                    .route(
+                        "/objects/{elementId}/value",
+                        web::put().to(i3x_handlers::update_current_value),
                     )
                     // WebSocket
                     .route("/ws", web::get().to(websocket::ws_handler)),

@@ -6,6 +6,10 @@ use crate::state::{AlarmRule, AppState, BlackoutWindow, PolEdge, PolTopology};
 
 const ALARMS_FILE: &str = "alarms.json";
 const TOPOLOGY_FILE: &str = "topology.json";
+const POL_TOPOLOGY_TOPIC: &str = "murph/pol/topology";
+const POL_ALARM_ACTION_TOPIC: &str = "murph/pol/alarm/action";
+const LEGACY_POL_TOPOLOGY_TOPIC: &str = "fendtastic/pol/topology";
+const LEGACY_POL_ALARM_ACTION_TOPIC: &str = "fendtastic/pol/alarm/action";
 
 #[derive(serde::Deserialize)]
 pub struct AlarmActionPayload {
@@ -64,7 +68,12 @@ pub async fn put_topology(
     });
     let _ = state
         .zenoh_session
-        .put("fendtastic/pol/topology", bus_msg.to_string())
+        .put(POL_TOPOLOGY_TOPIC, bus_msg.to_string())
+        .await;
+    // Legacy bridge for older clients still listening on fendtastic/pol/*
+    let _ = state
+        .zenoh_session
+        .put(LEGACY_POL_TOPOLOGY_TOPIC, bus_msg.to_string())
         .await;
 
     HttpResponse::Ok().json(topology)
@@ -105,7 +114,20 @@ pub async fn delete_alarm(
     let _ = state
         .zenoh_session
         .put(
-            "fendtastic/pol/alarm/action",
+            POL_ALARM_ACTION_TOPIC,
+            serde_json::json!({
+                "alarm_id": id,
+                "action": "delete",
+                "timestamp": Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .await;
+    // Legacy bridge for older clients still listening on fendtastic/pol/*
+    let _ = state
+        .zenoh_session
+        .put(
+            LEGACY_POL_ALARM_ACTION_TOPIC,
             serde_json::json!({
                 "alarm_id": id,
                 "action": "delete",
@@ -144,7 +166,20 @@ async fn handle_alarm_action(
             let _ = state
                 .zenoh_session
                 .put(
-                    "fendtastic/pol/alarm/action",
+                    POL_ALARM_ACTION_TOPIC,
+                    serde_json::json!({
+                        "alarm_id": alarm_id,
+                        "action": status,
+                        "timestamp": Utc::now().to_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .await;
+            // Legacy bridge for older clients still listening on fendtastic/pol/*
+            let _ = state
+                .zenoh_session
+                .put(
+                    LEGACY_POL_ALARM_ACTION_TOPIC,
                     serde_json::json!({
                         "alarm_id": alarm_id,
                         "action": status,
