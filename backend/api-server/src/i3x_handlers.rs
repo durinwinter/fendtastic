@@ -1,4 +1,5 @@
 use crate::state::AppState;
+use shared::mtp::PeaConfig; // bring into scope for helper type signatures
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -398,6 +399,76 @@ pub async fn get_relationship_type_by_id(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Helper for building relationship metadata
+// ═══════════════════════════════════════════════════════════════════════════
+
+fn compute_relationships(
+    element_id: &str,
+    pea_configs: &std::collections::HashMap<String, shared::mtp::PeaConfig>,
+) -> Option<serde_json::Value> {
+    use serde_json::{json, Map, Value};
+
+    let mut map = Map::new();
+
+    if element_id == "underhill-base" {
+        let children: Vec<Value> = pea_configs
+            .keys()
+            .map(|k| Value::String(k.clone()))
+            .collect();
+        if !children.is_empty() {
+            map.insert("HasChildren".to_string(), Value::Array(children));
+        }
+    } else if let Some(config) = pea_configs.get(element_id) {
+        // PEA instance
+        map.insert(
+            "HasParent".to_string(),
+            Value::Array(vec![Value::String("underhill-base".to_string())]),
+        );
+        let children: Vec<Value> = config
+            .services
+            .iter()
+            .map(|svc| Value::String(format!("{}-{}", element_id, svc.tag)))
+            .collect();
+        if !children.is_empty() {
+            map.insert("HasChildren".to_string(), Value::Array(children));
+        }
+    } else if element_id.contains("-proc-") {
+        // procedure id -> parent is service (everything before "-proc-")
+        if let Some((svc_id, _)) = element_id.split_once("-proc-") {
+            map.insert(
+                "HasParent".to_string(),
+                Value::Array(vec![Value::String(svc_id.to_string())]),
+            );
+        }
+    } else if let Some((pea_id, tag)) = element_id.split_once('-') {
+        // service id -> parent is PEA, and children are procedures
+        map.insert(
+            "HasParent".to_string(),
+            Value::Array(vec![Value::String(pea_id.to_string())]),
+        );
+
+        if let Some(config) = pea_configs.get(pea_id) {
+            if let Some(svc) = config.services.iter().find(|s| s.tag == tag) {
+                let procs: Vec<Value> = svc
+                    .procedures
+                    .iter()
+                    .map(|p| Value::String(format!("{}-proc-{}", element_id, p.id)))
+                    .collect();
+                if !procs.is_empty() {
+                    map.insert("HasChildren".to_string(), Value::Array(procs));
+                }
+            }
+        }
+    }
+
+    if map.is_empty() {
+        None
+    } else {
+        Some(Value::Object(map))
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // RFC 4.1.5/4.1.7 - Object Instances
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -406,7 +477,7 @@ pub async fn get_objects(
     query: web::Query<HashMap<String, String>>,
 ) -> impl Responder {
     let _type_id_filter = query.get("typeId").map(|s| s.as_str());
-    let _include_metadata = query
+    let include_metadata = query
         .get("includeMetadata")
         .and_then(|s| s.parse::<bool>().ok())
         .unwrap_or(false);
@@ -420,7 +491,11 @@ pub async fn get_objects(
             parent_id: None,
             is_composition: true,
             namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-            relationships: None,
+            relationships: if include_metadata {
+                compute_relationships("underhill-base", &pea_configs)
+            } else {
+                None
+            },
         },
     ];
 
@@ -434,7 +509,11 @@ pub async fn get_objects(
             parent_id: Some("underhill-base".to_string()),
             is_composition: true,
             namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-            relationships: None,
+            relationships: if include_metadata {
+                compute_relationships(pea_id, &pea_configs)
+            } else {
+                None
+            },
         });
 
         // Add Service instances
@@ -447,7 +526,11 @@ pub async fn get_objects(
                 parent_id: Some(pea_id.clone()),
                 is_composition: true,
                 namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-                relationships: None,
+                relationships: if include_metadata {
+                    compute_relationships(&service_id, &pea_configs)
+                } else {
+                    None
+                },
             });
 
             // Add Procedure instances
@@ -457,13 +540,17 @@ pub async fn get_objects(
                     pea_id, service.tag, procedure.id
                 );
                 objects.push(ObjectInstance {
-                    element_id: proc_id,
+                    element_id: proc_id.clone(),
                     display_name: procedure.name.clone(),
                     type_id: "ProcedureType".to_string(),
                     parent_id: Some(format!("{}-{}", pea_id, service.tag)),
                     is_composition: false,
                     namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-                    relationships: None,
+                    relationships: if include_metadata {
+                        compute_relationships(&proc_id, &pea_configs)
+                    } else {
+                        None
+                    },
                 });
             }
         }
@@ -484,6 +571,7 @@ pub async fn get_object_by_id(
         .unwrap_or(false);
 
     if element_id == "underhill-base" {
+        let pea_map = state.pea_configs.read().await;
         return HttpResponse::Ok().json(ObjectInstance {
             element_id: "underhill-base".to_string(),
             display_name: "Underhill Base".to_string(),
@@ -491,7 +579,7 @@ pub async fn get_object_by_id(
             parent_id: None,
             is_composition: true,
             namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-            relationships: None,
+            relationships: compute_relationships("underhill-base", &pea_map),
         });
     }
 
@@ -507,7 +595,7 @@ pub async fn get_object_by_id(
             parent_id: Some("underhill-base".to_string()),
             is_composition: true,
             namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-            relationships: None,
+            relationships: compute_relationships(&element_id, &pea_configs),
         });
     }
 
@@ -523,7 +611,7 @@ pub async fn get_object_by_id(
                     parent_id: Some(pea_id.clone()),
                     is_composition: true,
                     namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-                    relationships: None,
+                    relationships: compute_relationships(&service_id, &pea_configs),
                 });
             }
 
@@ -541,7 +629,7 @@ pub async fn get_object_by_id(
                         parent_id: Some(service_id.clone()),
                         is_composition: false,
                         namespace_uri: "https://underhill.murph/ns/pea".to_string(),
-                        relationships: None,
+                        relationships: compute_relationships(&proc_id, &pea_configs),
                     });
                 }
             }
