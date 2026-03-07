@@ -1,3 +1,4 @@
+pub mod domain;
 pub mod mtp;
 
 use chrono::{DateTime, Utc};

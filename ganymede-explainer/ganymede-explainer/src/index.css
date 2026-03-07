@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=JetBrains+Mono:wght@300;500&display=swap');
+
+:root {
+  --bg-color: #05070a;
+  --panel-bg: rgba(16, 20, 26, 0.85);
+  --accent-blue: #00d4ff;
+  --accent-orange: #ff8c00;
+  --text-primary: #e0e6ed;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(0, 212, 255, 0.3);
+  --scanline-color: rgba(0, 212, 255, 0.03);
+
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  background-image:
+    linear-gradient(var(--scanline-color) 50%, transparent 50%),
+    url('https://www.nasa.gov/wp-content/uploads/2022/10/pia21043-full.jpg');
+  background-size: 100% 4px, cover;
+  background-position: center;
+  background-attachment: fixed;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 70% 30%, transparent 0%, rgba(5, 7, 10, 0.8) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.stars-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: twinkle var(--duration) infinite ease-in-out;
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+h1 {
+  color: var(--accent-blue);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.hud-border {
+  position: absolute;
+  border: 1px solid var(--border-color);
+  pointer-events: none;
+}
+
+.hud-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--accent-blue);
+}
+
+.top-left {
+  top: 20px;
+  left: 20px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.top-right {
+  top: 20px;
+  right: 20px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.bottom-left {
+  bottom: 20px;
+  left: 20px;
+  border-right: none;
+  border-top: none;
+}
+
+.bottom-right {
+  bottom: 20px;
+  right: 20px;
+  border-left: none;
+  border-top: none;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.9;
+  }
+
+  5% {
+    opacity: 0.8;
+  }
+
+  10% {
+    opacity: 0.9;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.flicker {
+  animation: flicker 4s infinite step-end;
+}
+
+.glow-text {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+  }
+
+  to {
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.9), 0 0 25px rgba(0, 212, 255, 0.4);
+  }
+}
+
+.technical-data {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent-blue);
+  opacity: 0.7;
+}

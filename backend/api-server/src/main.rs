@@ -570,6 +570,10 @@ async fn main() -> std::io::Result<()> {
                         web::get().to(i3x_handlers::get_object_types),
                     )
                     .route(
+                        "/objecttypes/query",
+                        web::post().to(i3x_handlers::query_object_types),
+                    )
+                    .route(
                         "/objecttypes/{elementId}",
                         web::get().to(i3x_handlers::get_object_type_by_id),
                     )
@@ -578,10 +582,22 @@ async fn main() -> std::io::Result<()> {
                         web::get().to(i3x_handlers::get_relationship_types),
                     )
                     .route(
+                        "/relationshiptypes/query",
+                        web::post().to(i3x_handlers::query_relationship_types),
+                    )
+                    .route(
                         "/relationshiptypes/{elementId}",
                         web::get().to(i3x_handlers::get_relationship_type_by_id),
                     )
                     .route("/objects", web::get().to(i3x_handlers::get_objects))
+                    .route(
+                        "/objects/list",
+                        web::post().to(i3x_handlers::get_objects_list),
+                    )
+                    .route(
+                        "/objects/related",
+                        web::post().to(i3x_handlers::get_related_objects_bulk),
+                    )
                     .route(
                         "/objects/{elementId}",
                         web::get().to(i3x_handlers::get_object_by_id),
@@ -591,6 +607,10 @@ async fn main() -> std::io::Result<()> {
                         web::get().to(i3x_handlers::get_related_objects),
                     )
                     // I3X RFC 4.2.1 - Values (Read)
+                    .route(
+                        "/objects/value",
+                        web::post().to(i3x_handlers::get_current_value_bulk),
+                    )
                     .route(
                         "/objects/{elementId}/value",
                         web::get().to(i3x_handlers::get_current_value),
