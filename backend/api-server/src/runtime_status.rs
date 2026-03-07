@@ -91,6 +91,7 @@ pub async fn collect_runtime_status_snapshot(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use shared::domain::runtime::{NeuronAccessMode, NeuronConnection, RuntimeArchitecture, RuntimeNode};
 
     fn check(name: &str, ok: bool) -> RuntimeNodeHealthCheck {
         RuntimeNodeHealthCheck {
@@ -121,5 +122,60 @@ mod tests {
     fn summarize_degraded_for_non_connectivity_failures() {
         let checks = vec![check("assigned_pea", false), check("auth", true)];
         assert_eq!(summarize_runtime_status(&checks), RuntimeNodeStatus::Degraded);
+    }
+
+    #[tokio::test]
+    async fn collect_status_for_file_export_node_uses_config_path_check() {
+        let node = RuntimeNode {
+            id: "runtime-1".to_string(),
+            name: "arm-node".to_string(),
+            architecture: RuntimeArchitecture::Arm64,
+            host: "10.0.20.41".to_string(),
+            neuron: NeuronConnection {
+                base_url: "http://unused".to_string(),
+                username: None,
+                password_ref: None,
+                config_path: Some("/opt/neuron/config".to_string()),
+                mode: NeuronAccessMode::FileExport,
+            },
+            assigned_pea_id: Some("pea-1".to_string()),
+            status: RuntimeNodeStatus::Unknown,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
+
+        let client = NeuronHttpClient::new();
+        let snapshot = collect_runtime_status_snapshot(&node, &client).await;
+
+        assert_eq!(snapshot.status, RuntimeNodeStatus::Online);
+        assert!(snapshot.checks.iter().any(|check| check.name == "config_path" && check.ok));
+        assert!(snapshot.checks.iter().any(|check| check.name == "assigned_pea" && check.ok));
+    }
+
+    #[tokio::test]
+    async fn collect_status_for_file_export_node_without_path_is_offline() {
+        let node = RuntimeNode {
+            id: "runtime-2".to_string(),
+            name: "arm-node".to_string(),
+            architecture: RuntimeArchitecture::Arm64,
+            host: "10.0.20.41".to_string(),
+            neuron: NeuronConnection {
+                base_url: "http://unused".to_string(),
+                username: None,
+                password_ref: None,
+                config_path: None,
+                mode: NeuronAccessMode::FileExport,
+            },
+            assigned_pea_id: Some("pea-1".to_string()),
+            status: RuntimeNodeStatus::Unknown,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
+
+        let client = NeuronHttpClient::new();
+        let snapshot = collect_runtime_status_snapshot(&node, &client).await;
+
+        assert_eq!(snapshot.status, RuntimeNodeStatus::Offline);
+        assert!(snapshot.checks.iter().any(|check| check.name == "config_path" && !check.ok));
     }
 }

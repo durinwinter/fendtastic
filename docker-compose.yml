@@ -23,24 +23,8 @@ services:
       - "7447:7447"
       - "8000:8000"
     volumes:
-      - ./config/zenoh-router.json5:/etc/zenoh/config.json5
+      - ./config/zenoh-router.json5:/etc/zenoh/config.json5:ro
     command: -c /etc/zenoh/config.json5
-
-  eva-ics:
-    image: bmauto/eva-ics4
-    container_name: fendtastic-eva-ics
-    ports:
-      - "7727:7727"
-      - "4840:4840"
-      - "8765:8765"   # MCP (Model Context Protocol) SSE server
-    volumes:
-      - eva-ics-data:/opt/eva4/runtime
-      - ./config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro
-      - ./config/eva-ics/entrypoint.sh:/mcp-config/entrypoint.sh:ro
-    environment:
-      - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
-    entrypoint: ["/bin/bash", "/mcp-config/entrypoint.sh"]
-    restart: unless-stopped
 
   backend:
     build:
@@ -51,8 +35,6 @@ services:
       - "8080:8080"
     environment:
       - ZENOH_ROUTER=tcp/zenoh-router:7447
-      - EVA_ICS_URL=http://eva-ics:7727
-      - EVA_ICS_API_KEY=${EVA_ICS_API_KEY}
       - PEA_CONFIG_DIR=/app/data/pea-configs
       - POL_DB_DIR=/app/data/pol
       - DATABASE_URL=postgres://${POSTGRES_USER:-fendtastic}:${POSTGRES_PASSWORD:-fendtastic}@postgres:5432/${POSTGRES_DB:-fendtastic}
@@ -60,8 +42,6 @@ services:
       postgres:
         condition: service_healthy
       zenoh-router:
-        condition: service_started
-      eva-ics:
         condition: service_started
     volumes:
       - ./config:/app/config
@@ -80,6 +60,5 @@ services:
 
 volumes:
   postgres-data:
-  eva-ics-data:
   pea-configs:
   pol-data:

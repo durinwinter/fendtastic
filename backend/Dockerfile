@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /app/target/release/api-server /usr/local/bin/
 COPY --from=builder /app/target/release/zenoh-bridge /usr/local/bin/
-COPY --from=builder /app/target/release/eva-ics-connector /usr/local/bin/
+COPY --from=builder /app/target/release/neuron-connector /usr/local/bin/
 
 EXPOSE 8080
 

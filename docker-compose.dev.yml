@@ -32,19 +32,5 @@ services:
       - ./config/zenoh-router.json5:/etc/zenoh/config.json5:ro
     command: -c /etc/zenoh/config.json5
 
-  eva-ics:
-    image: bmauto/eva-ics4
-    container_name: fendtastic-eva-ics
-    ports:
-      - "${BIND_IP:-127.0.0.1}:7727:7727"
-      - "${BIND_IP:-127.0.0.1}:4840:4840"
-      - "${BIND_IP:-127.0.0.1}:${PORT_MCP:-8765}:8765"
-    volumes:
-      - eva-ics-runtime:/opt/eva4/runtime
-      - ./config/eva-ics/svc-tpl-mcp.yml:/mcp-config/svc-tpl-mcp.yml:ro
-    # Use the image's default entrypoint — it starts the EVA-ICS core.
-    # MCP service is deployed after startup via docker exec in dev.sh.
-
 volumes:
   postgres-data:
-  eva-ics-runtime:

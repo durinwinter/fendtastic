@@ -124,17 +124,12 @@ pub async fn deploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -
     let configs = state.pea_configs.read().await;
     match configs.get(pea_id.as_str()) {
         Some(config) => {
-            // Publish deploy command to Zenoh for any runtime bridge consuming deployment events.
+            // Publish deploy command on the runtime topic family.
             let deploy_msg = serde_json::json!({
                 "action": "deploy",
                 "pea_config": config
             });
-            let topic = shared::mtp::topics::pea_deploy(&pea_id);
             let runtime_topic = shared::mtp::topics::runtime_pea_deploy(&pea_id);
-            let _ = state
-                .zenoh_session
-                .put(&topic, deploy_msg.to_string())
-                .await;
             let _ = state
                 .zenoh_session
                 .put(&runtime_topic, deploy_msg.to_string())
@@ -193,12 +188,7 @@ pub async fn undeploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>)
     }
 
     let undeploy_msg = serde_json::json!({ "action": "undeploy" });
-    let topic = shared::mtp::topics::pea_deploy(&pea_id_str);
     let runtime_topic = shared::mtp::topics::runtime_pea_deploy(&pea_id_str);
-    let _ = state
-        .zenoh_session
-        .put(&topic, undeploy_msg.to_string())
-        .await;
     let _ = state
         .zenoh_session
         .put(&runtime_topic, undeploy_msg.to_string())
@@ -309,11 +299,9 @@ pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) ->
         }
     };
 
-    // Publish lifecycle command for runtime adapters that still consume legacy PEA lifecycle topics.
+    // Publish lifecycle command on the runtime topic family.
     let cmd = serde_json::json!({"action": "start"});
-    let topic = shared::mtp::topics::pea_lifecycle(&pea_id_str);
     let runtime_topic = shared::mtp::topics::runtime_pea_lifecycle(&pea_id_str);
-    let _ = state.zenoh_session.put(&topic, cmd.to_string()).await;
     let _ = state
         .zenoh_session
         .put(&runtime_topic, cmd.to_string())
@@ -393,11 +381,9 @@ pub async fn stop_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> 
 
     let pea_id_str = pea_id.into_inner();
 
-    // Publish lifecycle command for runtime adapters that still consume legacy PEA lifecycle topics.
+    // Publish lifecycle command on the runtime topic family.
     let cmd = serde_json::json!({"action": "stop"});
-    let topic = shared::mtp::topics::pea_lifecycle(&pea_id_str);
     let runtime_topic = shared::mtp::topics::runtime_pea_lifecycle(&pea_id_str);
-    let _ = state.zenoh_session.put(&topic, cmd.to_string()).await;
     let _ = state
         .zenoh_session
         .put(&runtime_topic, cmd.to_string())

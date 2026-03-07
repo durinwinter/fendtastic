@@ -33,8 +33,8 @@ pub async fn run(session: Session) {
 }
 
 async fn process_sample(key: &str, _payload: &str) {
-    if key.starts_with("fendtastic/eva-ics/") {
-        info!("Processing EVA-ICS data: {}", key);
+    if key.starts_with("murph/runtime/") || key.starts_with("murph/habitat/") {
+        info!("Processing runtime event: {}", key);
     } else if key.starts_with("fendtastic/commands/") {
         info!("Processing command: {}", key);
     }

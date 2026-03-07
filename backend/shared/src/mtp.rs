@@ -488,35 +488,6 @@ pub struct ServiceRuntimeState {
     pub source_mode: SourceMode,
 }
 
-// ─── EVA-ICS Deployment Structures ───────────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EvaDeploymentPlan {
-    pub pea_id: String,
-    pub items: Vec<EvaItem>,
-    pub controller_service: Option<EvaControllerConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EvaItem {
-    pub oid: String,
-    pub enabled: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EvaControllerConfig {
-    pub id: String,
-    pub opcua_endpoint: String,
-    pub node_mappings: Vec<OpcUaNodeMapping>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OpcUaNodeMapping {
-    pub oid: String,
-    pub node_id: String,
-    pub interval_ms: u32,
-}
-
 // ─── Recipe / Sequence Models ────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -592,14 +563,6 @@ pub mod topics {
         format!("murph/habitat/nodes/{}/pea/{}/config", get_node_id(), pea_id)
     }
 
-    pub fn pea_deploy(pea_id: &str) -> String {
-        format!("murph/habitat/nodes/{}/pea/{}/deploy", get_node_id(), pea_id)
-    }
-
-    pub fn pea_lifecycle(pea_id: &str) -> String {
-        format!("murph/habitat/nodes/{}/pea/{}/lifecycle", get_node_id(), pea_id)
-    }
-
     pub fn runtime_pea_deploy(pea_id: &str) -> String {
         format!("murph/runtime/nodes/{}/pea/{}/deploy", get_node_id(), pea_id)
     }
@@ -610,12 +573,9 @@ pub mod topics {
 
     pub const PEA_ANNOUNCE_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/announce";
     pub const PEA_STATUS_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/status";
-    pub const PEA_DEPLOY_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/deploy";
-    pub const PEA_LIFECYCLE_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/lifecycle";
     pub const RUNTIME_PEA_DEPLOY_WILDCARD: &str = "murph/runtime/nodes/*/pea/*/deploy";
     pub const RUNTIME_PEA_LIFECYCLE_WILDCARD: &str = "murph/runtime/nodes/*/pea/*/lifecycle";
     pub const PEA_SERVICE_COMMAND_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/services/*/command";
     pub const POL_RECIPES_COMMAND: &str = "murph/pol/recipes/command";
     pub const POL_RECIPES_STATUS: &str = "murph/pol/recipes/status";
-    pub const STATUS_EVA_ICS: &str = "murph/status/eva-ics";
 }
