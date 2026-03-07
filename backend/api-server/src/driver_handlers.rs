@@ -1,4 +1,5 @@
 use crate::authority_service;
+use crate::neuron_client::NeuronHttpClient;
 use crate::runtime_store;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
@@ -122,108 +123,236 @@ pub async fn delete_driver(state: web::Data<AppState>, id: web::Path<String>) ->
 }
 
 pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    set_driver_state(state, id.as_str(), DriverInstanceState::Running).await
+    let client = NeuronHttpClient::new();
+    let driver_snapshot = {
+        let drivers = state.driver_instances.read().await;
+        match drivers.get(id.as_str()) {
+            Some(driver) => driver.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Driver not found"}))
+            }
+        }
+    };
+    let runtime_node = {
+        let runtime_nodes = state.runtime_nodes.read().await;
+        match runtime_nodes.get(&driver_snapshot.runtime_node_id) {
+            Some(runtime_node) => runtime_node.clone(),
+            None => {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
+        }
+    };
+
+    match client.start_driver(&runtime_node.neuron, &driver_snapshot).await {
+        Ok(()) => {
+            let mut drivers = state.driver_instances.write().await;
+            let Some(driver) = drivers.get_mut(id.as_str()) else {
+                return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+            };
+            driver.state = DriverInstanceState::Running;
+            driver.last_error = None;
+            driver.updated_at = chrono::Utc::now();
+            runtime_store::persist_json(&state.driver_dir, &driver.id, driver);
+            HttpResponse::Ok().json(driver)
+        }
+        Err(err) => {
+            let mut drivers = state.driver_instances.write().await;
+            let Some(driver) = drivers.get_mut(id.as_str()) else {
+                return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+            };
+            driver.state = DriverInstanceState::Error;
+            driver.last_error = Some(err.to_string());
+            driver.updated_at = chrono::Utc::now();
+            runtime_store::persist_json(&state.driver_dir, &driver.id, driver);
+            HttpResponse::BadGateway().json(serde_json::json!({"error": err.to_string()}))
+        }
+    }
 }
 
 pub async fn stop_driver(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    set_driver_state(state, id.as_str(), DriverInstanceState::Stopped).await
+    let client = NeuronHttpClient::new();
+    let driver_snapshot = {
+        let drivers = state.driver_instances.read().await;
+        match drivers.get(id.as_str()) {
+            Some(driver) => driver.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Driver not found"}))
+            }
+        }
+    };
+    let runtime_node = {
+        let runtime_nodes = state.runtime_nodes.read().await;
+        match runtime_nodes.get(&driver_snapshot.runtime_node_id) {
+            Some(runtime_node) => runtime_node.clone(),
+            None => {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
+        }
+    };
+
+    match client.stop_driver(&runtime_node.neuron, &driver_snapshot).await {
+        Ok(()) => {
+            let mut drivers = state.driver_instances.write().await;
+            let Some(driver) = drivers.get_mut(id.as_str()) else {
+                return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+            };
+            driver.state = DriverInstanceState::Stopped;
+            driver.last_error = None;
+            driver.updated_at = chrono::Utc::now();
+            runtime_store::persist_json(&state.driver_dir, &driver.id, driver);
+            HttpResponse::Ok().json(driver)
+        }
+        Err(err) => {
+            let mut drivers = state.driver_instances.write().await;
+            let Some(driver) = drivers.get_mut(id.as_str()) else {
+                return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+            };
+            driver.state = DriverInstanceState::Error;
+            driver.last_error = Some(err.to_string());
+            driver.updated_at = chrono::Utc::now();
+            runtime_store::persist_json(&state.driver_dir, &driver.id, driver);
+            HttpResponse::BadGateway().json(serde_json::json!({"error": err.to_string()}))
+        }
+    }
 }
 
 pub async fn read_driver_tag(state: web::Data<AppState>, id: web::Path<String>, body: web::Json<ReadTagRequest>) -> impl Responder {
-    let drivers = state.driver_instances.read().await;
-    let Some(driver) = drivers.get(id.as_str()) else {
-        return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+    let client = NeuronHttpClient::new();
+    let driver = {
+        let drivers = state.driver_instances.read().await;
+        match drivers.get(id.as_str()) {
+            Some(driver) => driver.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Driver not found"}))
+            }
+        }
+    };
+    let runtime_node = {
+        let runtime_nodes = state.runtime_nodes.read().await;
+        match runtime_nodes.get(&driver.runtime_node_id) {
+            Some(runtime_node) => runtime_node.clone(),
+            None => {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
+        }
     };
 
-    let tag = driver
+    let tag_with_group = driver
         .tag_groups
         .iter()
-        .flat_map(|group| group.tags.iter())
-        .find(|tag| tag.id == body.tag_id);
+        .find_map(|group| {
+            group
+                .tags
+                .iter()
+                .find(|tag| tag.id == body.tag_id)
+                .map(|tag| (group.name.clone(), tag.clone()))
+        });
 
-    match tag {
-        Some(tag) => {
+    match tag_with_group {
+        Some((group_name, tag)) => {
             if !matches!(tag.access, TagAccess::Read | TagAccess::ReadWrite) {
                 return HttpResponse::BadRequest().json(serde_json::json!({
                     "error": "Tag does not support read access"
                 }));
             }
 
-            HttpResponse::Ok().json(serde_json::json!({
-                "tag_id": tag.id,
-                "value": sample_value_for_tag(tag.data_type.clone()),
-                "quality": "good",
-                "timestamp": chrono::Utc::now().to_rfc3339(),
-            }))
+            match client
+                .read_tag(&runtime_node.neuron, &driver, &group_name, &tag.name)
+                .await
+            {
+                Ok(read_result) => HttpResponse::Ok().json(serde_json::json!({
+                    "tag_id": tag.id,
+                    "tag_name": tag.name,
+                    "value": read_result.value,
+                    "error": read_result.error,
+                    "quality": if read_result.error.unwrap_or_default() == 0 { "good" } else { "bad" },
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                })),
+                Err(err) => HttpResponse::BadGateway().json(serde_json::json!({
+                    "error": err.to_string()
+                })),
+            }
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
     }
 }
 
 pub async fn write_driver_tag(state: web::Data<AppState>, id: web::Path<String>, body: web::Json<WriteTagRequest>) -> impl Responder {
+    let client = NeuronHttpClient::new();
     let authority = get_authority_for_pea(&state, &body.pea_id).await;
     if let Err(message) = authority_service::validate_write_request(&authority, &body.actor_class) {
         return HttpResponse::Forbidden().json(serde_json::json!({"error": message}));
     }
 
-    let drivers = state.driver_instances.read().await;
-    let Some(driver) = drivers.get(id.as_str()) else {
-        return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+    let driver = {
+        let drivers = state.driver_instances.read().await;
+        match drivers.get(id.as_str()) {
+            Some(driver) => driver.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Driver not found"}))
+            }
+        }
+    };
+    let runtime_node = {
+        let runtime_nodes = state.runtime_nodes.read().await;
+        match runtime_nodes.get(&driver.runtime_node_id) {
+            Some(runtime_node) => runtime_node.clone(),
+            None => {
+                return HttpResponse::BadRequest()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
+        }
     };
 
-    let tag = driver
+    let tag_with_group = driver
         .tag_groups
         .iter()
-        .flat_map(|group| group.tags.iter())
-        .find(|tag| tag.id == body.tag_id);
+        .find_map(|group| {
+            group
+                .tags
+                .iter()
+                .find(|tag| tag.id == body.tag_id)
+                .map(|tag| (group.name.clone(), tag.clone()))
+        });
 
-    match tag {
-        Some(tag) => {
+    match tag_with_group {
+        Some((group_name, tag)) => {
             if !matches!(tag.access, TagAccess::Write | TagAccess::ReadWrite) {
                 return HttpResponse::BadRequest().json(serde_json::json!({
                     "error": "Tag does not support write access"
                 }));
             }
 
-            HttpResponse::Ok().json(serde_json::json!({
-                "tag_id": tag.id,
-                "value": body.value,
-                "actor_id": body.actor_id,
-                "status": "accepted",
-                "timestamp": chrono::Utc::now().to_rfc3339(),
-            }))
+            match client
+                .write_tag(&runtime_node.neuron, &driver, &group_name, &tag.name, body.value.clone())
+                .await
+            {
+                Ok(()) => HttpResponse::Ok().json(serde_json::json!({
+                    "tag_id": tag.id,
+                    "value": body.value,
+                    "actor_id": body.actor_id,
+                    "status": "accepted",
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                })),
+                Err(err) => HttpResponse::BadGateway().json(serde_json::json!({
+                    "error": err.to_string()
+                })),
+            }
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
     }
 }
 
-async fn set_driver_state(state: web::Data<AppState>, id: &str, target_state: DriverInstanceState) -> HttpResponse {
-    let mut drivers = state.driver_instances.write().await;
-    let Some(driver) = drivers.get_mut(id) else {
-        return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
-    };
-    driver.state = target_state;
-    driver.updated_at = chrono::Utc::now();
-    runtime_store::persist_json(&state.driver_dir, &driver.id, driver);
-    HttpResponse::Ok().json(driver)
-}
-
 async fn get_authority_for_pea(state: &web::Data<AppState>, pea_id: &str) -> AuthorityState {
     let authority_states = state.authority_states.read().await;
     authority_states.get(pea_id).cloned().unwrap_or_else(|| authority_service::default_authority_state(pea_id))
-}
-
-fn sample_value_for_tag(data_type: shared::domain::driver::DriverDataType) -> serde_json::Value {
-    match data_type {
-        shared::domain::driver::DriverDataType::Bool => serde_json::json!(true),
-        shared::domain::driver::DriverDataType::Int16
-        | shared::domain::driver::DriverDataType::Uint16
-        | shared::domain::driver::DriverDataType::Int32
-        | shared::domain::driver::DriverDataType::Uint32 => serde_json::json!(42),
-        shared::domain::driver::DriverDataType::Float32
-        | shared::domain::driver::DriverDataType::Float64 => serde_json::json!(3.14),
-        shared::domain::driver::DriverDataType::String => serde_json::json!("sample"),
-    }
 }
 
 fn default_tag_groups(driver_key: &str) -> Vec<TagGroup> {

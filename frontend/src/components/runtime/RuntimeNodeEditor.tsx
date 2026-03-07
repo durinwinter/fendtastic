@@ -21,7 +21,7 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onTest }: Runt
       neuron: {
         base_url: 'http://10.0.20.41:7000',
         username: 'admin',
-        password_ref: 'secret://runtime/default/neuron',
+        password_ref: '0000',
         config_path: '/opt/neuron/config',
         mode: 'Hybrid',
       },

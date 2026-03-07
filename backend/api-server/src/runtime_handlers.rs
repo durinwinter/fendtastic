@@ -3,6 +3,7 @@ use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use shared::domain::runtime::{NeuronConnection, NeuronAccessMode, RuntimeArchitecture, RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatus};
 use uuid::Uuid;
+use crate::neuron_client::NeuronHttpClient;
 
 #[derive(serde::Deserialize)]
 pub struct CreateRuntimeNodeRequest {
@@ -103,31 +104,33 @@ pub async fn test_runtime_node(state: web::Data<AppState>, id: web::Path<String>
         return HttpResponse::NotFound().json(serde_json::json!({"error": "Runtime node not found"}));
     };
 
-    let checks = vec![
-        RuntimeNodeHealthCheck {
-            name: "neuron_base_url".to_string(),
-            ok: node.neuron.base_url.starts_with("http://") || node.neuron.base_url.starts_with("https://"),
-            message: if node.neuron.base_url.starts_with("http://") || node.neuron.base_url.starts_with("https://") {
-                "Neuron base URL looks valid".to_string()
-            } else {
-                "Neuron base URL must start with http:// or https://".to_string()
-            },
+    let client = NeuronHttpClient::new();
+    let mut checks = vec![RuntimeNodeHealthCheck {
+        name: "assigned_pea".to_string(),
+        ok: node.assigned_pea_id.is_some(),
+        message: if node.assigned_pea_id.is_some() {
+            "Runtime node has an assigned PEA".to_string()
+        } else {
+            "Runtime node has no assigned PEA yet".to_string()
         },
-        RuntimeNodeHealthCheck {
+    }];
+
+    if !matches!(node.neuron.mode, NeuronAccessMode::Api | NeuronAccessMode::Hybrid) {
+        checks.push(RuntimeNodeHealthCheck {
             name: "neuron_mode".to_string(),
-            ok: matches!(node.neuron.mode, NeuronAccessMode::Api | NeuronAccessMode::FileExport | NeuronAccessMode::Hybrid),
-            message: "Neuron access mode is supported".to_string(),
-        },
-        RuntimeNodeHealthCheck {
-            name: "assigned_pea".to_string(),
-            ok: node.assigned_pea_id.is_some(),
-            message: if node.assigned_pea_id.is_some() {
-                "Runtime node has an assigned PEA".to_string()
-            } else {
-                "Runtime node has no assigned PEA yet".to_string()
-            },
-        },
-    ];
+            ok: true,
+            message: "Runtime node is configured for file-export-only mode".to_string(),
+        });
+    } else {
+        match client.test_connection(&node.neuron).await {
+            Ok(mut remote_checks) => checks.append(&mut remote_checks),
+            Err(err) => checks.push(RuntimeNodeHealthCheck {
+                name: "neuron_api".to_string(),
+                ok: false,
+                message: err.to_string(),
+            }),
+        }
+    }
 
     let ok = checks.iter().all(|check| check.ok);
     HttpResponse::Ok().json(serde_json::json!({"ok": ok, "runtime_node_id": node.id, "checks": checks}))

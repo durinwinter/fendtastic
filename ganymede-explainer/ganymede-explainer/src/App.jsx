@@ -297,61 +297,178 @@ const Diagram = ({ id }) => {
   }
 };
 
-const Starfield = () => {
-  const [stars, setStars] = useState([]);
-
-  useEffect(() => {
-    const newStars = Array.from({ length: 150 }).map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      size: `${Math.random() * 2 + 1}px`,
-      duration: `${Math.random() * 3 + 2}s`,
-      delay: `${Math.random() * 5}s`
-    }));
-    setStars(newStars);
-  }, []);
-
-  return (
-    <div className="stars-container">
-      {stars.map((star) => (
-        <div
-          key={star.id}
-          className="star"
-          style={{
-            left: star.left,
-            top: star.top,
-            width: star.size,
-            height: star.size,
-            '--duration': star.duration,
-            animationDelay: star.delay
-          }}
-        />
-      ))}
-    </div>
-  );
+// --- DEEP DIVE CONTENT ---
+const DEEP_DIVES = {
+  PEA: {
+    title: "PEA Subsystems: Atomic Automation",
+    meta: "DOC_ID: TECH-PEA-01 // AUTH: GAN-SYS-ARCH",
+    sections: [
+      {
+        title: "Packaged Equipment Assembly (PEA) Model",
+        content: "A PEA is a modular automation unit that encapsulates sensors, actuators, and the local logic required to manage a specific process function (e.g., pH adjustment, thermal regulation).",
+        code: "Capability Ontology: fluid_transport\nInterfaces: OPC UA, Zenoh\nLatency Target: < 10ms"
+      },
+      {
+        title: "Semantic Layer: The Machine DNA",
+        content: "Each PEA exposes its functionality through a standardized 'Capability Ontology'. This allows the central orchestration layer to discover and command the unit without knowing its internal hardware vendor or implementation details.",
+      }
+    ]
+  },
+  POL: {
+    title: "POL: Process Orchestration Layer",
+    meta: "DOC_ID: TECH-POL-04 // AUTH: GAN-SYS-ARCH",
+    sections: [
+      {
+        title: "The Central Nervous System",
+        content: "The POL is responsible for high-level facility coordination. It maintains the registry of all active PEAs and constructs the 'Facility Capability Graph' used for procedure generation.",
+        code: "Registry: Zenoh-based distributed KV\nOrchestrator: Procedure Engine v4.2"
+      },
+      {
+        title: "Dynamic Procedure Composition",
+        content: "Procedures are not hardcoded. The POL dynamically assembles command sequences by matching 'Intent Objectives' with 'PEA Capabilities' found in the capability graph.",
+      }
+    ]
+  },
+  INTENT: {
+    title: "Intent & AI Arbitration",
+    meta: "DOC_ID: TECH-INT-09 // AUTH: GAN-SYS-ARCH",
+    sections: [
+      {
+        title: "Intent-Based Control",
+        content: "External actors (Humans or AI models) do not send direct 'Open Valve' commands. They submit declarative 'Intents' describing a desired state (e.g., 'Maintain Humidity 70%').",
+      },
+      {
+        title: "Digital Twin Arbitration",
+        content: "Before any Intent is translated into a physical procedure, it is simulated in the POL's Digital Twin sandbox. If the simulation detects a safety violation or process instability, the Intent is rejected.",
+        code: "Outcome 1: APPROVE (Proceed to execution)\nOutcome 2: MODIFY (Adjust setpoints and retry)\nOutcome 3: REJECT (Safety violation detected)"
+      }
+    ]
+  },
+  SECURITY: {
+    title: "Zero-Trust Infrastructure",
+    meta: "DOC_ID: TECH-SEC-07 // AUTH: GAN-SYS-ARCH",
+    sections: [
+      {
+        title: "Service-Level Security",
+        content: "The Ganymede Base platform utilizes OpenZiti for service-level zero-trust. No device is reachable on the network without a cryptographically verified identity.",
+        code: "Protocol: MTP / OPC UA over Ziti\nIdentity Provider: Ganymede-Auth-Service"
+      },
+      {
+        title: "Network Overlay",
+        content: "Nebula provides a flat, encrypted host-to-host network while Zenoh ensures high-performance, low-latency data distribution across the base's distributed nodes.",
+      }
+    ]
+  }
 };
 
+const TerminalDoc = ({ data }) => (
+  <div className="terminal-view">
+    <header className="terminal-header">
+      <h1 className="terminal-title glow-text">{data.title}</h1>
+      <div className="terminal-meta">{data.meta}</div>
+    </header>
+    <div className="terminal-content">
+      {data.sections.map((sec, i) => (
+        <section key={i} className="terminal-section">
+          <h3>{sec.title}</h3>
+          <p>{sec.content}</p>
+          {sec.code && <div className="code-block">{sec.code}</div>}
+        </section>
+      ))}
+    </div>
+  </div>
+);
+
 function App() {
+  const [activeTab, setActiveTab] = useState('HOME');
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => setCurrentSlide((prev) => Math.min(prev + 1, SLIDES.length - 1));
   const prevSlide = () => setCurrentSlide((prev) => Math.max(prev - 1, 0));
 
   useEffect(() => {
+    if (activeTab !== 'HOME') return;
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') nextSlide();
       if (e.key === 'ArrowLeft') prevSlide();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeTab]);
 
   const slide = SLIDES[currentSlide];
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'PEA': return <TerminalDoc data={DEEP_DIVES.PEA} />;
+      case 'POL': return <TerminalDoc data={DEEP_DIVES.POL} />;
+      case 'INTENT': return <TerminalDoc data={DEEP_DIVES.INTENT} />;
+      case 'SECURITY': return <TerminalDoc data={DEEP_DIVES.SECURITY} />;
+      default: return (
+        <main className="slide-container">
+          <article className="slide flicker" key={currentSlide}>
+            <header>
+              <span className="tag">TOP SECRET // GANYMEDE CLEARANCE</span>
+              <h1 className="slide-title glow-text">{slide.title}</h1>
+              <h2 style={{ color: 'var(--accent-orange)', fontSize: '1.2rem', marginTop: '-10px' }}>
+                {slide.subtitle}
+              </h2>
+            </header>
+
+            <div className="slide-content">
+              {slide.type === 'diagram' ? (
+                <div className="diagram-layout">
+                  <div className="diagram-viz">
+                    <Diagram id={slide.diagramId} />
+                  </div>
+                  <ul className="bullet-list mini">
+                    {slide.content.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <ul className="bullet-list">
+                  {slide.content.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <footer className="status-bar">
+              <div className="status-item">{slide.technical}</div>
+              <div className="status-item glow-text">SYSTEM_LINK: ENCRYPTED</div>
+            </footer>
+
+            <div className="nav-hint">
+              [ SPACE / CLICK ] TO ADVANCE // SECTOR {currentSlide + 1}
+            </div>
+          </article>
+        </main>
+      );
+    }
+  };
+
   return (
-    <div className="app-container" onClick={nextSlide}>
+    <div className="app-container" onClick={activeTab === 'HOME' ? nextSlide : undefined}>
       <Starfield />
+
+      {/* HUD Tabs */}
+      <nav className="hud-tabs">
+        {['HOME', 'PEA', 'POL', 'INTENT', 'SECURITY'].map(tab => (
+          <button
+            key={tab}
+            className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveTab(tab);
+            }}
+          >
+            {tab === 'HOME' ? 'Briefing' : tab}
+          </button>
+        ))}
+      </nav>
 
       {/* HUD Elements */}
       <div className="hud-corner top-left flicker"></div>
@@ -360,54 +477,14 @@ function App() {
       <div className="hud-corner bottom-right flicker"></div>
 
       <div className="technical-data glow-text" style={{ position: 'absolute', top: '25px', left: '50px' }}>
-        TERMINAL: G-BASE-CMD // CHAPTER: {slide.chapter} // SLIDE: {currentSlide + 1}/{SLIDES.length}
+        TERMINAL: G-BASE-CMD // MODE: {activeTab === 'HOME' ? `CHAPTER_${slide.chapter}` : 'DEEP_DIVE'}
       </div>
 
       <div className="technical-data" style={{ position: 'absolute', bottom: '25px', left: '50px' }}>
         {new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC // LAT: 0.709°N // LON: 128.3°W
       </div>
 
-      <main className="slide-container">
-        <article className="slide flicker" key={currentSlide}>
-          <header>
-            <span className="tag">TOP SECRET // GANYMEDE CLEARANCE</span>
-            <h1 className="slide-title glow-text">{slide.title}</h1>
-            <h2 style={{ color: 'var(--accent-orange)', fontSize: '1.2rem', marginTop: '-10px' }}>
-              {slide.subtitle}
-            </h2>
-          </header>
-
-          <div className="slide-content">
-            {slide.type === 'diagram' ? (
-              <div className="diagram-layout">
-                <div className="diagram-viz">
-                  <Diagram id={slide.diagramId} />
-                </div>
-                <ul className="bullet-list mini">
-                  {slide.content.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <ul className="bullet-list">
-                {slide.content.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <footer className="status-bar">
-            <div className="status-item">{slide.technical}</div>
-            <div className="status-item glow-text">SYSTEM_LINK: ENCRYPTED</div>
-          </footer>
-
-          <div className="nav-hint">
-            [ SPACE / CLICK ] TO ADVANCE // SECTOR {currentSlide + 1}
-          </div>
-        </article>
-      </main>
+      {renderContent()}
     </div>
   )
 }

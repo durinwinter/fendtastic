@@ -16,6 +16,7 @@ mod driver_handlers;
 mod handlers;
 mod i3x_handlers;
 mod mesh_handlers;
+mod neuron_client;
 mod pea_handlers;
 mod pol_handlers;
 mod runtime_handlers;
