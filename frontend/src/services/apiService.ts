@@ -2,6 +2,10 @@ import axios, { AxiosInstance } from 'axios'
 import { PeaConfig, ServiceCommand } from '../types/mtp'
 import { Recipe } from '../types/recipe'
 import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
+import { RuntimeNode, RuntimeNodeHealthCheck } from '../types/runtime'
+import { AuthorityAuditRecord, AuthorityState } from '../types/authority'
+import { DriverCatalogEntry, DriverInstance } from '../types/driver'
+import { BindingValidationSummary, PeaBinding } from '../types/binding'
 
 class ApiService {
   private client: AxiosInstance
@@ -191,6 +195,112 @@ class ApiService {
       command,
       procedure_id: procedureId ?? null,
     })
+  }
+
+  // ─── Runtime Nodes / Drivers / Bindings / Authority ─────────────────────
+
+  async listRuntimeNodes(): Promise<RuntimeNode[]> {
+    const response = await this.client.get('/runtime/nodes')
+    return response.data
+  }
+
+  async createRuntimeNode(payload: Partial<RuntimeNode>): Promise<RuntimeNode> {
+    const response = await this.client.post('/runtime/nodes', payload)
+    return response.data
+  }
+
+  async updateRuntimeNode(id: string, payload: Partial<RuntimeNode>): Promise<RuntimeNode> {
+    const response = await this.client.put(`/runtime/nodes/${id}`, payload)
+    return response.data
+  }
+
+  async deleteRuntimeNode(id: string): Promise<void> {
+    await this.client.delete(`/runtime/nodes/${id}`)
+  }
+
+  async testRuntimeNode(id: string): Promise<{ ok: boolean; runtime_node_id: string; checks: RuntimeNodeHealthCheck[] }> {
+    const response = await this.client.post(`/runtime/nodes/${id}/test`)
+    return response.data
+  }
+
+  async getDriverCatalog(): Promise<DriverCatalogEntry[]> {
+    const response = await this.client.get('/drivers/catalog')
+    return response.data
+  }
+
+  async listDrivers(): Promise<DriverInstance[]> {
+    const response = await this.client.get('/drivers')
+    return response.data
+  }
+
+  async createDriver(payload: Partial<DriverInstance>): Promise<DriverInstance> {
+    const response = await this.client.post('/drivers', payload)
+    return response.data
+  }
+
+  async updateDriver(id: string, payload: Partial<DriverInstance>): Promise<DriverInstance> {
+    const response = await this.client.put(`/drivers/${id}`, payload)
+    return response.data
+  }
+
+  async startDriver(id: string): Promise<DriverInstance> {
+    const response = await this.client.post(`/drivers/${id}/start`)
+    return response.data
+  }
+
+  async stopDriver(id: string): Promise<DriverInstance> {
+    const response = await this.client.post(`/drivers/${id}/stop`)
+    return response.data
+  }
+
+  async readDriverTag(id: string, payload: { tag_id: string }): Promise<unknown> {
+    const response = await this.client.post(`/drivers/${id}/read`, payload)
+    return response.data
+  }
+
+  async writeDriverTag(id: string, payload: {
+    tag_id: string
+    value: unknown
+    pea_id: string
+    actor_id: string
+    actor_class: string
+  }): Promise<void> {
+    await this.client.post(`/drivers/${id}/write`, payload)
+  }
+
+  async listBindings(): Promise<PeaBinding[]> {
+    const response = await this.client.get('/bindings')
+    return response.data
+  }
+
+  async createBinding(payload: Partial<PeaBinding>): Promise<PeaBinding> {
+    const response = await this.client.post('/bindings', payload)
+    return response.data
+  }
+
+  async updateBinding(id: string, payload: Partial<PeaBinding>): Promise<PeaBinding> {
+    const response = await this.client.put(`/bindings/${id}`, payload)
+    return response.data
+  }
+
+  async validateBinding(id: string): Promise<BindingValidationSummary> {
+    const response = await this.client.post(`/bindings/${id}/validate`)
+    return response.data
+  }
+
+  async getAuthority(peaId: string): Promise<AuthorityState> {
+    const response = await this.client.get(`/authority/${peaId}`)
+    return response.data
+  }
+
+  async setAuthority(peaId: string, payload: Partial<AuthorityState>): Promise<AuthorityState> {
+    const response = await this.client.post(`/authority/${peaId}`, payload)
+    return response.data
+  }
+
+  async getAuthorityAudit(peaId: string): Promise<AuthorityAuditRecord[]> {
+    const response = await this.client.get(`/authority/${peaId}/audit`)
+    return response.data
   }
 
   // ─── Recipes ─────────────────────────────────────────────────────────────

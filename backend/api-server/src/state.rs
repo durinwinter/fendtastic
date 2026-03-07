@@ -1,3 +1,7 @@
+use shared::domain::authority::{AuthorityAuditRecord, AuthorityState};
+use shared::domain::binding::PeaBinding;
+use shared::domain::driver::{DriverCatalogEntry, DriverInstance};
+use shared::domain::runtime::RuntimeNode;
 use shared::mtp::{PeaConfig, Recipe};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -107,6 +111,12 @@ pub struct AppState {
     pub zenoh_session: Arc<Session>,
     pub pea_configs: Arc<RwLock<HashMap<String, PeaConfig>>>,
     pub recipes: Arc<RwLock<HashMap<String, Recipe>>>,
+    pub runtime_nodes: Arc<RwLock<HashMap<String, RuntimeNode>>>,
+    pub driver_instances: Arc<RwLock<HashMap<String, DriverInstance>>>,
+    pub pea_bindings: Arc<RwLock<HashMap<String, PeaBinding>>>,
+    pub authority_states: Arc<RwLock<HashMap<String, AuthorityState>>>,
+    pub authority_audit: Arc<RwLock<Vec<AuthorityAuditRecord>>>,
+    pub driver_catalog: Arc<RwLock<Vec<DriverCatalogEntry>>>,
     pub recipe_executions: Arc<RwLock<HashMap<String, serde_json::Value>>>,
     pub scenario_runs: Arc<RwLock<HashMap<String, serde_json::Value>>>,
     pub alarms: Arc<RwLock<HashMap<String, AlarmRecord>>>,
@@ -117,6 +127,10 @@ pub struct AppState {
     pub pea_config_dir: String,
     pub recipe_dir: String,
     pub pol_db_dir: String,
+    pub runtime_node_dir: String,
+    pub driver_dir: String,
+    pub binding_dir: String,
+    pub authority_dir: String,
     pub timeseries: Arc<RwLock<TimeSeriesStore>>,
     /// Running simulator tasks keyed by simulator id
     pub running_sims: Arc<RwLock<HashMap<String, SimulatorTask>>>,

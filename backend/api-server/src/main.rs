@@ -6,12 +6,20 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, Level};
 
+mod authority_handlers;
+mod authority_service;
+mod binding_handlers;
+mod binding_validation;
 mod db;
+mod driver_catalog;
+mod driver_handlers;
 mod handlers;
 mod i3x_handlers;
 mod mesh_handlers;
 mod pea_handlers;
 mod pol_handlers;
+mod runtime_handlers;
+mod runtime_store;
 mod scenario_handlers;
 mod simulator;
 mod state;
@@ -63,6 +71,13 @@ async fn main() -> std::io::Result<()> {
 
     let recipe_dir = std::env::var("RECIPE_DIR").unwrap_or_else(|_| "./data/recipes".to_string());
     let pol_db_dir = std::env::var("POL_DB_DIR").unwrap_or_else(|_| "./data/pol".to_string());
+    let runtime_node_dir =
+        std::env::var("RUNTIME_NODE_DIR").unwrap_or_else(|_| "./data/runtime-nodes".to_string());
+    let driver_dir = std::env::var("DRIVER_DIR").unwrap_or_else(|_| "./data/drivers".to_string());
+    let binding_dir =
+        std::env::var("BINDING_DIR").unwrap_or_else(|_| "./data/bindings".to_string());
+    let authority_dir =
+        std::env::var("AUTHORITY_DIR").unwrap_or_else(|_| "./data/authority".to_string());
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
         "postgres://murph:murph@localhost:5432/murph".to_string()
     });
@@ -73,6 +88,10 @@ async fn main() -> std::io::Result<()> {
 
     let pea_configs = pea_handlers::load_pea_configs(&pea_config_dir);
     let recipes = pea_handlers::load_recipes(&recipe_dir);
+    let runtime_nodes = runtime_store::load_map(&runtime_node_dir);
+    let driver_instances = runtime_store::load_map(&driver_dir);
+    let pea_bindings = runtime_store::load_map(&binding_dir);
+    let authority_states = runtime_store::load_map(&authority_dir);
     let alarms = db::load_alarms(&db_client).await.unwrap_or_default();
     let topology = db::load_topology(&db_client).await.unwrap_or_default();
     let alarm_rules = db::load_alarm_rules(&db_client).await.unwrap_or_default();
@@ -85,6 +104,12 @@ async fn main() -> std::io::Result<()> {
         zenoh_session: Arc::new(zenoh_session),
         pea_configs: Arc::new(RwLock::new(pea_configs)),
         recipes: Arc::new(RwLock::new(recipes)),
+        runtime_nodes: Arc::new(RwLock::new(runtime_nodes)),
+        driver_instances: Arc::new(RwLock::new(driver_instances)),
+        pea_bindings: Arc::new(RwLock::new(pea_bindings)),
+        authority_states: Arc::new(RwLock::new(authority_states)),
+        authority_audit: Arc::new(RwLock::new(Vec::new())),
+        driver_catalog: Arc::new(RwLock::new(driver_catalog::built_in_catalog())),
         recipe_executions: Arc::new(RwLock::new(HashMap::new())),
         scenario_runs: Arc::new(RwLock::new(HashMap::new())),
         alarms: Arc::new(RwLock::new(alarms)),
@@ -95,6 +120,10 @@ async fn main() -> std::io::Result<()> {
         pea_config_dir,
         recipe_dir,
         pol_db_dir,
+        runtime_node_dir,
+        driver_dir,
+        binding_dir,
+        authority_dir,
         timeseries: timeseries.clone(),
         running_sims: Arc::new(RwLock::new(HashMap::new())),
     });
@@ -491,6 +520,77 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/pea/{id}/services/{service_tag}/command",
                         web::post().to(pea_handlers::command_service),
+                    )
+                    // Runtime Nodes
+                    .route("/runtime/nodes", web::get().to(runtime_handlers::list_runtime_nodes))
+                    .route("/runtime/nodes", web::post().to(runtime_handlers::create_runtime_node))
+                    .route(
+                        "/runtime/nodes/{id}",
+                        web::get().to(runtime_handlers::get_runtime_node),
+                    )
+                    .route(
+                        "/runtime/nodes/{id}",
+                        web::put().to(runtime_handlers::update_runtime_node),
+                    )
+                    .route(
+                        "/runtime/nodes/{id}",
+                        web::delete().to(runtime_handlers::delete_runtime_node),
+                    )
+                    .route(
+                        "/runtime/nodes/{id}/test",
+                        web::post().to(runtime_handlers::test_runtime_node),
+                    )
+                    // Drivers
+                    .route("/drivers/catalog", web::get().to(driver_handlers::get_driver_catalog))
+                    .route("/drivers", web::get().to(driver_handlers::list_drivers))
+                    .route("/drivers", web::post().to(driver_handlers::create_driver))
+                    .route("/drivers/{id}", web::get().to(driver_handlers::get_driver))
+                    .route("/drivers/{id}", web::put().to(driver_handlers::update_driver))
+                    .route(
+                        "/drivers/{id}",
+                        web::delete().to(driver_handlers::delete_driver),
+                    )
+                    .route(
+                        "/drivers/{id}/start",
+                        web::post().to(driver_handlers::start_driver),
+                    )
+                    .route(
+                        "/drivers/{id}/stop",
+                        web::post().to(driver_handlers::stop_driver),
+                    )
+                    .route(
+                        "/drivers/{id}/read",
+                        web::post().to(driver_handlers::read_driver_tag),
+                    )
+                    .route(
+                        "/drivers/{id}/write",
+                        web::post().to(driver_handlers::write_driver_tag),
+                    )
+                    // Bindings
+                    .route("/bindings", web::get().to(binding_handlers::list_bindings))
+                    .route("/bindings", web::post().to(binding_handlers::create_binding))
+                    .route("/bindings/{id}", web::get().to(binding_handlers::get_binding))
+                    .route("/bindings/{id}", web::put().to(binding_handlers::update_binding))
+                    .route(
+                        "/bindings/{id}",
+                        web::delete().to(binding_handlers::delete_binding),
+                    )
+                    .route(
+                        "/bindings/{id}/validate",
+                        web::post().to(binding_handlers::validate_binding),
+                    )
+                    // Authority
+                    .route(
+                        "/authority/{pea_id}",
+                        web::get().to(authority_handlers::get_authority_state),
+                    )
+                    .route(
+                        "/authority/{pea_id}",
+                        web::post().to(authority_handlers::set_authority_state),
+                    )
+                    .route(
+                        "/authority/{pea_id}/audit",
+                        web::get().to(authority_handlers::get_authority_audit),
                     )
                     // Recipes
                     .route("/recipes", web::get().to(pea_handlers::list_recipes))

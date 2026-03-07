@@ -3,6 +3,7 @@ members = [
     "api-server",
     "zenoh-bridge",
     "eva-ics-connector",
+    "neuron-connector",
     "shared",
 ]
 resolver = "2"
