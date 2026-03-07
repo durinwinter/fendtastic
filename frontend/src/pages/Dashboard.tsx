@@ -11,6 +11,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material'
 import { PlayArrow, Stop, Agriculture } from '@mui/icons-material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
@@ -19,9 +22,6 @@ import Header from '../components/Header'
 import apiService from '../services/apiService'
 import SpotValues from '../components/SpotValues'
 import Coobie from '../components/Coobie'
-
-// Lazy-load Three.js heavy component
-const IsometricView = React.lazy(() => import('../components/IsometricView'))
 
 const Dashboard: React.FC = () => {
   const [simRunning, setSimRunning] = useState(false)
@@ -84,6 +84,8 @@ const Dashboard: React.FC = () => {
       setSimLoading(false)
     }
   }
+
+  const selectedScenario = simScenarios.find((scenario) => scenario.id === selectedScenarioId) ?? null
 
   return (
     <Box sx={{
@@ -195,19 +197,66 @@ const Dashboard: React.FC = () => {
           <Paper sx={{ flex: 1, p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A' }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
-                MACHINE VIEW
+                MACHINE SNAPSHOT
               </Typography>
             </Box>
-            <Box sx={{ flex: 1, position: 'relative' }}>
-              <React.Suspense fallback={<Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>}>
-                <IsometricView />
-              </React.Suspense>
+            <Box sx={{ flex: 1, position: 'relative', p: 2, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 2 }}>
+              <Paper variant="outlined" sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.02)', borderColor: '#2A2A2A' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, letterSpacing: '0.08em' }}>
+                  Runtime Summary
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Asset</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>Fendt Vario 1001</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">State</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: simRunning ? 'success.main' : 'warning.main' }}>
+                      {simRunning ? 'Executing' : 'Standby'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Scenario</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                      {selectedScenario?.name ?? 'Baseline Work Cycle'}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Tick Rate</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                      {selectedScenario?.tick_ms ?? 1000} ms
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  3D visualization is disabled in this build. Use telemetry, swimlanes, and live metrics for current state verification.
+                </Typography>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2, backgroundColor: 'rgba(255,255,255,0.02)', borderColor: '#2A2A2A' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, letterSpacing: '0.08em' }}>
+                  Operator Checklist
+                </Typography>
+                <List dense sx={{ p: 0 }}>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="Verify simulator state" secondary={simRunning ? 'Simulator active and publishing telemetry' : 'Simulator stopped'} />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="Review telemetry trends" secondary="Use the timeline and telemetry panels above for sequence validation." />
+                  </ListItem>
+                  <ListItem sx={{ px: 0 }}>
+                    <ListItemText primary="Check live metrics" secondary="Spot values remain the primary operational readout." />
+                  </ListItem>
+                </List>
+              </Paper>
+
               {!simRunning && (
                 <Fade in={!simRunning}>
                   <Box sx={{
                     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                     zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)'
+                    backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)'
                   }}>
                     <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.1em', color: '#fff' }}>
                       SIMULATOR OFFLINE

@@ -32,17 +32,17 @@ impl PeaBridge {
     pub async fn run_command_listener(&self) -> Result<()> {
         info!("Starting PeaBridge command listener");
 
-        // Subscribe to deploy commands
+        // Subscribe to runtime deploy commands
         let deploy_sub = self
             .zenoh_session
-            .declare_subscriber(topics::PEA_DEPLOY_WILDCARD)
+            .declare_subscriber(topics::RUNTIME_PEA_DEPLOY_WILDCARD)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to deploy topic: {}", e))?;
 
-        // Subscribe to lifecycle commands (start/stop)
+        // Subscribe to runtime lifecycle commands (start/stop)
         let lifecycle_sub = self
             .zenoh_session
-            .declare_subscriber(topics::PEA_LIFECYCLE_WILDCARD)
+            .declare_subscriber(topics::RUNTIME_PEA_LIFECYCLE_WILDCARD)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to lifecycle topic: {}", e))?;
 
@@ -53,7 +53,7 @@ impl PeaBridge {
             .await
             .map_err(|e| anyhow::anyhow!("Failed to subscribe to service command topic: {}", e))?;
 
-        info!("PeaBridge subscribed to deploy, lifecycle, and service command topics");
+        info!("PeaBridge subscribed to runtime deploy, runtime lifecycle, and service command topics");
 
         loop {
             tokio::select! {

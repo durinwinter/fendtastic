@@ -35,7 +35,6 @@ export const DataMonolith = ({ position, label, onClick, active }) => {
                     position={[0, 1.2, 0]}
                     fontSize={0.2}
                     color="white"
-                    font="/fonts/JetBrainsMono-Bold.ttf"
                     anchorX="center"
                     anchorY="middle"
                 >

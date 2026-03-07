@@ -5,20 +5,17 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@lit/react": "^1.0.0",
     "@mui/icons-material": "^6.4.0",
     "@mui/material": "^6.4.0",
-    "@react-three/drei": "^10.0.0",
-    "@react-three/fiber": "^9.0.0",
+    "@oicl/openbridge-webcomponents": "^0.0.17",
+    "@oicl/openbridge-webcomponents-react": "^0.0.17",
     "axios": "^1.7.0",
     "chart.js": "^4.4.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^6.28.0",
-    "three": "^0.170.0",
-    "@oicl/openbridge-webcomponents": "^0.0.17",
-    "@oicl/openbridge-webcomponents-react": "^0.0.17",
-    "@lit/react": "^1.0.0"
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
