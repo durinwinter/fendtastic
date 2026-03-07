@@ -43,22 +43,22 @@ const Header: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [zenohConnected, setZenohConnected] = useState(false)
-  const [evaIcsOnline, setEvaIcsOnline] = useState(false)
+  const [runtimeOrchestratorOnline, setRuntimeOrchestratorOnline] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     const unsubscribeZenoh = zenohService.onConnectionChange((connected) => {
       setZenohConnected(connected)
-      if (!connected) setEvaIcsOnline(false)
+      if (!connected) setRuntimeOrchestratorOnline(false)
     })
-    const unsubscribeEva = zenohService.subscribe('murph/status/eva-ics', (data) => {
-      setEvaIcsOnline(!!(data && data.online))
+    const unsubscribeRuntime = zenohService.subscribe('murph/status/runtime-orchestrator', (data) => {
+      setRuntimeOrchestratorOnline(!!(data && data.online))
     })
     return () => {
       clearInterval(timer)
       unsubscribeZenoh()
-      unsubscribeEva()
+      unsubscribeRuntime()
     }
   }, [])
 
@@ -111,8 +111,8 @@ const Header: React.FC = () => {
           />
           <StatusChip
             icon={<CircleIcon />}
-            label={evaIcsOnline ? 'EVA-ICS ONLINE' : 'EVA-ICS OFFLINE'}
-            color={evaIcsOnline ? 'success' : 'error'}
+            label={runtimeOrchestratorOnline ? 'RUNTIME ORCHESTRATOR ONLINE' : 'RUNTIME ORCHESTRATOR OFFLINE'}
+            color={runtimeOrchestratorOnline ? 'success' : 'error'}
           />
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 1, fontFamily: 'JetBrains Mono' }}>
             {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

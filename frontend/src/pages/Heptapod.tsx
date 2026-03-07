@@ -1,12 +1,13 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Box, Grid, Typography, Tabs, Tab } from '@mui/material'
 import Header from '../components/Header'
 import PEAList from '../components/heptapod/PEAList'
 import RecipeManager from '../components/heptapod/RecipeManager'
 import AlarmCenter from '../components/heptapod/AlarmCenter'
-import IsometricWorkbench from '../components/heptapod/IsometricWorkbench'
 import PeaConnectionsDesigner from '../components/heptapod/PeaConnectionsDesigner'
 import Coobie from '../components/Coobie'
+
+const IsometricWorkbench = React.lazy(() => import('../components/heptapod/IsometricWorkbench'))
 
 const Heptapod: React.FC = () => {
     const [tab, setTab] = React.useState(0)
@@ -51,7 +52,9 @@ const Heptapod: React.FC = () => {
                 )}
                 {tab === 2 && (
                     <Box sx={{ height: 'calc(100% - 110px)' }}>
-                        <IsometricWorkbench />
+                        <Suspense fallback={<Typography variant="body2" color="text.secondary">Loading habitat overview...</Typography>}>
+                            <IsometricWorkbench />
+                        </Suspense>
                     </Box>
                 )}
                 {tab === 3 && (

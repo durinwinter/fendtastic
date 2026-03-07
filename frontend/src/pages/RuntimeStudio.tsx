@@ -6,6 +6,7 @@ import RuntimeShell from '../components/runtime/RuntimeShell'
 import { RuntimeSection } from '../components/runtime/SectionNav'
 import RuntimeNodeList from '../components/runtime/RuntimeNodeList'
 import RuntimeNodeEditor from '../components/runtime/RuntimeNodeEditor'
+import RuntimeHealthPanel from '../components/runtime/RuntimeHealthPanel'
 import DriverCatalogPanel from '../components/runtime/DriverCatalogPanel'
 import DriverInstanceEditor from '../components/runtime/DriverInstanceEditor'
 import BindingDesigner from '../components/runtime/BindingDesigner'
@@ -107,6 +108,27 @@ export default function RuntimeStudio() {
 
     let cancelled = false
     const topic = `murph/runtime/nodes/${selectedNode.id}/status`
+    const loadSnapshot = async () => {
+      try {
+        const snapshot = await apiService.getRuntimeNodeStatus(selectedNode.id)
+        if (cancelled) return
+        setRuntimeStatus(snapshot)
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === snapshot.runtime_node_id ? { ...node, status: snapshot.status } : node
+          )
+        )
+        setSelectedNode((current) =>
+          current && current.id === snapshot.runtime_node_id
+            ? { ...current, status: snapshot.status }
+            : current
+        )
+      } catch {
+        if (!cancelled) setRuntimeStatus(null)
+      }
+    }
+
+    void loadSnapshot()
     const unsubscribe = zenohService.subscribe(topic, (payload) => {
       if (cancelled) return
       const parsed = typeof payload === 'string'
@@ -180,7 +202,7 @@ export default function RuntimeStudio() {
     switch (section) {
       case 'runtime':
         return (
-          <Box sx={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 2, height: '100%' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '280px 1fr 340px', gap: 2, height: '100%' }}>
             <RuntimeNodeList nodes={nodes} selectedId={selectedNode?.id} onSelect={setSelectedNode} />
             <RuntimeNodeEditor
               node={selectedNode}
@@ -197,6 +219,7 @@ export default function RuntimeStudio() {
                 return apiService.testRuntimeNode(nodeId)
               }}
             />
+            <RuntimeHealthPanel node={selectedNode} status={runtimeStatus} />
           </Box>
         )
       case 'driver':

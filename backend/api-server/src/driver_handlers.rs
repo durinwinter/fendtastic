@@ -723,3 +723,56 @@ async fn publish_driver_status(
     let payload = serde_json::to_string(snapshot).unwrap_or_else(|_| "{}".to_string());
     let _ = state.zenoh_session.put(&topic, payload).await;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_driver() -> DriverInstance {
+        DriverInstance {
+            id: "driver-12345678".to_string(),
+            runtime_node_id: "runtime-1".to_string(),
+            pea_id: "pea-1".to_string(),
+            driver_key: "siemens-s7".to_string(),
+            display_name: "S7".to_string(),
+            state: DriverInstanceState::Created,
+            config: serde_json::json!({}),
+            tag_groups: Vec::new(),
+            last_error: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn driver_status_topic_uses_runtime_and_driver_ids() {
+        let driver = sample_driver();
+        assert_eq!(
+            driver_status_topic(&driver),
+            "murph/runtime/nodes/runtime-1/drivers/driver-12345678/status"
+        );
+    }
+
+    #[test]
+    fn default_status_snapshot_uses_neuron_node_name() {
+        let driver = sample_driver();
+        let snapshot = default_status_snapshot(&driver);
+        assert_eq!(snapshot.driver_id, driver.id);
+        assert_eq!(snapshot.node_name, crate::neuron_client::neuron_node_name(&driver));
+        assert!(snapshot.remote_running.is_none());
+    }
+
+    #[test]
+    fn merge_status_defaults_applies_overrides() {
+        let mut driver = sample_driver();
+        driver.last_error = Some("prior".to_string());
+        let snapshot = merge_status_defaults(
+            &driver,
+            Some((true, Some(1), Some(25), None, Some("current".to_string()))),
+        );
+        assert_eq!(snapshot.remote_running, Some(true));
+        assert_eq!(snapshot.remote_link, Some(1));
+        assert_eq!(snapshot.remote_rtt, Some(25));
+        assert_eq!(snapshot.last_error.as_deref(), Some("current"));
+    }
+}

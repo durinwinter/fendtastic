@@ -17,6 +17,10 @@ import {
 
 import { GanymedeMoon } from './components/GanymedeMoon'
 import { TechnicalGrid } from './components/TechnicalGrid'
+import { SentinelGuide } from './components/SentinelGuide'
+import { DataDebris } from './components/DataDebris'
+import { DigitalOoze } from './components/DigitalOoze'
+import { DataMonolith } from './components/DataMonolith'
 import './App.css'
 
 // --- DEEP DIVE CONTENT ---
@@ -647,6 +651,7 @@ function App() {
       {/* 3D SCENE BACKGROUND */}
       <div className="canvas-container">
         <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+          <CameraRig activeTab={activeTab} />
           <color attach="background" args={['#000']} />
           <Suspense fallback={null}>
             <ambientLight intensity={0.5} />
@@ -655,18 +660,32 @@ function App() {
 
             <GanymedeMoon />
             <TechnicalGrid isNavigating={isNavigating} />
+            <DigitalOoze />
+            <SentinelGuide active={activeTab !== 'HOME'} />
+            <DataDebris count={200} />
+
+            {/* DATA MONOLITHS (Phase 6 Navigation) */}
+            {['PEA', 'POL', 'INTENT', 'SECURITY'].map((tab, i) => (
+              <DataMonolith
+                key={tab}
+                label={tab}
+                position={[(i - 1.5) * 4, -1, -2]}
+                onClick={() => setActiveTab(tab)}
+                active={activeTab === tab}
+              />
+            ))}
 
             {/* POST PROCESSING */}
             <EffectComposer>
               <Bloom
-                intensity={1.2}
-                luminanceThreshold={0.2}
+                intensity={1.5}
+                luminanceThreshold={0.1}
                 luminanceSmoothing={0.9}
                 mipmapBlur
               />
-              <Noise opacity={0.08} />
-              <ChromaticAberration offset={[0.003, 0.003]} />
-              {isNavigating && <Glitch duration={[0.1, 0.2]} strength={[0.1, 0.2]} ratio={0.3} />}
+              <Noise opacity={0.1} />
+              <ChromaticAberration offset={[0.005, 0.005]} />
+              {isNavigating && <Glitch duration={[0.1, 0.2]} strength={[0.3, 0.5]} ratio={0.5} />}
             </EffectComposer>
           </Suspense>
         </Canvas>

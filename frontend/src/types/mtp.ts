@@ -414,7 +414,7 @@ export const ZENOH_TOPICS = {
   peaStatusWildcard: 'murph/habitat/nodes/+/pea/+/status',
   polRecipesCommand: 'murph/pol/recipes/command',
   polRecipesStatus: 'murph/pol/recipes/status',
-  statusEvaIcs: 'murph/status/eva-ics',
+  statusRuntimeOrchestrator: 'murph/status/runtime-orchestrator',
 } as const
 
 // ─── Factory Helpers ─────────────────────────────────────────────────────────

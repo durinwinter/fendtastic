@@ -32,16 +32,18 @@ export const GanymedeMoon = () => {
                 </meshStandardMaterial>
             </Sphere>
 
-            {/* Atmospheric Glow / Clouds */}
+            {/* Atmospheric Glow / Clouds (Iridescent & Warped) */}
             <Sphere ref={cloudsRef} args={[1.55, 64, 64]}>
                 <MeshDistortMaterial
                     color="#00f2ff"
-                    speed={2}
-                    distort={0.2}
+                    speed={3}
+                    distort={0.4}
                     radius={1}
-                    opacity={0.15}
+                    opacity={0.3}
                     transparent
                     side={THREE.DoubleSide}
+                    emissive="#ff00ff"
+                    emissiveIntensity={0.5}
                 />
             </Sphere>
 

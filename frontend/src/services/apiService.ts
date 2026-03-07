@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios'
 import { PeaConfig, ServiceCommand } from '../types/mtp'
 import { Recipe } from '../types/recipe'
 import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
-import { RuntimeNode, RuntimeNodeHealthCheck } from '../types/runtime'
+import { RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatusSnapshot } from '../types/runtime'
 import { AuthorityAuditRecord, AuthorityState } from '../types/authority'
 import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { BindingValidationSummary, PeaBinding } from '../types/binding'
@@ -216,6 +216,11 @@ class ApiService {
 
   async deleteRuntimeNode(id: string): Promise<void> {
     await this.client.delete(`/runtime/nodes/${id}`)
+  }
+
+  async getRuntimeNodeStatus(id: string): Promise<RuntimeNodeStatusSnapshot> {
+    const response = await this.client.get(`/runtime/nodes/${id}/status`)
+    return response.data
   }
 
   async testRuntimeNode(id: string): Promise<{ ok: boolean; runtime_node_id: string; checks: RuntimeNodeHealthCheck[] }> {
