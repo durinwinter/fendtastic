@@ -1,7 +1,8 @@
 use crate::runtime_store;
+use crate::runtime_status;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
-use shared::domain::runtime::{NeuronConnection, NeuronAccessMode, RuntimeArchitecture, RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatus};
+use shared::domain::runtime::{NeuronConnection, RuntimeArchitecture, RuntimeNode, RuntimeNodeStatus};
 use uuid::Uuid;
 use crate::neuron_client::NeuronHttpClient;
 
@@ -64,6 +65,40 @@ pub async fn get_runtime_node(state: web::Data<AppState>, id: web::Path<String>)
     }
 }
 
+pub async fn get_runtime_node_status(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    let node = {
+        let nodes = state.runtime_nodes.read().await;
+        match nodes.get(id.as_str()) {
+            Some(node) => node.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
+        }
+    };
+
+    let client = NeuronHttpClient::new();
+    let snapshot = runtime_status::collect_runtime_status_snapshot(&node, &client).await;
+
+    {
+        let mut nodes = state.runtime_nodes.write().await;
+        if let Some(existing) = nodes.get_mut(id.as_str()) {
+            existing.status = snapshot.status.clone();
+            existing.updated_at = chrono::Utc::now();
+        }
+    }
+
+    let _ = state
+        .zenoh_session
+        .put(
+            &format!("murph/runtime/nodes/{}/status", node.id),
+            serde_json::to_string(&snapshot).unwrap_or_else(|_| "{}".to_string()),
+        )
+        .await;
+
+    HttpResponse::Ok().json(snapshot)
+}
+
 pub async fn update_runtime_node(state: web::Data<AppState>, id: web::Path<String>, body: web::Json<UpdateRuntimeNodeRequest>) -> impl Responder {
     let mut nodes = state.runtime_nodes.write().await;
     let Some(existing) = nodes.get_mut(id.as_str()) else {
@@ -99,39 +134,18 @@ pub async fn delete_runtime_node(state: web::Data<AppState>, id: web::Path<Strin
 }
 
 pub async fn test_runtime_node(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let nodes = state.runtime_nodes.read().await;
-    let Some(node) = nodes.get(id.as_str()) else {
-        return HttpResponse::NotFound().json(serde_json::json!({"error": "Runtime node not found"}));
-    };
-
-    let client = NeuronHttpClient::new();
-    let mut checks = vec![RuntimeNodeHealthCheck {
-        name: "assigned_pea".to_string(),
-        ok: node.assigned_pea_id.is_some(),
-        message: if node.assigned_pea_id.is_some() {
-            "Runtime node has an assigned PEA".to_string()
-        } else {
-            "Runtime node has no assigned PEA yet".to_string()
-        },
-    }];
-
-    if !matches!(node.neuron.mode, NeuronAccessMode::Api | NeuronAccessMode::Hybrid) {
-        checks.push(RuntimeNodeHealthCheck {
-            name: "neuron_mode".to_string(),
-            ok: true,
-            message: "Runtime node is configured for file-export-only mode".to_string(),
-        });
-    } else {
-        match client.test_connection(&node.neuron).await {
-            Ok(mut remote_checks) => checks.append(&mut remote_checks),
-            Err(err) => checks.push(RuntimeNodeHealthCheck {
-                name: "neuron_api".to_string(),
-                ok: false,
-                message: err.to_string(),
-            }),
+    let node = {
+        let nodes = state.runtime_nodes.read().await;
+        match nodes.get(id.as_str()) {
+            Some(node) => node.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Runtime node not found"}))
+            }
         }
-    }
-
-    let ok = checks.iter().all(|check| check.ok);
-    HttpResponse::Ok().json(serde_json::json!({"ok": ok, "runtime_node_id": node.id, "checks": checks}))
+    };
+    let client = NeuronHttpClient::new();
+    let snapshot = runtime_status::collect_runtime_status_snapshot(&node, &client).await;
+    let ok = snapshot.checks.iter().all(|check| check.ok);
+    HttpResponse::Ok().json(serde_json::json!({"ok": ok, "runtime_node_id": node.id, "checks": snapshot.checks}))
 }

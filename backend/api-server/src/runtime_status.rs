@@ -1,5 +1,6 @@
+use crate::neuron_client::NeuronHttpClient;
 use shared::domain::runtime::{
-    RuntimeNodeHealthCheck, RuntimeNodeStatus, RuntimeNodeStatusSnapshot,
+    NeuronAccessMode, RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatus, RuntimeNodeStatusSnapshot,
 };
 
 pub fn summarize_runtime_status(checks: &[RuntimeNodeHealthCheck]) -> RuntimeNodeStatus {
@@ -36,6 +37,55 @@ pub fn build_runtime_status_snapshot(
         checks,
         updated_at: chrono::Utc::now(),
     }
+}
+
+pub async fn collect_runtime_status_snapshot(
+    runtime_node: &RuntimeNode,
+    client: &NeuronHttpClient,
+) -> RuntimeNodeStatusSnapshot {
+    let mut checks = vec![RuntimeNodeHealthCheck {
+        name: "assigned_pea".to_string(),
+        ok: runtime_node.assigned_pea_id.is_some(),
+        message: if runtime_node.assigned_pea_id.is_some() {
+            "Runtime node has an assigned PEA".to_string()
+        } else {
+            "Runtime node has no assigned PEA yet".to_string()
+        },
+    }];
+
+    if matches!(runtime_node.neuron.mode, NeuronAccessMode::Api | NeuronAccessMode::Hybrid) {
+        match client.test_connection(&runtime_node.neuron).await {
+            Ok(mut remote_checks) => checks.append(&mut remote_checks),
+            Err(err) => checks.push(RuntimeNodeHealthCheck {
+                name: "neuron_api".to_string(),
+                ok: false,
+                message: err.to_string(),
+            }),
+        }
+    } else {
+        checks.push(RuntimeNodeHealthCheck {
+            name: "config_path".to_string(),
+            ok: runtime_node
+                .neuron
+                .config_path
+                .as_deref()
+                .map(|path| !path.trim().is_empty())
+                .unwrap_or(false),
+            message: if runtime_node
+                .neuron
+                .config_path
+                .as_deref()
+                .map(|path| !path.trim().is_empty())
+                .unwrap_or(false)
+            {
+                "Runtime node has a file-export path configured".to_string()
+            } else {
+                "Runtime node is missing a writable file-export path".to_string()
+            },
+        });
+    }
+
+    build_runtime_status_snapshot(runtime_node.id.clone(), checks)
 }
 
 #[cfg(test)]

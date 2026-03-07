@@ -291,56 +291,9 @@ async fn main() -> std::io::Result<()> {
                 };
 
                 for runtime_node in runtime_nodes {
-                    let mut checks = vec![shared::domain::runtime::RuntimeNodeHealthCheck {
-                        name: "assigned_pea".to_string(),
-                        ok: runtime_node.assigned_pea_id.is_some(),
-                        message: if runtime_node.assigned_pea_id.is_some() {
-                            "Runtime node has an assigned PEA".to_string()
-                        } else {
-                            "Runtime node has no assigned PEA yet".to_string()
-                        },
-                    }];
-
-                    if matches!(
-                        runtime_node.neuron.mode,
-                        shared::domain::runtime::NeuronAccessMode::Api
-                            | shared::domain::runtime::NeuronAccessMode::Hybrid
-                    ) {
-                        match client.test_connection(&runtime_node.neuron).await {
-                            Ok(mut remote_checks) => checks.append(&mut remote_checks),
-                            Err(err) => checks.push(shared::domain::runtime::RuntimeNodeHealthCheck {
-                                name: "neuron_api".to_string(),
-                                ok: false,
-                                message: err.to_string(),
-                            }),
-                        }
-                    } else {
-                        checks.push(shared::domain::runtime::RuntimeNodeHealthCheck {
-                            name: "config_path".to_string(),
-                            ok: runtime_node
-                                .neuron
-                                .config_path
-                                .as_deref()
-                                .map(|path| !path.trim().is_empty())
-                                .unwrap_or(false),
-                            message: if runtime_node
-                                .neuron
-                                .config_path
-                                .as_deref()
-                                .map(|path| !path.trim().is_empty())
-                                .unwrap_or(false)
-                            {
-                                "Runtime node has a file-export path configured".to_string()
-                            } else {
-                                "Runtime node is missing a writable file-export path".to_string()
-                            },
-                        });
-                    }
-
-                    let snapshot = runtime_status::build_runtime_status_snapshot(
-                        runtime_node.id.clone(),
-                        checks,
-                    );
+                    let snapshot =
+                        runtime_status::collect_runtime_status_snapshot(&runtime_node, &client)
+                            .await;
 
                     {
                         let mut nodes = state.runtime_nodes.write().await;
@@ -716,6 +669,10 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/runtime/nodes/{id}",
                         web::get().to(runtime_handlers::get_runtime_node),
+                    )
+                    .route(
+                        "/runtime/nodes/{id}/status",
+                        web::get().to(runtime_handlers::get_runtime_node_status),
                     )
                     .route(
                         "/runtime/nodes/{id}",
