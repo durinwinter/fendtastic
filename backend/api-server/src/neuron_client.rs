@@ -360,7 +360,7 @@ impl NeuronHttpClient {
 fn resolve_password(conn: &NeuronConnection) -> Option<String> {
     match conn.password_ref.as_deref() {
         Some(value) if value.starts_with("env:") => std::env::var(value.trim_start_matches("env:")).ok(),
-        Some(value) if value.starts_with("secret://") => None,
+        Some(value) if value.starts_with("secret://") => resolve_secret_ref(value.trim_start_matches("secret://")),
         Some(value) => Some(value.to_string()),
         None => Some("0000".to_string()),
     }
@@ -416,6 +416,42 @@ fn sanitize_name(name: &str) -> String {
 
 fn is_conflict_error(err: &anyhow::Error) -> bool {
     err.to_string().contains("409") || err.to_string().to_ascii_lowercase().contains("exist")
+}
+
+fn resolve_secret_ref(secret_path: &str) -> Option<String> {
+    let sanitized = secret_path
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_uppercase() } else { '_' })
+        .collect::<String>();
+
+    let env_candidates = [
+        format!("SECRET_{}", sanitized),
+        format!("NEURON_SECRET_{}", sanitized),
+    ];
+
+    for candidate in env_candidates {
+        if let Ok(value) = std::env::var(&candidate) {
+            if !value.is_empty() {
+                return Some(value);
+            }
+        }
+    }
+
+    let file_candidates = [
+        format!("./data/secrets/{}", secret_path),
+        format!("../data/secrets/{}", secret_path),
+    ];
+
+    for candidate in file_candidates {
+        if let Ok(value) = std::fs::read_to_string(&candidate) {
+            let trimmed = value.trim().to_string();
+            if !trimmed.is_empty() {
+                return Some(trimmed);
+            }
+        }
+    }
+
+    None
 }
 
 fn encode_query_component(input: &str) -> String {

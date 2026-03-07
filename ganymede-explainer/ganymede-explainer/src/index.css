@@ -1,18 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=JetBrains+Mono:wght@300;500&display=swap');
 
 :root {
-  --bg-color: #05070a;
-  --panel-bg: rgba(16, 20, 26, 0.85);
-  --accent-blue: #00d4ff;
-  --accent-orange: #ff8c00;
-  --text-primary: #e0e6ed;
-  --text-secondary: #94a3b8;
-  --border-color: rgba(0, 212, 255, 0.3);
-  --scanline-color: rgba(0, 212, 255, 0.03);
+  --bg-color: #020408;
+  --panel-bg: rgba(10, 15, 25, 0.7);
+  --accent-blue: #00f2ff;
+  --accent-orange: #ffaa00;
+  --text-primary: #f0f5ff;
+  --text-secondary: #a0aec0;
+  --border-color: rgba(0, 242, 255, 0.25);
+  --scanline-color: rgba(0, 242, 255, 0.05);
 
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-primary);
   background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -24,9 +25,8 @@ body {
   overflow: hidden;
   background-color: var(--bg-color);
   background-image:
-    linear-gradient(var(--scanline-color) 50%, transparent 50%),
-    url('https://www.nasa.gov/wp-content/uploads/2022/10/pia21043-full.jpg');
-  background-size: 100% 4px, cover;
+    linear-gradient(var(--scanline-color) 50%, transparent 50%);
+  background-size: 100% 4px;
   background-position: center;
   background-attachment: fixed;
   height: 100vh;
@@ -41,7 +41,9 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 70% 30%, transparent 0%, rgba(5, 7, 10, 0.8) 100%);
+  background:
+    radial-gradient(circle at 70% 30%, transparent 0%, rgba(2, 4, 8, 0.5) 100%),
+    linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.05));
   pointer-events: none;
   z-index: 1;
 }

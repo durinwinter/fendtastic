@@ -145,6 +145,7 @@ pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>
                 .write()
                 .await
                 .insert(driver.id.clone(), snapshot.clone());
+            publish_driver_status(&state, &driver, &snapshot).await;
         }
     }
 
@@ -184,11 +185,13 @@ pub async fn create_driver(state: web::Data<AppState>, body: web::Json<CreateDri
 
     runtime_store::persist_json(&state.driver_dir, &driver.id, &driver);
     state.driver_instances.write().await.insert(driver.id.clone(), driver.clone());
+    let snapshot = default_status_snapshot(&driver);
     state
         .driver_statuses
         .write()
         .await
-        .insert(driver.id.clone(), default_status_snapshot(&driver));
+        .insert(driver.id.clone(), snapshot.clone());
+    publish_driver_status(&state, &driver, &snapshot).await;
     HttpResponse::Created().json(driver)
 }
 
@@ -244,11 +247,17 @@ pub async fn update_driver(state: web::Data<AppState>, id: web::Path<String>, bo
         .write()
         .await
         .insert(updated_driver.id.clone(), updated_driver.clone());
+    let mut snapshot = current_driver_status(&state, &updated_driver).await;
+    snapshot.node_name = crate::neuron_client::neuron_node_name(&updated_driver);
+    snapshot.state = updated_driver.state.clone();
+    snapshot.last_error = updated_driver.last_error.clone();
+    snapshot.updated_at = chrono::Utc::now();
     state
         .driver_statuses
         .write()
         .await
-        .insert(updated_driver.id.clone(), merge_status_defaults(&updated_driver, None));
+        .insert(updated_driver.id.clone(), snapshot.clone());
+    publish_driver_status(&state, &updated_driver, &snapshot).await;
     HttpResponse::Ok().json(updated_driver)
 }
 
@@ -258,6 +267,7 @@ pub async fn delete_driver(state: web::Data<AppState>, id: web::Path<String>) ->
         return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
     }
     runtime_store::delete_json(&state.driver_dir, id.as_str());
+    state.driver_statuses.write().await.remove(id.as_str());
     HttpResponse::NoContent().finish()
 }
 
@@ -302,8 +312,11 @@ pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> 
                 .driver_statuses
                 .write()
                 .await
-                .insert(driver.id.clone(), snapshot);
-            HttpResponse::Ok().json(driver)
+                .insert(driver.id.clone(), snapshot.clone());
+            let driver_response = driver.clone();
+            drop(drivers);
+            publish_driver_status(&state, &driver_response, &snapshot).await;
+            HttpResponse::Ok().json(driver_response)
         }
         Err(err) => {
             let mut drivers = state.driver_instances.write().await;
@@ -322,7 +335,10 @@ pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> 
                 .driver_statuses
                 .write()
                 .await
-                .insert(driver.id.clone(), snapshot);
+                .insert(driver.id.clone(), snapshot.clone());
+            let driver_response = driver.clone();
+            drop(drivers);
+            publish_driver_status(&state, &driver_response, &snapshot).await;
             HttpResponse::BadGateway().json(serde_json::json!({"error": err.to_string()}))
         }
     }
@@ -369,8 +385,11 @@ pub async fn stop_driver(state: web::Data<AppState>, id: web::Path<String>) -> i
                 .driver_statuses
                 .write()
                 .await
-                .insert(driver.id.clone(), snapshot);
-            HttpResponse::Ok().json(driver)
+                .insert(driver.id.clone(), snapshot.clone());
+            let driver_response = driver.clone();
+            drop(drivers);
+            publish_driver_status(&state, &driver_response, &snapshot).await;
+            HttpResponse::Ok().json(driver_response)
         }
         Err(err) => {
             let mut drivers = state.driver_instances.write().await;
@@ -389,7 +408,10 @@ pub async fn stop_driver(state: web::Data<AppState>, id: web::Path<String>) -> i
                 .driver_statuses
                 .write()
                 .await
-                .insert(driver.id.clone(), snapshot);
+                .insert(driver.id.clone(), snapshot.clone());
+            let driver_response = driver.clone();
+            drop(drivers);
+            publish_driver_status(&state, &driver_response, &snapshot).await;
             HttpResponse::BadGateway().json(serde_json::json!({"error": err.to_string()}))
         }
     }
@@ -445,7 +467,7 @@ pub async fn read_driver_tag(state: web::Data<AppState>, id: web::Path<String>, 
                     let message = read_result
                         .error
                         .and_then(|code| if code == 0 { None } else { Some(format!("Neuron error {}", code)) });
-                    update_last_read(
+                    let snapshot = update_last_read(
                         &state,
                         &driver,
                         DriverOperationRecord {
@@ -458,6 +480,7 @@ pub async fn read_driver_tag(state: web::Data<AppState>, id: web::Path<String>, 
                         },
                     )
                     .await;
+                    publish_driver_status(&state, &driver, &snapshot).await;
                     HttpResponse::Ok().json(serde_json::json!({
                         "tag_id": tag.id,
                         "tag_name": tag.name,
@@ -467,9 +490,13 @@ pub async fn read_driver_tag(state: web::Data<AppState>, id: web::Path<String>, 
                         "timestamp": chrono::Utc::now().to_rfc3339(),
                     }))
                 }
-                Err(err) => HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": err.to_string()
-                })),
+                Err(err) => {
+                    let snapshot = update_status_error(&state, &driver, err.to_string()).await;
+                    publish_driver_status(&state, &driver, &snapshot).await;
+                    HttpResponse::BadGateway().json(serde_json::json!({
+                        "error": err.to_string()
+                    }))
+                }
             }
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
@@ -528,7 +555,7 @@ pub async fn write_driver_tag(state: web::Data<AppState>, id: web::Path<String>,
                 .await
             {
                 Ok(()) => {
-                    update_last_write(
+                    let snapshot = update_last_write(
                         &state,
                         &driver,
                         DriverOperationRecord {
@@ -541,6 +568,7 @@ pub async fn write_driver_tag(state: web::Data<AppState>, id: web::Path<String>,
                         },
                     )
                     .await;
+                    publish_driver_status(&state, &driver, &snapshot).await;
                     HttpResponse::Ok().json(serde_json::json!({
                         "tag_id": tag.id,
                         "value": body.value,
@@ -549,9 +577,13 @@ pub async fn write_driver_tag(state: web::Data<AppState>, id: web::Path<String>,
                         "timestamp": chrono::Utc::now().to_rfc3339(),
                     }))
                 }
-                Err(err) => HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": err.to_string()
-                })),
+                Err(err) => {
+                    let snapshot = update_status_error(&state, &driver, err.to_string()).await;
+                    publish_driver_status(&state, &driver, &snapshot).await;
+                    HttpResponse::BadGateway().json(serde_json::json!({
+                        "error": err.to_string()
+                    }))
+                }
             }
         }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
@@ -637,24 +669,57 @@ async fn update_last_read(
     state: &web::Data<AppState>,
     driver: &DriverInstance,
     record: DriverOperationRecord,
-) {
+) -> DriverStatusSnapshot {
     let mut statuses = state.driver_statuses.write().await;
     let status = statuses
         .entry(driver.id.clone())
         .or_insert_with(|| default_status_snapshot(driver));
     status.last_read = Some(record);
     status.updated_at = chrono::Utc::now();
+    status.clone()
 }
 
 async fn update_last_write(
     state: &web::Data<AppState>,
     driver: &DriverInstance,
     record: DriverOperationRecord,
-) {
+) -> DriverStatusSnapshot {
     let mut statuses = state.driver_statuses.write().await;
     let status = statuses
         .entry(driver.id.clone())
         .or_insert_with(|| default_status_snapshot(driver));
     status.last_write = Some(record);
     status.updated_at = chrono::Utc::now();
+    status.clone()
+}
+
+async fn update_status_error(
+    state: &web::Data<AppState>,
+    driver: &DriverInstance,
+    message: String,
+) -> DriverStatusSnapshot {
+    let mut statuses = state.driver_statuses.write().await;
+    let status = statuses
+        .entry(driver.id.clone())
+        .or_insert_with(|| default_status_snapshot(driver));
+    status.last_error = Some(message);
+    status.updated_at = chrono::Utc::now();
+    status.clone()
+}
+
+fn driver_status_topic(driver: &DriverInstance) -> String {
+    format!(
+        "murph/runtime/nodes/{}/drivers/{}/status",
+        driver.runtime_node_id, driver.id
+    )
+}
+
+async fn publish_driver_status(
+    state: &web::Data<AppState>,
+    driver: &DriverInstance,
+    snapshot: &DriverStatusSnapshot,
+) {
+    let topic = driver_status_topic(driver);
+    let payload = serde_json::to_string(snapshot).unwrap_or_else(|_| "{}".to_string());
+    let _ = state.zenoh_session.put(&topic, payload).await;
 }

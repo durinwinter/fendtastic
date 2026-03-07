@@ -23,8 +23,14 @@ pub fn built_in_catalog() -> Vec<DriverCatalogEntry> {
             "properties": {
                 "name": { "type": "string" },
                 "address": { "type": "string", "title": "S7 Address" },
-                "data_type": { "type": "string" },
-                "access": { "type": "string" },
+                "data_type": {
+                    "type": "string",
+                    "enum": ["Bool", "Int16", "Uint16", "Int32", "Uint32", "Float32", "Float64", "String"]
+                },
+                "access": {
+                    "type": "string",
+                    "enum": ["Read", "Write", "ReadWrite"]
+                },
                 "scan_ms": { "type": "integer" }
             }
         }),

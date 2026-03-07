@@ -1,6 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use chrono::Utc;
+use shared::domain::driver::{DriverInstance, DriverStatusSnapshot};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -45,6 +46,28 @@ async fn ingest_timeseries_sample(
 
     let mut store = ts_store.write().await;
     store.insert(key, value, now_ms);
+}
+
+fn default_driver_status_snapshot(driver: &DriverInstance) -> DriverStatusSnapshot {
+    DriverStatusSnapshot {
+        driver_id: driver.id.clone(),
+        node_name: neuron_client::neuron_node_name(driver),
+        state: driver.state.clone(),
+        remote_running: None,
+        remote_link: None,
+        remote_rtt: None,
+        last_error: driver.last_error.clone(),
+        last_read: None,
+        last_write: None,
+        updated_at: chrono::Utc::now(),
+    }
+}
+
+fn driver_status_topic(driver: &DriverInstance) -> String {
+    format!(
+        "murph/runtime/nodes/{}/drivers/{}/status",
+        driver.runtime_node_id, driver.id
+    )
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -248,6 +271,83 @@ async fn main() -> std::io::Result<()> {
                         .to_string(),
                     )
                     .await;
+            }
+        });
+    }
+
+    // Poll Neuron periodically so driver status stays fresh even without user actions.
+    {
+        let state = app_state.clone();
+        tokio::spawn(async move {
+            let client = neuron_client::NeuronHttpClient::new();
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+            loop {
+                interval.tick().await;
+
+                let drivers: Vec<DriverInstance> = {
+                    let guard = state.driver_instances.read().await;
+                    guard.values().cloned().collect()
+                };
+
+                if drivers.is_empty() {
+                    continue;
+                }
+
+                let runtime_nodes = {
+                    let guard = state.runtime_nodes.read().await;
+                    guard.clone()
+                };
+
+                for driver in drivers {
+                    let Some(runtime_node) = runtime_nodes.get(&driver.runtime_node_id).cloned() else {
+                        continue;
+                    };
+
+                    let mut snapshot = {
+                        let statuses = state.driver_statuses.read().await;
+                        statuses
+                            .get(&driver.id)
+                            .cloned()
+                            .unwrap_or_else(|| default_driver_status_snapshot(&driver))
+                    };
+
+                    snapshot.node_name = neuron_client::neuron_node_name(&driver);
+                    snapshot.state = driver.state.clone();
+                    snapshot.last_error = driver.last_error.clone();
+
+                    match client.get_node_state(&runtime_node.neuron, &driver).await {
+                        Ok(Some(remote_state)) => {
+                            snapshot.remote_running = Some(remote_state.running == 1);
+                            snapshot.remote_link = Some(remote_state.link);
+                            snapshot.remote_rtt = remote_state.rtt;
+                        }
+                        Ok(None) => {
+                            snapshot.remote_running = None;
+                            snapshot.remote_link = None;
+                            snapshot.remote_rtt = None;
+                        }
+                        Err(err) => {
+                            snapshot.remote_running = Some(false);
+                            snapshot.last_error = Some(err.to_string());
+                        }
+                    }
+
+                    snapshot.updated_at = chrono::Utc::now();
+                    state
+                        .driver_statuses
+                        .write()
+                        .await
+                        .insert(driver.id.clone(), snapshot.clone());
+
+                    let _ = state
+                        .zenoh_session
+                        .put(
+                            &driver_status_topic(&driver),
+                            serde_json::to_string(&snapshot)
+                                .unwrap_or_else(|_| "{}".to_string()),
+                        )
+                        .await;
+                }
             }
         });
     }

@@ -11,6 +11,7 @@ import DriverInstanceEditor from '../components/runtime/DriverInstanceEditor'
 import BindingDesigner from '../components/runtime/BindingDesigner'
 import AuthorityPanel from '../components/runtime/AuthorityPanel'
 import apiService from '../services/apiService'
+import zenohService from '../services/zenohService'
 import { RuntimeNode } from '../types/runtime'
 import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { PeaBinding } from '../types/binding'
@@ -55,7 +56,11 @@ export default function RuntimeStudio() {
     setCatalog(catalogData)
     setDrivers(driverData)
     setBindings(bindingData)
-    if (!selectedNode && nodeData.length > 0) setSelectedNode(nodeData[0])
+    setSelectedNode((current) => {
+      if (!nodeData.length) return null
+      if (!current) return nodeData[0]
+      return nodeData.find((node) => node.id === current.id) ?? nodeData[0]
+    })
     if (!authority && peaData.length > 0) {
       setAuthority(await apiService.getAuthority(peaData[0].id))
     }
@@ -93,6 +98,44 @@ export default function RuntimeStudio() {
     void loadDriverContext()
   }, [selectedNode, selectedDriver?.id, selectedDriver?.driver_key])
 
+  useEffect(() => {
+    if (!selectedDriver) return
+
+    let cancelled = false
+    const topic = `murph/runtime/nodes/${selectedDriver.runtime_node_id}/drivers/${selectedDriver.id}/status`
+    const refresh = async () => {
+      try {
+        const status = await apiService.getDriverStatus(selectedDriver.id)
+        if (!cancelled) setDriverStatus(status)
+      } catch {
+        if (!cancelled) setDriverStatus(null)
+      }
+    }
+
+    void refresh()
+    const unsubscribe = zenohService.subscribe(topic, (payload) => {
+      if (cancelled) return
+      if (typeof payload === 'string') {
+        try {
+          setDriverStatus(JSON.parse(payload) as DriverStatusSnapshot)
+        } catch {
+          return
+        }
+        return
+      }
+      setDriverStatus(payload as DriverStatusSnapshot)
+    })
+    const intervalId = window.setInterval(() => {
+      void refresh()
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+      window.clearInterval(intervalId)
+    }
+  }, [selectedDriver?.id])
+
   const workspace = (() => {
     switch (section) {
       case 'runtime':
@@ -106,8 +149,12 @@ export default function RuntimeStudio() {
                 await apiService.createRuntimeNode(payload)
                 await loadAll()
               }}
+              onUpdate={async (id, payload) => {
+                await apiService.updateRuntimeNode(id, payload)
+                await loadAll()
+              }}
               onTest={async (nodeId) => {
-                await apiService.testRuntimeNode(nodeId)
+                return apiService.testRuntimeNode(nodeId)
               }}
             />
           </Box>
