@@ -1,10 +1,10 @@
 import React, { useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Grid, Box as ThreeBox } from '@react-three/drei'
-import * as THREE from 'three'
+import type { Group } from 'three'
 
 const MachineModel: React.FC = () => {
-  const groupRef = useRef<THREE.Group>(null)
+  const groupRef = useRef<Group>(null)
 
   useFrame(() => {
     if (groupRef.current) {

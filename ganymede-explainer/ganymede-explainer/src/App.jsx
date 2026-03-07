@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { Bloom, EffectComposer, Noise, ChromaticAberration, Glitch } from '@react-three/postprocessing'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { EffectComposer, Bloom, Noise, ChromaticAberration, Glitch } from '@react-three/postprocessing'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as THREE from 'three'
 import {
   Shield,
   Cpu,
@@ -22,6 +23,26 @@ import { DataDebris } from './components/DataDebris'
 import { DigitalOoze } from './components/DigitalOoze'
 import { DataMonolith } from './components/DataMonolith'
 import './App.css'
+
+// --- 3D CAMERA RIG ---
+const CameraRig = ({ activeTab }) => {
+  const { camera, mouse } = useThree()
+  const vec = new THREE.Vector3()
+
+  useFrame(() => {
+    // Base parallax
+    camera.position.lerp(vec.set(mouse.x * 2, mouse.y * 1, 5), 0.05)
+
+    // Target zooming based on active tab
+    if (activeTab === 'PEA') camera.position.lerp(vec.set(-2, 0, 3), 0.05)
+    if (activeTab === 'POL') camera.position.lerp(vec.set(0, 0, 3), 0.05)
+    if (activeTab === 'INTENT') camera.position.lerp(vec.set(2, 0, 3), 0.05)
+    if (activeTab === 'SECURITY') camera.position.lerp(vec.set(4, 0, 3), 0.05)
+
+    camera.lookAt(0, 0, 0)
+  })
+  return null
+}
 
 // --- DEEP DIVE CONTENT ---
 const DEEP_DIVES = {
