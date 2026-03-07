@@ -12,7 +12,7 @@ import BindingDesigner from '../components/runtime/BindingDesigner'
 import AuthorityPanel from '../components/runtime/AuthorityPanel'
 import apiService from '../services/apiService'
 import { RuntimeNode } from '../types/runtime'
-import { DriverCatalogEntry, DriverInstance } from '../types/driver'
+import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { PeaBinding } from '../types/binding'
 import { AuthorityState } from '../types/authority'
 import { PeaConfig } from '../types/mtp'
@@ -25,6 +25,8 @@ export default function RuntimeStudio() {
   const [drivers, setDrivers] = useState<DriverInstance[]>([])
   const [bindings, setBindings] = useState<PeaBinding[]>([])
   const [authority, setAuthority] = useState<AuthorityState | null>(null)
+  const [driverSchema, setDriverSchema] = useState<DriverSchemaPayload | null>(null)
+  const [driverStatus, setDriverStatus] = useState<DriverStatusSnapshot | null>(null)
   const [selectedNode, setSelectedNode] = useState<RuntimeNode | null>(null)
 
   const selectedDriver = useMemo(
@@ -63,6 +65,34 @@ export default function RuntimeStudio() {
     void loadAll()
   }, [])
 
+  useEffect(() => {
+    const loadDriverContext = async () => {
+      if (!selectedNode) {
+        setDriverSchema(null)
+        setDriverStatus(null)
+        return
+      }
+
+      try {
+        setDriverSchema(await apiService.getDriverSchema(selectedDriver?.driver_key ?? 'siemens-s7', selectedNode.id))
+      } catch {
+        setDriverSchema(null)
+      }
+
+      if (selectedDriver) {
+        try {
+          setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
+        } catch {
+          setDriverStatus(null)
+        }
+      } else {
+        setDriverStatus(null)
+      }
+    }
+
+    void loadDriverContext()
+  }, [selectedNode, selectedDriver?.id, selectedDriver?.driver_key])
+
   const workspace = (() => {
     switch (section) {
       case 'runtime':
@@ -90,17 +120,40 @@ export default function RuntimeStudio() {
               runtimeNode={selectedNode}
               driver={selectedDriver}
               catalog={catalog}
+              schema={driverSchema}
+              status={driverStatus}
               onCreate={async (payload) => {
                 await apiService.createDriver(payload)
                 await loadAll()
               }}
+              onUpdate={async (id, payload) => {
+                await apiService.updateDriver(id, payload)
+                await loadAll()
+                setDriverStatus(await apiService.getDriverStatus(id))
+              }}
               onStart={async (id) => {
                 await apiService.startDriver(id)
                 await loadAll()
+                setDriverStatus(await apiService.getDriverStatus(id))
               }}
               onStop={async (id) => {
                 await apiService.stopDriver(id)
                 await loadAll()
+                setDriverStatus(await apiService.getDriverStatus(id))
+              }}
+              onRead={async (id, tagId) => {
+                await apiService.readDriverTag(id, { tag_id: tagId })
+                setDriverStatus(await apiService.getDriverStatus(id))
+              }}
+              onWrite={async (id, tagId, value, peaId) => {
+                await apiService.writeDriverTag(id, {
+                  tag_id: tagId,
+                  value,
+                  pea_id: peaId,
+                  actor_id: 'operator-console-1',
+                  actor_class: 'Operator',
+                })
+                setDriverStatus(await apiService.getDriverStatus(id))
               }}
             />
           </Box>
@@ -160,6 +213,9 @@ export default function RuntimeStudio() {
         `Status: ${selectedNode.status}`,
         `Assigned PEA: ${selectedNode.assigned_pea_id ?? 'unassigned'}`,
         `Driver: ${selectedDriver?.driver_key ?? 'none'}`,
+        `Remote running: ${String(driverStatus?.remote_running ?? false)}`,
+        `Last read: ${driverStatus?.last_read ? `${driverStatus.last_read.tag_name}=${JSON.stringify(driverStatus.last_read.value)}` : 'none'}`,
+        `Last write: ${driverStatus?.last_write ? `${driverStatus.last_write.tag_name}=${JSON.stringify(driverStatus.last_write.value)}` : 'none'}`,
       ]
     : ['Select a runtime node to inspect health, binding status, and deployment context.']
 
@@ -177,7 +233,7 @@ export default function RuntimeStudio() {
           workspace={workspace}
           inspectorTitle="Runtime Inspector"
           inspectorLines={inspectorLines}
-          inspectorStatus={selectedBinding && !selectedBinding.validation.valid ? 'warn' : 'ok'}
+          inspectorStatus={driverStatus?.last_error ? 'error' : selectedBinding && !selectedBinding.validation.valid ? 'warn' : 'ok'}
         />
       </Box>
       <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>

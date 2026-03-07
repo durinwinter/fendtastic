@@ -4,7 +4,7 @@ import { Recipe } from '../types/recipe'
 import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
 import { RuntimeNode, RuntimeNodeHealthCheck } from '../types/runtime'
 import { AuthorityAuditRecord, AuthorityState } from '../types/authority'
-import { DriverCatalogEntry, DriverInstance } from '../types/driver'
+import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { BindingValidationSummary, PeaBinding } from '../types/binding'
 
 class ApiService {
@@ -228,6 +228,13 @@ class ApiService {
     return response.data
   }
 
+  async getDriverSchema(driverKey: string, runtimeNodeId?: string): Promise<DriverSchemaPayload> {
+    const response = await this.client.get(`/drivers/catalog/${driverKey}/schema`, {
+      params: runtimeNodeId ? { runtime_node_id: runtimeNodeId } : {},
+    })
+    return response.data
+  }
+
   async listDrivers(): Promise<DriverInstance[]> {
     const response = await this.client.get('/drivers')
     return response.data
@@ -245,6 +252,11 @@ class ApiService {
 
   async startDriver(id: string): Promise<DriverInstance> {
     const response = await this.client.post(`/drivers/${id}/start`)
+    return response.data
+  }
+
+  async getDriverStatus(id: string): Promise<DriverStatusSnapshot> {
+    const response = await this.client.get(`/drivers/${id}/status`)
     return response.data
   }
 

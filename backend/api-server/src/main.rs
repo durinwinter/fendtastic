@@ -107,6 +107,7 @@ async fn main() -> std::io::Result<()> {
         recipes: Arc::new(RwLock::new(recipes)),
         runtime_nodes: Arc::new(RwLock::new(runtime_nodes)),
         driver_instances: Arc::new(RwLock::new(driver_instances)),
+        driver_statuses: Arc::new(RwLock::new(HashMap::new())),
         pea_bindings: Arc::new(RwLock::new(pea_bindings)),
         authority_states: Arc::new(RwLock::new(authority_states)),
         authority_audit: Arc::new(RwLock::new(Vec::new())),
@@ -543,6 +544,10 @@ async fn main() -> std::io::Result<()> {
                     )
                     // Drivers
                     .route("/drivers/catalog", web::get().to(driver_handlers::get_driver_catalog))
+                    .route(
+                        "/drivers/catalog/{id}/schema",
+                        web::get().to(driver_handlers::get_driver_schema),
+                    )
                     .route("/drivers", web::get().to(driver_handlers::list_drivers))
                     .route("/drivers", web::post().to(driver_handlers::create_driver))
                     .route("/drivers/{id}", web::get().to(driver_handlers::get_driver))
@@ -554,6 +559,10 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/drivers/{id}/start",
                         web::post().to(driver_handlers::start_driver),
+                    )
+                    .route(
+                        "/drivers/{id}/status",
+                        web::get().to(driver_handlers::get_driver_status),
                     )
                     .route(
                         "/drivers/{id}/stop",

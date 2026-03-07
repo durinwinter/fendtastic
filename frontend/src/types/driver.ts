@@ -21,6 +21,32 @@ export interface DriverInstance {
   updated_at: string
 }
 
+export interface DriverSchemaPayload extends DriverCatalogEntry {
+  source?: 'neuron' | 'builtin'
+}
+
+export interface DriverOperationRecord {
+  tag_id: string
+  tag_name: string
+  value: unknown
+  ok: boolean
+  message?: string | null
+  timestamp: string
+}
+
+export interface DriverStatusSnapshot {
+  driver_id: string
+  node_name: string
+  state: DriverInstance['state']
+  remote_running?: boolean | null
+  remote_link?: number | null
+  remote_rtt?: number | null
+  last_error?: string | null
+  last_read?: DriverOperationRecord | null
+  last_write?: DriverOperationRecord | null
+  updated_at: string
+}
+
 export interface TagGroup {
   id: string
   name: string

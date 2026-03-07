@@ -32,6 +32,30 @@ pub struct DriverInstance {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DriverStatusSnapshot {
+    pub driver_id: String,
+    pub node_name: String,
+    pub state: DriverInstanceState,
+    pub remote_running: Option<bool>,
+    pub remote_link: Option<i64>,
+    pub remote_rtt: Option<i64>,
+    pub last_error: Option<String>,
+    pub last_read: Option<DriverOperationRecord>,
+    pub last_write: Option<DriverOperationRecord>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DriverOperationRecord {
+    pub tag_id: String,
+    pub tag_name: String,
+    pub value: serde_json::Value,
+    pub ok: bool,
+    pub message: Option<String>,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DriverInstanceState {
     Created,
     Configured,

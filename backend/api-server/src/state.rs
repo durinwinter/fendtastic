@@ -1,6 +1,6 @@
 use shared::domain::authority::{AuthorityAuditRecord, AuthorityState};
 use shared::domain::binding::PeaBinding;
-use shared::domain::driver::{DriverCatalogEntry, DriverInstance};
+use shared::domain::driver::{DriverCatalogEntry, DriverInstance, DriverStatusSnapshot};
 use shared::domain::runtime::RuntimeNode;
 use shared::mtp::{PeaConfig, Recipe};
 use std::collections::{HashMap, VecDeque};
@@ -113,6 +113,7 @@ pub struct AppState {
     pub recipes: Arc<RwLock<HashMap<String, Recipe>>>,
     pub runtime_nodes: Arc<RwLock<HashMap<String, RuntimeNode>>>,
     pub driver_instances: Arc<RwLock<HashMap<String, DriverInstance>>>,
+    pub driver_statuses: Arc<RwLock<HashMap<String, DriverStatusSnapshot>>>,
     pub pea_bindings: Arc<RwLock<HashMap<String, PeaBinding>>>,
     pub authority_states: Arc<RwLock<HashMap<String, AuthorityState>>>,
     pub authority_audit: Arc<RwLock<Vec<AuthorityAuditRecord>>>,

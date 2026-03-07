@@ -126,6 +126,11 @@ impl NeuronHttpClient {
             .await
     }
 
+    pub async fn get_driver_schema(&self, conn: &NeuronConnection, driver_key: &str) -> Result<Value> {
+        let plugin = self.resolve_plugin(conn, driver_key).await?;
+        self.get_plugin_schema(conn, &plugin.schema).await
+    }
+
     pub async fn sync_driver(&self, conn: &NeuronConnection, driver: &DriverInstance) -> Result<()> {
         let plugin = self.resolve_plugin(conn, &driver.driver_key).await?;
         let node_name = neuron_node_name(driver);
@@ -210,7 +215,7 @@ impl NeuronHttpClient {
         Ok(())
     }
 
-    async fn resolve_plugin(&self, conn: &NeuronConnection, driver_key: &str) -> Result<NeuronPlugin> {
+    pub async fn resolve_plugin(&self, conn: &NeuronConnection, driver_key: &str) -> Result<NeuronPlugin> {
         let plugins = self.list_plugins(conn).await?;
         let normalized_key = driver_key.to_ascii_lowercase();
 
