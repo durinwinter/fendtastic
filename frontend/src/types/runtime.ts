@@ -23,3 +23,10 @@ export interface RuntimeNodeHealthCheck {
   ok: boolean
   message: string
 }
+
+export interface RuntimeNodeStatusSnapshot {
+  runtime_node_id: string
+  status: RuntimeNode['status']
+  checks: RuntimeNodeHealthCheck[]
+  updated_at: string
+}

@@ -21,6 +21,7 @@ mod neuron_client;
 mod pea_handlers;
 mod pol_handlers;
 mod runtime_handlers;
+mod runtime_status;
 mod runtime_store;
 mod scenario_handlers;
 mod simulator;
@@ -271,6 +272,92 @@ async fn main() -> std::io::Result<()> {
                         .to_string(),
                     )
                     .await;
+            }
+        });
+    }
+
+    // Poll runtime nodes periodically so status flows onto Zenoh even without UI actions.
+    {
+        let state = app_state.clone();
+        tokio::spawn(async move {
+            let client = neuron_client::NeuronHttpClient::new();
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+            loop {
+                interval.tick().await;
+
+                let runtime_nodes: Vec<_> = {
+                    let guard = state.runtime_nodes.read().await;
+                    guard.values().cloned().collect()
+                };
+
+                for runtime_node in runtime_nodes {
+                    let mut checks = vec![shared::domain::runtime::RuntimeNodeHealthCheck {
+                        name: "assigned_pea".to_string(),
+                        ok: runtime_node.assigned_pea_id.is_some(),
+                        message: if runtime_node.assigned_pea_id.is_some() {
+                            "Runtime node has an assigned PEA".to_string()
+                        } else {
+                            "Runtime node has no assigned PEA yet".to_string()
+                        },
+                    }];
+
+                    if matches!(
+                        runtime_node.neuron.mode,
+                        shared::domain::runtime::NeuronAccessMode::Api
+                            | shared::domain::runtime::NeuronAccessMode::Hybrid
+                    ) {
+                        match client.test_connection(&runtime_node.neuron).await {
+                            Ok(mut remote_checks) => checks.append(&mut remote_checks),
+                            Err(err) => checks.push(shared::domain::runtime::RuntimeNodeHealthCheck {
+                                name: "neuron_api".to_string(),
+                                ok: false,
+                                message: err.to_string(),
+                            }),
+                        }
+                    } else {
+                        checks.push(shared::domain::runtime::RuntimeNodeHealthCheck {
+                            name: "config_path".to_string(),
+                            ok: runtime_node
+                                .neuron
+                                .config_path
+                                .as_deref()
+                                .map(|path| !path.trim().is_empty())
+                                .unwrap_or(false),
+                            message: if runtime_node
+                                .neuron
+                                .config_path
+                                .as_deref()
+                                .map(|path| !path.trim().is_empty())
+                                .unwrap_or(false)
+                            {
+                                "Runtime node has a file-export path configured".to_string()
+                            } else {
+                                "Runtime node is missing a writable file-export path".to_string()
+                            },
+                        });
+                    }
+
+                    let snapshot = runtime_status::build_runtime_status_snapshot(
+                        runtime_node.id.clone(),
+                        checks,
+                    );
+
+                    {
+                        let mut nodes = state.runtime_nodes.write().await;
+                        if let Some(node) = nodes.get_mut(&runtime_node.id) {
+                            node.status = snapshot.status.clone();
+                        }
+                    }
+
+                    let _ = state
+                        .zenoh_session
+                        .put(
+                            &format!("murph/runtime/nodes/{}/status", runtime_node.id),
+                            serde_json::to_string(&snapshot)
+                                .unwrap_or_else(|_| "{}".to_string()),
+                        )
+                        .await;
+                }
             }
         });
     }

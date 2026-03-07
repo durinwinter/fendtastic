@@ -57,3 +57,54 @@ pub fn validate_write_request(
         _ => Ok(()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn state(mode: ControlAuthorityMode) -> AuthorityState {
+        AuthorityState {
+            pea_id: "pea-1".to_string(),
+            mode,
+            owner_actor_id: None,
+            owner_actor_class: None,
+            updated_at: chrono::Utc::now(),
+            reason: None,
+        }
+    }
+
+    #[test]
+    fn observe_only_blocks_writes() {
+        let err = validate_write_request(&state(ControlAuthorityMode::ObserveOnly), &ActorClass::Operator)
+            .expect_err("observe-only should reject writes");
+        assert!(err.contains("ObserveOnly"));
+    }
+
+    #[test]
+    fn operator_exclusive_allows_only_operators() {
+        assert!(validate_write_request(
+            &state(ControlAuthorityMode::OperatorExclusive),
+            &ActorClass::Operator
+        )
+        .is_ok());
+        assert!(validate_write_request(
+            &state(ControlAuthorityMode::OperatorExclusive),
+            &ActorClass::AI
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn ai_assisted_blocks_ai_but_allows_operator() {
+        assert!(validate_write_request(
+            &state(ControlAuthorityMode::AIAssisted),
+            &ActorClass::Operator
+        )
+        .is_ok());
+        assert!(validate_write_request(
+            &state(ControlAuthorityMode::AIAssisted),
+            &ActorClass::AI
+        )
+        .is_err());
+    }
+}

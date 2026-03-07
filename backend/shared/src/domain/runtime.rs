@@ -36,7 +36,7 @@ pub enum NeuronAccessMode {
     Hybrid,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RuntimeNodeStatus {
     Unknown,
     Offline,
@@ -49,4 +49,12 @@ pub struct RuntimeNodeHealthCheck {
     pub name: String,
     pub ok: bool,
     pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeNodeStatusSnapshot {
+    pub runtime_node_id: String,
+    pub status: RuntimeNodeStatus,
+    pub checks: Vec<RuntimeNodeHealthCheck>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
 }

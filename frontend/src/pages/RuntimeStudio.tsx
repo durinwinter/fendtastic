@@ -12,7 +12,7 @@ import BindingDesigner from '../components/runtime/BindingDesigner'
 import AuthorityPanel from '../components/runtime/AuthorityPanel'
 import apiService from '../services/apiService'
 import zenohService from '../services/zenohService'
-import { RuntimeNode } from '../types/runtime'
+import { RuntimeNode, RuntimeNodeStatusSnapshot } from '../types/runtime'
 import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { PeaBinding } from '../types/binding'
 import { AuthorityState } from '../types/authority'
@@ -28,6 +28,7 @@ export default function RuntimeStudio() {
   const [authority, setAuthority] = useState<AuthorityState | null>(null)
   const [driverSchema, setDriverSchema] = useState<DriverSchemaPayload | null>(null)
   const [driverStatus, setDriverStatus] = useState<DriverStatusSnapshot | null>(null)
+  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeNodeStatusSnapshot | null>(null)
   const [selectedNode, setSelectedNode] = useState<RuntimeNode | null>(null)
 
   const selectedDriver = useMemo(
@@ -97,6 +98,45 @@ export default function RuntimeStudio() {
 
     void loadDriverContext()
   }, [selectedNode, selectedDriver?.id, selectedDriver?.driver_key])
+
+  useEffect(() => {
+    if (!selectedNode) {
+      setRuntimeStatus(null)
+      return
+    }
+
+    let cancelled = false
+    const topic = `murph/runtime/nodes/${selectedNode.id}/status`
+    const unsubscribe = zenohService.subscribe(topic, (payload) => {
+      if (cancelled) return
+      const parsed = typeof payload === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(payload) as RuntimeNodeStatusSnapshot
+            } catch {
+              return null
+            }
+          })()
+        : (payload as RuntimeNodeStatusSnapshot)
+      if (!parsed) return
+      setRuntimeStatus(parsed)
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === parsed.runtime_node_id ? { ...node, status: parsed.status } : node
+        )
+      )
+      setSelectedNode((current) =>
+        current && current.id === parsed.runtime_node_id
+          ? { ...current, status: parsed.status }
+          : current
+      )
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [selectedNode?.id])
 
   useEffect(() => {
     if (!selectedDriver) return
@@ -257,12 +297,14 @@ export default function RuntimeStudio() {
         `Node: ${selectedNode.name}`,
         `Host: ${selectedNode.host}`,
         `Architecture: ${selectedNode.architecture}`,
-        `Status: ${selectedNode.status}`,
+        `Status: ${runtimeStatus?.status ?? selectedNode.status}`,
         `Assigned PEA: ${selectedNode.assigned_pea_id ?? 'unassigned'}`,
+        `Checks: ${runtimeStatus ? `${runtimeStatus.checks.filter((check) => check.ok).length}/${runtimeStatus.checks.length}` : 'pending'}`,
         `Driver: ${selectedDriver?.driver_key ?? 'none'}`,
         `Remote running: ${String(driverStatus?.remote_running ?? false)}`,
         `Last read: ${driverStatus?.last_read ? `${driverStatus.last_read.tag_name}=${JSON.stringify(driverStatus.last_read.value)}` : 'none'}`,
         `Last write: ${driverStatus?.last_write ? `${driverStatus.last_write.tag_name}=${JSON.stringify(driverStatus.last_write.value)}` : 'none'}`,
+        ...(runtimeStatus?.checks.slice(0, 3).map((check) => `${check.name}: ${check.ok ? 'ok' : check.message}`) ?? []),
       ]
     : ['Select a runtime node to inspect health, binding status, and deployment context.']
 
