@@ -1,38 +1,78 @@
-# MURPH - Mars Habitat Control System
+# Fendtastic — Modular Automation Platform
 
-A real-time distributed control system for Martian surface operations.
+A modular automation platform with intent-driven control, designed to coordinate distributed automation subsystems using a Packaged Equipment Assembly (PEA) model.
+
+The platform enables humans, automation procedures, and AI systems to interact safely with physical infrastructure while maintaining deterministic machine behavior and operational safety.
+
+## Core Concepts
+
+### Packaged Equipment Assemblies (PEAs)
+
+Self-contained automation modules encapsulating device integrations, operational procedures, telemetry/command interfaces, digital twin models, and capability definitions. PEAs are the central engineering artifact — all automation logic lives inside them.
+
+### Process Orchestration Layer (POL)
+
+Centralized orchestration engine that evaluates intents, composes procedures across PEAs, manages control authority, and maintains the facility capability graph.
+
+### Intent-Driven Control
+
+External actors (operators, AI systems, schedulers) submit high-level intents describing desired outcomes rather than directly manipulating actuators. The POL translates intents into validated procedures.
+
+### Control Authority Model
+
+Determines which actors may control a subsystem at any given time. Control modes include ObserveOnly, OperatorExclusive, AutoExclusive, AIAssisted, AIExclusive, MaintenanceExclusive, and EmergencyLockout.
+
+### Digital Twin Arbitration
+
+Proposed control plans are evaluated against a facility digital twin before execution. Actions may be approved, modified, or rejected based on safety constraints, system stability, and operational limits.
+
+### Self-Assembling Automation
+
+New PEA runtimes register dynamically with the POL, publish capabilities, and integrate into the facility model automatically.
 
 ## Architecture
 
+### Infrastructure Stack
+
+- **Zenoh**: Event mesh and real-time data distribution
+- **OpenZiti**: Zero-trust service access enforcement
+- **Nebula**: Secure overlay networking between runtime nodes
+
 ### Backend
-- **Zenoh**: High-performance pub/sub messaging for real-time data streaming
-- **Rust Web Server**: Actix-web based API server
-- **EVA-ICS v4**: Integration layer for physical sensor connectivity
+
+- **Rust API Server**: Actix-web based orchestration and API services
+- **PEA Runtimes**: Distributed automation execution on runtime nodes
+- **EVA-ICS v4**: Device protocol integration layer
 
 ### Frontend
-- **React**: Modern UI framework
-- **MURPH Theme**: Red Mars inspired design language (Mars Rust / Terminal Amber)
-- **Coobie Assistant**: Built-in expedition mascot helper
 
-## Features
+- **React**: Operator interface and monitoring dashboard
+- **MURPH Theme**: Mars Rust / Terminal Amber design language
 
-- **Real-time Monitoring Dashboard**
-  - Machine state swimlanes with temporal visualization
-  - User action tracking lanes
-  - Alarm management lanes
-  - Time-synchronized time-series graphs
-  - Live spot value displays
-  - 3D isometric machine views
+## Control Loop Hierarchy
 
-- **Sensor Integration**
-  - Physical sensor connectivity via EVA-ICS v4
-  - Low-latency data streaming through Zenoh
-  - Bi-directional control capabilities
+| Loop              | Responsibility                                        | Timescale          |
+| ----------------- | ----------------------------------------------------- | ------------------ |
+| Intent Loop       | Humans / AI define desired outcomes                   | Minutes to hours   |
+| Optimization Loop | POL evaluates intents, digital twin predicts response | Minutes            |
+| Procedure Loop    | POL composes procedures across PEAs                   | Seconds to minutes |
+| Control Loop      | Local device control (PID, valve, motor)              | Milliseconds       |
+
+## Layered Architecture
+
+| Layer               | Responsibility            |
+| ------------------- | ------------------------- |
+| Intent Layer        | Defines goals             |
+| Orchestration Layer | Determines system actions |
+| Digital Twin        | Validates actions         |
+| Authority Layer     | Determines who may act    |
+| Execution Layer     | Performs procedures       |
+| Device Layer        | Executes control loops    |
 
 ## Project Structure
 
-```
-murph/
+```text
+fendtastic/
 ├── dev.sh                # One-command dev launcher
 ├── backend/              # Rust backend services
 │   ├── api-server/       # REST API server
@@ -42,7 +82,7 @@ murph/
 ├── frontend/             # React application
 │   ├── src/
 │   │   ├── components/   # React components
-│   │   ├── themes/       # MURPH theming
+│   │   ├── themes/       # Theming
 │   │   └── services/     # API & Zenoh clients
 ├── config/               # Configuration files
 └── docs/                 # Documentation
@@ -52,13 +92,12 @@ murph/
 
 ### One-Command Launch
 
-The fastest way to get everything running for development:
-
 ```bash
 ./dev.sh
 ```
 
 This script will:
+
 1. Check that Rust, Node.js 18+, and Docker are installed
 2. Verify ports 3000, 7447, 8000, and 8080 are free
 3. Copy `.env.example` to `.env` if needed
@@ -68,15 +107,14 @@ This script will:
 7. Start the React dev server with hot-reload
 
 Once running:
-- **Dashboard**: http://localhost:3000
-- **API**: http://localhost:8080
-- **Health check**: http://localhost:8080/health
+
+- **Dashboard**: <http://localhost:3000>
+- **API**: <http://localhost:8080>
+- **Health check**: <http://localhost:8080/health>
 
 Press `Ctrl+C` to stop all services.
 
 ### Prerequisites
-
-Install these before running `dev.sh`:
 
 ```bash
 # Rust
@@ -97,11 +135,10 @@ sudo usermod -aG docker $USER
 cargo install cargo-watch
 ```
 
-### Manual Launch (without dev.sh)
-
-If you prefer to run services individually in separate terminals:
+### Manual Launch
 
 **Terminal 1 — Zenoh Router:**
+
 ```bash
 docker run --rm -p 7447:7447 -p 8000:8000 \
   -v ./config/zenoh-router.json5:/etc/zenoh/config.json5:ro \
@@ -109,16 +146,19 @@ docker run --rm -p 7447:7447 -p 8000:8000 \
 ```
 
 **Terminal 2 — API Server:**
+
 ```bash
 cd backend && cargo run --bin api-server
 ```
 
 **Terminal 3 — Frontend:**
+
 ```bash
 cd frontend && npm install && npm run dev
 ```
 
-**Terminal 4 — EVA-ICS Connector (when you have EVA-ICS running):**
+**Terminal 4 — EVA-ICS Connector (when EVA-ICS is running):**
+
 ```bash
 cd backend && cargo run --bin eva-ics-connector
 ```
@@ -127,53 +167,39 @@ cd backend && cargo run --bin eva-ics-connector
 
 ```bash
 cp .env.example .env
-# Edit .env with your EVA-ICS credentials
+# Edit .env with your configuration
 docker compose up -d
 ```
 
-### Makefile Shortcuts
-
-```bash
-make setup          # Install deps and build everything
-make dev            # Run backend + frontend in parallel
-make docker-up      # Start via Docker Compose
-make docker-logs    # Tail all container logs
-make test-backend   # Run Rust tests
-make clean          # Remove build artifacts
-```
-
 ## Configuration
-
-Copy the example and edit as needed:
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Default | Description |
-|---|---|---|
-| `EVA_ICS_URL` | `http://localhost:7727` | EVA-ICS v4 API endpoint |
-| `EVA_ICS_API_KEY` | — | EVA-ICS authentication key |
-| `VITE_API_URL` | `http://localhost:8080/api/v1` | Frontend API base URL |
-| `VITE_ZENOH_WS` | `ws://localhost:8000` | Frontend Zenoh WebSocket URL |
-
-See [docs/configuration.md](docs/configuration.md) for detailed setup including EVA-ICS sensor configuration.
+| Variable          | Default                        | Description                    |
+| ----------------- | ------------------------------ | ------------------------------ |
+| `EVA_ICS_URL`     | `http://localhost:7727`        | EVA-ICS v4 API endpoint        |
+| `EVA_ICS_API_KEY` | —                              | EVA-ICS authentication key     |
+| `VITE_API_URL`    | `http://localhost:8080/api/v1` | Frontend API base URL          |
+| `VITE_ZENOH_WS`   | `ws://localhost:8000`          | Frontend Zenoh WebSocket URL   |
 
 ## Ports
 
-| Port | Service | Protocol |
-|---|---|---|
-| 3000 | Frontend dev server | HTTP |
-| 7447 | Zenoh router | TCP |
-| 8000 | Zenoh router | WebSocket |
-| 8080 | API server | HTTP |
+| Port | Service              | Protocol  |
+| ---- | -------------------- | --------- |
+| 3000 | Frontend dev server  | HTTP      |
+| 7447 | Zenoh router         | TCP       |
+| 8000 | Zenoh router         | WebSocket |
+| 8080 | API server           | HTTP      |
 
 ## Documentation
 
+- [Control Authority Specification](Control-Authority.md) — Platform architecture and control model
 - [Architecture](docs/architecture.md) — System design and data flow diagrams
 - [Configuration](docs/configuration.md) — Detailed setup for all components
 - [Development](docs/development.md) — Adding features, components, and sensors
-- [Deployment](docs/deployment.md) — Production deployment on bare metal, Docker, and cloud
+- [Deployment](docs/deployment.md) — Production deployment
 
 ## License
 

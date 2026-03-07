@@ -2,7 +2,7 @@ use crate::authority_service;
 use crate::runtime_store;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
-use shared::domain::authority::{AuthorityChangeRequest, AuthorityState};
+use shared::domain::authority::AuthorityChangeRequest;
 
 pub async fn get_authority_state(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
     let authority_states = state.authority_states.read().await;

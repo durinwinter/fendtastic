@@ -3,7 +3,9 @@ use crate::runtime_store;
 use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use shared::domain::authority::{ActorClass, AuthorityState};
-use shared::domain::driver::{DriverInstance, DriverInstanceState, TagGroup};
+use shared::domain::driver::{
+    DriverDataType, DriverInstance, DriverInstanceState, DriverTag, TagAccess, TagGroup,
+};
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
@@ -74,7 +76,7 @@ pub async fn create_driver(state: web::Data<AppState>, body: web::Json<CreateDri
         display_name: body.display_name.clone(),
         state: DriverInstanceState::Created,
         config: body.config.clone(),
-        tag_groups: Vec::new(),
+        tag_groups: default_tag_groups(&body.driver_key),
         last_error: None,
         created_at: now,
         updated_at: now,
@@ -140,12 +142,20 @@ pub async fn read_driver_tag(state: web::Data<AppState>, id: web::Path<String>, 
         .find(|tag| tag.id == body.tag_id);
 
     match tag {
-        Some(tag) => HttpResponse::Ok().json(serde_json::json!({
-            "tag_id": tag.id,
-            "value": sample_value_for_tag(tag.data_type.clone()),
-            "quality": "good",
-            "timestamp": chrono::Utc::now().to_rfc3339(),
-        })),
+        Some(tag) => {
+            if !matches!(tag.access, TagAccess::Read | TagAccess::ReadWrite) {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Tag does not support read access"
+                }));
+            }
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "tag_id": tag.id,
+                "value": sample_value_for_tag(tag.data_type.clone()),
+                "quality": "good",
+                "timestamp": chrono::Utc::now().to_rfc3339(),
+            }))
+        }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
     }
 }
@@ -168,13 +178,21 @@ pub async fn write_driver_tag(state: web::Data<AppState>, id: web::Path<String>,
         .find(|tag| tag.id == body.tag_id);
 
     match tag {
-        Some(tag) => HttpResponse::Ok().json(serde_json::json!({
-            "tag_id": tag.id,
-            "value": body.value,
-            "actor_id": body.actor_id,
-            "status": "accepted",
-            "timestamp": chrono::Utc::now().to_rfc3339(),
-        })),
+        Some(tag) => {
+            if !matches!(tag.access, TagAccess::Write | TagAccess::ReadWrite) {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Tag does not support write access"
+                }));
+            }
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "tag_id": tag.id,
+                "value": body.value,
+                "actor_id": body.actor_id,
+                "status": "accepted",
+                "timestamp": chrono::Utc::now().to_rfc3339(),
+            }))
+        }
         None => HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})),
     }
 }
@@ -206,4 +224,36 @@ fn sample_value_for_tag(data_type: shared::domain::driver::DriverDataType) -> se
         | shared::domain::driver::DriverDataType::Float64 => serde_json::json!(3.14),
         shared::domain::driver::DriverDataType::String => serde_json::json!("sample"),
     }
+}
+
+fn default_tag_groups(driver_key: &str) -> Vec<TagGroup> {
+    if driver_key != "siemens-s7" {
+        return Vec::new();
+    }
+
+    vec![TagGroup {
+        id: "main".to_string(),
+        name: "Main Signals".to_string(),
+        description: Some("Starter read/write tags for initial S7 validation".to_string()),
+        tags: vec![
+            DriverTag {
+                id: "tag-flow-enable".to_string(),
+                name: "Flow Enable".to_string(),
+                address: "DB1,X0.0".to_string(),
+                data_type: DriverDataType::Bool,
+                access: TagAccess::ReadWrite,
+                scan_ms: Some(250),
+                attributes: serde_json::json!({}),
+            },
+            DriverTag {
+                id: "tag-line-pressure".to_string(),
+                name: "Line Pressure".to_string(),
+                address: "DB1,REAL4".to_string(),
+                data_type: DriverDataType::Float32,
+                access: TagAccess::Read,
+                scan_ms: Some(250),
+                attributes: serde_json::json!({}),
+            },
+        ],
+    }]
 }

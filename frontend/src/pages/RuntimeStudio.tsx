@@ -35,6 +35,10 @@ export default function RuntimeStudio() {
     () => bindings.find((binding) => binding.runtime_node_id === selectedNode?.id) ?? null,
     [bindings, selectedNode]
   )
+  const selectedPea = useMemo(
+    () => peas.find((pea) => pea.id === selectedNode?.assigned_pea_id) ?? null,
+    [peas, selectedNode]
+  )
 
   const loadAll = async () => {
     const [peaData, nodeData, catalogData, driverData, bindingData] = await Promise.all([
@@ -107,6 +111,7 @@ export default function RuntimeStudio() {
             runtimeNode={selectedNode}
             driver={selectedDriver}
             binding={selectedBinding}
+            pea={selectedPea}
             onCreate={async (payload) => {
               await apiService.createBinding(payload)
               await loadAll()
