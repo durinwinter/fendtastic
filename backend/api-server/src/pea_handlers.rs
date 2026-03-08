@@ -2,7 +2,6 @@ use crate::state::{AppState, SimulatorRun, SimulatorTask};
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Utc;
 use serde::Deserialize;
-use serde_json::Value;
 use shared::mtp::{PeaConfig, Recipe, ServiceCommand, ServiceState};
 use std::time::Duration;
 use tracing::{error, info};
@@ -11,49 +10,12 @@ use uuid::Uuid;
 // ─── PEA Configuration CRUD ─────────────────────────────────────────────────
 
 pub async fn list_peas(state: web::Data<AppState>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        match proxy_get_json(&base, "/pea").await {
-            Ok((status, payload)) if (200..300).contains(&status) => {
-                if let Some(items) = payload.get("items").and_then(|v| v.as_array()) {
-                    let adapted: Vec<Value> = items.iter().map(adapt_underhill_pea_config).collect();
-                    return HttpResponse::Ok().json(adapted);
-                }
-                return HttpResponse::Ok().json(payload);
-            }
-            Ok((status, payload)) => {
-                return HttpResponse::build(http_status(status)).json(payload);
-            }
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy list_peas to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let configs = state.pea_configs.read().await;
     let peas: Vec<&PeaConfig> = configs.values().collect();
     HttpResponse::Ok().json(peas)
 }
 
 pub async fn get_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        let path = format!("/pea/{}", pea_id.as_str());
-        match proxy_get_json(&base, &path).await {
-            Ok((status, payload)) if (200..300).contains(&status) => {
-                return HttpResponse::Ok().json(adapt_underhill_pea_config(&payload));
-            }
-            Ok((status, payload)) => {
-                return HttpResponse::build(http_status(status)).json(payload);
-            }
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy get_pea to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let configs = state.pea_configs.read().await;
     match configs.get(pea_id.as_str()) {
         Some(config) => HttpResponse::Ok().json(config),
@@ -109,18 +71,6 @@ pub async fn delete_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -
 // ─── PEA Lifecycle ───────────────────────────────────────────────────────────
 
 pub async fn deploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        let path = format!("/pea/{}/deploy", pea_id.as_str());
-        match proxy_post_json(&base, &path, None).await {
-            Ok((status, payload)) => return HttpResponse::build(http_status(status)).json(payload),
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy deploy_pea to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let configs = state.pea_configs.read().await;
     match configs.get(pea_id.as_str()) {
         Some(config) => {
@@ -166,18 +116,6 @@ pub async fn deploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -
 }
 
 pub async fn undeploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        let path = format!("/pea/{}/undeploy", pea_id.as_str());
-        match proxy_post_json(&base, &path, None).await {
-            Ok((status, payload)) => return HttpResponse::build(http_status(status)).json(payload),
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy undeploy_pea to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let pea_id_str = pea_id.into_inner();
     let exists = {
         let configs = state.pea_configs.read().await;
@@ -231,14 +169,6 @@ pub async fn command_service(
     path: web::Path<(String, String)>,
     body: web::Json<ServiceCommandRequest>,
 ) -> impl Responder {
-    if underhill_pea_base_url().is_some() {
-        // Underhill command payload currently differs from legacy ServiceCommandRequest shape.
-        // Keep behavior explicit to avoid silently sending malformed commands.
-        return HttpResponse::NotImplemented().json(serde_json::json!({
-            "error": "command_service proxy is not enabled yet; use Underhill native command payload/API directly"
-        }));
-    }
-
     let (pea_id, service_tag) = path.into_inner();
     let req = body.into_inner();
 
@@ -274,18 +204,6 @@ pub async fn command_service(
 }
 
 pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        let path = format!("/pea/{}/start", pea_id.as_str());
-        match proxy_post_json(&base, &path, None).await {
-            Ok((status, payload)) => return HttpResponse::build(http_status(status)).json(payload),
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy start_pea to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let pea_id_str = pea_id.into_inner();
 
     // Check PEA exists
@@ -367,18 +285,6 @@ pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) ->
 }
 
 pub async fn stop_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> impl Responder {
-    if let Some(base) = underhill_pea_base_url() {
-        let path = format!("/pea/{}/stop", pea_id.as_str());
-        match proxy_post_json(&base, &path, None).await {
-            Ok((status, payload)) => return HttpResponse::build(http_status(status)).json(payload),
-            Err(err) => {
-                return HttpResponse::BadGateway().json(serde_json::json!({
-                    "error": format!("Failed to proxy stop_pea to Underhill: {err}")
-                }));
-            }
-        }
-    }
-
     let pea_id_str = pea_id.into_inner();
 
     // Publish lifecycle command on the runtime topic family.
@@ -778,121 +684,6 @@ fn service_state_name(state: ServiceState) -> &'static str {
     }
 }
 
-fn underhill_pea_base_url() -> Option<String> {
-    let raw = std::env::var("UNDERHILL_PEA_BASE_URL").ok()?;
-    let trimmed = raw.trim().trim_end_matches('/');
-    if trimmed.is_empty() {
-        return None;
-    }
-    let with_api = if trimmed.ends_with("/api/v1") {
-        trimmed.to_string()
-    } else {
-        format!("{trimmed}/api/v1")
-    };
-    Some(with_api)
-}
-
-fn http_status(code: u16) -> actix_web::http::StatusCode {
-    actix_web::http::StatusCode::from_u16(code)
-        .unwrap_or(actix_web::http::StatusCode::BAD_GATEWAY)
-}
-
-async fn proxy_get_json(base: &str, path: &str) -> anyhow::Result<(u16, Value)> {
-    let url = format!("{base}{path}");
-    let resp = reqwest::Client::new()
-        .get(&url)
-        .send()
-        .await?;
-    let status = resp.status().as_u16();
-    let payload = resp.json::<Value>().await.unwrap_or_else(|_| {
-        serde_json::json!({
-            "status": status,
-            "message": "Non-JSON response from Underhill"
-        })
-    });
-    Ok((status, payload))
-}
-
-async fn proxy_post_json(base: &str, path: &str, body: Option<Value>) -> anyhow::Result<(u16, Value)> {
-    let url = format!("{base}{path}");
-    let client = reqwest::Client::new();
-    let req = client.post(&url);
-    let req = if let Some(b) = body {
-        req.json(&b)
-    } else {
-        req
-    };
-    let resp = req.send().await?;
-    let status = resp.status().as_u16();
-    let payload = resp.json::<Value>().await.unwrap_or_else(|_| {
-        serde_json::json!({
-            "status": status,
-            "message": "Non-JSON response from Underhill"
-        })
-    });
-    Ok((status, payload))
-}
-
-fn adapt_underhill_pea_config(v: &Value) -> Value {
-    let id = v
-        .get("pea_id")
-        .and_then(|x| x.as_str())
-        .or_else(|| v.get("id").and_then(|x| x.as_str()))
-        .unwrap_or("unknown-pea");
-    let name = v.get("name").and_then(|x| x.as_str()).unwrap_or(id);
-    let version = v
-        .get("version")
-        .and_then(|x| x.as_str())
-        .unwrap_or("1.0.0");
-    let services = v
-        .get("services")
-        .and_then(|x| x.as_array())
-        .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|svc| {
-            let tag = svc.get("tag").and_then(|x| x.as_str()).unwrap_or_default();
-            let svc_name = svc
-                .get("name")
-                .and_then(|x| x.as_str())
-                .unwrap_or(tag);
-            serde_json::json!({
-                "tag": tag,
-                "name": svc_name,
-                "description": "",
-                "config_parameters": [],
-                "procedures": []
-            })
-        })
-        .collect::<Vec<_>>();
-    let opcua_endpoint = v
-        .get("opcua_endpoint")
-        .and_then(|x| x.as_str())
-        .unwrap_or("opc.tcp://127.0.0.1:4841/mars-airlock");
-    let now = chrono::Utc::now().to_rfc3339();
-
-    serde_json::json!({
-        "id": id,
-        "name": name,
-        "version": version,
-        "description": v.get("pea_type").and_then(|x| x.as_str()).unwrap_or("Underhill PEA"),
-        "writer": {
-            "name": "Underhill Base",
-            "version": "1.0.0",
-            "vendor": "Underhill"
-        },
-        "services": services,
-        "active_elements": [],
-        "opcua_config": {
-            "endpoint": opcua_endpoint,
-            "namespace_uri": v.get("namespace_uri").and_then(|x| x.as_str()).unwrap_or(""),
-            "security_policy": "Basic256Sha256"
-        },
-        "created_at": now,
-        "updated_at": now
-    })
-}
-
 pub fn load_recipes(dir: &str) -> std::collections::HashMap<String, Recipe> {
     let mut recipes = std::collections::HashMap::new();
 
@@ -963,4 +754,83 @@ pub fn load_pea_configs(dir: &str) -> std::collections::HashMap<String, PeaConfi
 
     info!("Loaded {} PEA configurations", configs.len());
     configs
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared::mtp::{OpcUaConfig, ServiceConfig, WriterInfo};
+
+    fn unique_temp_dir(name: &str) -> String {
+        let dir = std::env::temp_dir().join(format!(
+            "fendtastic-pea-handlers-{name}-{}",
+            Uuid::new_v4()
+        ));
+        dir.to_string_lossy().to_string()
+    }
+
+    fn sample_pea_config(id: &str, name: &str) -> PeaConfig {
+        PeaConfig {
+            id: id.to_string(),
+            name: name.to_string(),
+            version: "1.0.0".to_string(),
+            description: "test pea".to_string(),
+            writer: WriterInfo {
+                name: "test-writer".to_string(),
+                version: "1.0.0".to_string(),
+                vendor: "tests".to_string(),
+            },
+            services: vec![ServiceConfig {
+                tag: "svc.main".to_string(),
+                name: "Main Service".to_string(),
+                description: "primary service".to_string(),
+                config_parameters: vec![],
+                procedures: vec![],
+            }],
+            active_elements: vec![],
+            opcua_config: OpcUaConfig {
+                endpoint: "opc.tcp://127.0.0.1:4841/test".to_string(),
+                namespace_uri: "urn:fendtastic:test".to_string(),
+                security_policy: "Basic256Sha256".to_string(),
+            },
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn load_pea_configs_reads_local_json_files() {
+        let dir = unique_temp_dir("load-peas");
+        let config = sample_pea_config("pea-1", "Test PEA");
+        persist_pea_config(&dir, &config);
+
+        let configs = load_pea_configs(&dir);
+
+        assert_eq!(configs.len(), 1);
+        let loaded = configs.get("pea-1").expect("missing persisted pea");
+        assert_eq!(loaded.name, "Test PEA");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn load_recipes_reads_local_json_files() {
+        let dir = unique_temp_dir("load-recipes");
+        let recipe = Recipe {
+            id: "recipe-1".to_string(),
+            name: "Test Recipe".to_string(),
+            description: "test recipe".to_string(),
+            steps: vec![],
+            created_at: Utc::now(),
+        };
+        persist_recipe(&dir, &recipe);
+
+        let recipes = load_recipes(&dir);
+
+        assert_eq!(recipes.len(), 1);
+        let loaded = recipes.get("recipe-1").expect("missing persisted recipe");
+        assert_eq!(loaded.name, "Test Recipe");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

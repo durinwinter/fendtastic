@@ -42,7 +42,7 @@ interface DriverInstanceEditorProps {
   onUpdate: (id: string, payload: any) => Promise<void>
   onStart: (id: string) => Promise<void>
   onStop: (id: string) => Promise<void>
-  onRead: (id: string, tagId: string) => Promise<void>
+  onRead: (id: string, tagId: string) => Promise<unknown>
   onWrite: (id: string, tagId: string, value: unknown, peaId: string) => Promise<void>
 }
 

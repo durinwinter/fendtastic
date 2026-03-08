@@ -124,8 +124,12 @@ async fn main() -> std::io::Result<()> {
     let alarm_rules = db::load_alarm_rules(&db_client).await.unwrap_or_default();
     let blackout_windows = db::load_blackouts(&db_client).await.unwrap_or_default();
 
-    // Time-series ring buffer: keep up to 86400 points per key (~24h at 1 sample/sec)
-    let timeseries = Arc::new(RwLock::new(TimeSeriesStore::new(86400)));
+    let timeseries_max_points = std::env::var("TIMESERIES_MAX_POINTS_PER_KEY")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| *value >= 32)
+        .unwrap_or(86400);
+    let timeseries = Arc::new(RwLock::new(TimeSeriesStore::new(timeseries_max_points)));
 
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
@@ -384,6 +388,60 @@ async fn main() -> std::io::Result<()> {
                                 .unwrap_or_else(|_| "{}".to_string()),
                         )
                         .await;
+                }
+            }
+        });
+    }
+
+    // Publish canonical binding values periodically so the frontend can subscribe instead of polling.
+    {
+        let state = app_state.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+            loop {
+                interval.tick().await;
+
+                let bindings = {
+                    let guard = state.pea_bindings.read().await;
+                    guard.values().cloned().collect::<Vec<_>>()
+                };
+
+                if bindings.is_empty() {
+                    continue;
+                }
+
+                let drivers = {
+                    let guard = state.driver_instances.read().await;
+                    guard.clone()
+                };
+
+                for binding in bindings {
+                    let Some(driver) = drivers.get(&binding.driver_instance_id).cloned() else {
+                        continue;
+                    };
+
+                    for mapping in binding.mappings.iter().filter(|mapping| {
+                        matches!(
+                            mapping.direction,
+                            shared::domain::binding::BindingDirection::ReadFromDriver
+                                | shared::domain::binding::BindingDirection::Bidirectional
+                        )
+                    }) {
+                        let read_result = match driver_handlers::execute_driver_read(
+                            &state,
+                            &driver,
+                            &mapping.driver_tag_id,
+                        )
+                        .await
+                        {
+                            Ok(result) => Some(result),
+                            Err(_) => None,
+                        };
+
+                        if let Some(result) = read_result {
+                            binding_handlers::publish_read_snapshot(&state, &binding, mapping, result).await;
+                        }
+                    }
                 }
             }
         });

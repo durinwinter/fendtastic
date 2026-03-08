@@ -5,7 +5,8 @@ import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../
 import { RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatusSnapshot } from '../types/runtime'
 import { AuthorityAuditRecord, AuthorityState } from '../types/authority'
 import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
-import { BindingValidationSummary, PeaBinding } from '../types/binding'
+import { BindingReadResponse, BindingValidationSummary, BindingWriteResponse, PeaBinding } from '../types/binding'
+import { TimeSeriesConfig, TimeSeriesQueryResponse } from '../types/timeseries'
 
 class ApiService {
   private client: AxiosInstance
@@ -305,6 +306,21 @@ class ApiService {
     return response.data
   }
 
+  async readBindingTag(id: string, payload: { canonical_tag: string }): Promise<BindingReadResponse> {
+    const response = await this.client.post(`/bindings/${id}/read`, payload)
+    return response.data
+  }
+
+  async writeBindingTag(id: string, payload: {
+    canonical_tag: string
+    value: unknown
+    actor_id: string
+    actor_class: string
+  }): Promise<BindingWriteResponse> {
+    const response = await this.client.post(`/bindings/${id}/write`, payload)
+    return response.data
+  }
+
   async getAuthority(peaId: string): Promise<AuthorityState> {
     const response = await this.client.get(`/authority/${peaId}`)
     return response.data
@@ -466,15 +482,26 @@ class ApiService {
     return response.data
   }
 
-  async queryTimeSeries(key: string, startMs: number, endMs: number): Promise<{
-    key: string
-    start_ms: number
-    end_ms: number
-    count: number
-    points: Array<{ t: number; v: unknown }>
-  }> {
+  async queryTimeSeries(
+    key: string,
+    startMs: number,
+    endMs: number,
+    maxPoints?: number
+  ): Promise<TimeSeriesQueryResponse> {
     const response = await this.client.get('/ts/query', {
-      params: { key, start_ms: startMs, end_ms: endMs },
+      params: { key, start_ms: startMs, end_ms: endMs, max_points: maxPoints },
+    })
+    return response.data
+  }
+
+  async getTsConfig(): Promise<TimeSeriesConfig> {
+    const response = await this.client.get('/ts/config')
+    return response.data
+  }
+
+  async updateTsConfig(maxPointsPerKey: number): Promise<TimeSeriesConfig> {
+    const response = await this.client.put('/ts/config', {
+      max_points_per_key: maxPointsPerKey,
     })
     return response.data
   }

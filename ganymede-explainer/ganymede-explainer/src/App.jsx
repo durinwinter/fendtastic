@@ -9,6 +9,8 @@ import {
   Network,
   Terminal,
   Activity,
+  RotateCcw,
+  ChevronLeft,
   ChevronRight,
   Lock,
   Zap,
@@ -534,8 +536,20 @@ function App() {
 
   const prevSlide = () => {
     if (currentSlide > 0) {
-      setCurrentSlide(curr => curr - 1);
+      setIsNavigating(true);
+      setTimeout(() => {
+        setCurrentSlide(curr => curr - 1);
+        setIsNavigating(false);
+      }, 300);
     }
+  };
+
+  const resetSlides = () => {
+    setIsNavigating(true);
+    setTimeout(() => {
+      setCurrentSlide(0);
+      setIsNavigating(false);
+    }, 500);
   };
 
   useEffect(() => {
@@ -741,6 +755,43 @@ function App() {
           className={`hud-corner ${pos} flicker`}
         />
       ))}
+
+      {/* NAVIGATION CONTROLS (Phase 7) */}
+      {activeTab === 'HOME' && (
+        <div className="hud-nav-controls">
+          <motion.button
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(0, 242, 255, 0.1)' }}
+            whileTap={{ scale: 0.9 }}
+            className="nav-control-btn"
+            onClick={resetSlides}
+            title="Return to Beginning"
+          >
+            <RotateCcw size={18} />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(0, 242, 255, 0.1)' }}
+            whileTap={{ scale: 0.9 }}
+            className="nav-control-btn"
+            onClick={prevSlide}
+            disabled={currentSlide === 0}
+            title="Back One Slide"
+          >
+            <ChevronLeft size={18} />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1, backgroundColor: 'rgba(0, 242, 255, 0.1)' }}
+            whileTap={{ scale: 0.9 }}
+            className="nav-control-btn next"
+            onClick={nextSlide}
+            disabled={currentSlide === SLIDES.length - 1}
+            title="Next Slide"
+          >
+            <ChevronRight size={18} />
+          </motion.button>
+        </div>
+      )}
 
       <div className="technical-data glow-text" style={{ position: 'absolute', top: '25px', left: '50px', zIndex: 100 }}>
         <Zap size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />

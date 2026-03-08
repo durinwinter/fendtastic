@@ -20,7 +20,8 @@ pub struct NeuronPlugin {
 #[derive(Debug, Clone, Deserialize)]
 pub struct NeuronGroup {
     pub name: String,
-    pub interval: Option<u64>,
+    #[serde(rename = "interval")]
+    pub _interval: Option<u64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

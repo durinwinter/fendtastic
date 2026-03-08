@@ -105,6 +105,15 @@ impl TimeSeriesStore {
     pub fn keys(&self) -> Vec<&String> {
         self.data.keys().collect()
     }
+
+    pub fn set_max_points_per_key(&mut self, max_points_per_key: usize) {
+        self.max_points_per_key = max_points_per_key;
+        for buf in self.data.values_mut() {
+            while buf.len() > self.max_points_per_key {
+                buf.pop_front();
+            }
+        }
+    }
 }
 
 pub struct AppState {

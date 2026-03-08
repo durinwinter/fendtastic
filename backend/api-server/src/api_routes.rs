@@ -28,6 +28,8 @@ pub fn configure_api(cfg: &mut web::ServiceConfig) {
         .route("/ts/keys", web::get().to(timeseries_handlers::get_ts_keys))
         .route("/ts/query", web::get().to(timeseries_handlers::query_timeseries))
         .route("/ts/latest", web::get().to(timeseries_handlers::get_ts_latest))
+        .route("/ts/config", web::get().to(timeseries_handlers::get_ts_config))
+        .route("/ts/config", web::put().to(timeseries_handlers::update_ts_config))
         // PEA CRUD
         .route("/pea", web::get().to(pea_handlers::list_peas))
         .route("/pea", web::post().to(pea_handlers::create_pea))
@@ -80,6 +82,8 @@ pub fn configure_api(cfg: &mut web::ServiceConfig) {
         .route("/bindings/{id}", web::put().to(binding_handlers::update_binding))
         .route("/bindings/{id}", web::delete().to(binding_handlers::delete_binding))
         .route("/bindings/{id}/validate", web::post().to(binding_handlers::validate_binding))
+        .route("/bindings/{id}/read", web::post().to(binding_handlers::read_binding_tag))
+        .route("/bindings/{id}/write", web::post().to(binding_handlers::write_binding_tag))
         // Authority
         .route("/authority/{pea_id}", web::get().to(authority_handlers::get_authority_state))
         .route("/authority/{pea_id}", web::post().to(authority_handlers::set_authority_state))
@@ -210,6 +214,36 @@ mod tests {
 
         let request = test::TestRequest::post()
             .uri("/api/v1/drivers/example/write")
+            .to_request();
+        let response = test::call_service(&app, request).await;
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[actix_web::test]
+    async fn binding_read_route_is_registered() {
+        let app = test::init_service(
+            App::new().service(web::scope("/api/v1").configure(configure_api)),
+        )
+        .await;
+
+        let request = test::TestRequest::post()
+            .uri("/api/v1/bindings/example/read")
+            .to_request();
+        let response = test::call_service(&app, request).await;
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[actix_web::test]
+    async fn ts_config_route_is_registered() {
+        let app = test::init_service(
+            App::new().service(web::scope("/api/v1").configure(configure_api)),
+        )
+        .await;
+
+        let request = test::TestRequest::get()
+            .uri("/api/v1/ts/config")
             .to_request();
         let response = test::call_service(&app, request).await;
 

@@ -19,3 +19,28 @@ export interface BindingValidationSummary {
   errors: string[]
   warnings: string[]
 }
+
+export interface BindingReadResponse {
+  binding_id: string
+  canonical_tag: string
+  driver_instance_id: string
+  driver_tag_id: string
+  result: {
+    tag_id: string
+    tag_name: string
+    value: unknown
+    error?: number | null
+    quality: string
+    timestamp: string
+  }
+}
+
+export interface BindingWriteResponse {
+  binding_id: string
+  canonical_tag: string
+  driver_instance_id: string
+  driver_tag_id: string
+  actor_id: string
+  status: string
+  timestamp: string
+}

@@ -1,5 +1,4 @@
 use crate::state::AppState;
-use shared::mtp::PeaConfig; // bring into scope for helper type signatures
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -121,7 +120,7 @@ pub struct BulkValueRequest {
     #[serde(rename = "elementIds")]
     pub element_ids: Vec<String>,
     #[serde(rename = "maxDepth")]
-    pub max_depth: Option<i32>,
+    pub _max_depth: Option<i32>,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -534,7 +533,7 @@ fn compute_relationships(
     element_id: &str,
     pea_configs: &std::collections::HashMap<String, shared::mtp::PeaConfig>,
 ) -> Option<serde_json::Value> {
-    use serde_json::{json, Map, Value};
+    use serde_json::{Map, Value};
 
     let mut map = Map::new();
 

@@ -30,6 +30,7 @@ export default function RuntimeStudio() {
   const [driverSchema, setDriverSchema] = useState<DriverSchemaPayload | null>(null)
   const [driverStatus, setDriverStatus] = useState<DriverStatusSnapshot | null>(null)
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeNodeStatusSnapshot | null>(null)
+  const [bindingValues, setBindingValues] = useState<Record<string, unknown>>({})
   const [selectedNode, setSelectedNode] = useState<RuntimeNode | null>(null)
 
   const selectedDriver = useMemo(
@@ -187,16 +188,88 @@ export default function RuntimeStudio() {
       }
       setDriverStatus(payload as DriverStatusSnapshot)
     })
-    const intervalId = window.setInterval(() => {
-      void refresh()
-    }, 30000)
 
     return () => {
       cancelled = true
       unsubscribe()
-      window.clearInterval(intervalId)
     }
   }, [selectedDriver?.id])
+
+  useEffect(() => {
+    if (!selectedBinding) {
+      setBindingValues({})
+      return
+    }
+
+    let cancelled = false
+    const readableMappings = selectedBinding.mappings.filter(
+      (mapping) => mapping.direction === 'ReadFromDriver' || mapping.direction === 'Bidirectional'
+    )
+    const topic = `murph/runtime/nodes/${selectedBinding.runtime_node_id}/pea/${selectedBinding.pea_id}/bindings/*/value`
+    setBindingValues({})
+
+    const seedSnapshot = async () => {
+      const results = await Promise.allSettled(
+        readableMappings.map((mapping) =>
+          apiService.readBindingTag(selectedBinding.id, { canonical_tag: mapping.canonical_tag })
+        )
+      )
+
+      if (cancelled) return
+
+      setBindingValues((current) => {
+        const next = { ...current }
+        readableMappings.forEach((mapping, index) => {
+          const result = results[index]
+          if (result?.status === 'fulfilled') {
+            next[mapping.canonical_tag] = result.value.result.value
+          }
+        })
+        return next
+      })
+    }
+
+    void seedSnapshot()
+    const unsubscribe = zenohService.subscribe(topic, (payload) => {
+      if (cancelled) return
+
+      const parsed = typeof payload === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(payload) as {
+                binding_id: string
+                canonical_tag: string
+                result?: { value?: unknown }
+                value?: unknown
+              }
+            } catch {
+              return null
+            }
+          })()
+        : (payload as {
+            binding_id: string
+            canonical_tag: string
+            result?: { value?: unknown }
+            value?: unknown
+            _key?: string
+          })
+
+      if (!parsed || parsed.binding_id !== selectedBinding.id || !parsed.canonical_tag) {
+        return
+      }
+
+      const value = parsed.result?.value ?? parsed.value
+      setBindingValues((current) => ({
+        ...current,
+        [parsed.canonical_tag]: value,
+      }))
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [selectedBinding?.id, selectedBinding?.mappings])
 
   const workspace = (() => {
     switch (section) {
@@ -279,9 +352,40 @@ export default function RuntimeStudio() {
               await apiService.createBinding(payload)
               await loadAll()
             }}
+            onUpdate={async (id, payload) => {
+              await apiService.updateBinding(id, payload)
+              await loadAll()
+            }}
             onValidate={async (id) => {
               await apiService.validateBinding(id)
               await loadAll()
+            }}
+            onRead={async (bindingId, canonicalTag) => {
+              const result = await apiService.readBindingTag(bindingId, { canonical_tag: canonicalTag })
+              setBindingValues((current) => ({
+                ...current,
+                [canonicalTag]: result.result.value,
+              }))
+              if (selectedDriver) {
+                setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
+              }
+              return result
+            }}
+            onWrite={async (bindingId, canonicalTag, value) => {
+              const result = await apiService.writeBindingTag(bindingId, {
+                canonical_tag: canonicalTag,
+                value,
+                actor_id: 'operator-console-1',
+                actor_class: 'Operator',
+              })
+              setBindingValues((current) => ({
+                ...current,
+                [canonicalTag]: value,
+              }))
+              if (selectedDriver) {
+                setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
+              }
+              return result
             }}
           />
         )
@@ -324,9 +428,14 @@ export default function RuntimeStudio() {
         `Assigned PEA: ${selectedNode.assigned_pea_id ?? 'unassigned'}`,
         `Checks: ${runtimeStatus ? `${runtimeStatus.checks.filter((check) => check.ok).length}/${runtimeStatus.checks.length}` : 'pending'}`,
         `Driver: ${selectedDriver?.driver_key ?? 'none'}`,
+        `Binding: ${selectedBinding ? `${selectedBinding.mappings.length} mapping(s)` : 'none'}`,
+        `Binding valid: ${selectedBinding ? String(selectedBinding.validation.valid) : 'n/a'}`,
         `Remote running: ${String(driverStatus?.remote_running ?? false)}`,
         `Last read: ${driverStatus?.last_read ? `${driverStatus.last_read.tag_name}=${JSON.stringify(driverStatus.last_read.value)}` : 'none'}`,
         `Last write: ${driverStatus?.last_write ? `${driverStatus.last_write.tag_name}=${JSON.stringify(driverStatus.last_write.value)}` : 'none'}`,
+        ...Object.entries(bindingValues)
+          .slice(0, 4)
+          .map(([canonicalTag, value]) => `${canonicalTag}: ${JSON.stringify(value)}`),
         ...(runtimeStatus?.checks.slice(0, 3).map((check) => `${check.name}: ${check.ok ? 'ok' : check.message}`) ?? []),
       ]
     : ['Select a runtime node to inspect health, binding status, and deployment context.']

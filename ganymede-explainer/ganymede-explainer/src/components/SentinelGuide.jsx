@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 export const SentinelGuide = ({ active }) => {
     const sentinelRef = useRef()
-    const texture = useTexture('/assets/digital_sentinel.png')
+    const texture = useTexture('/digital_sentinel.png')
 
     useFrame((state) => {
         if (!sentinelRef.current) return
