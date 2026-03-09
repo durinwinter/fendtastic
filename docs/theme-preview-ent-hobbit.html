@@ -3,470 +3,429 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shirewood Theme Preview</title>
+  <title>Ent Workshop Preview</title>
   <style>
     :root {
-      --ink: #f4ead8;
-      --muted: rgba(244, 234, 216, 0.74);
-      --shadow: rgba(0, 0, 0, 0.35);
-      --ent-bark-0: #120d09;
-      --ent-bark-1: #1f1711;
-      --ent-bark-2: #342519;
-      --ent-wood-0: #5a3c25;
-      --ent-wood-1: #7a5231;
-      --ent-sap: #d3a24f;
-      --ent-moss: #6f8c4b;
-      --ent-river: #5e8b8a;
-      --ent-ember: #be6543;
-      --hobbit-soil-0: #22170f;
-      --hobbit-soil-1: #3d2a1b;
-      --hobbit-wood-0: #7b5432;
-      --hobbit-wood-1: #9d6a3b;
-      --hobbit-cream-0: #e7d7b3;
-      --hobbit-cream-1: #f2e7cc;
-      --hobbit-olive: #78824b;
-      --hobbit-gold: #c29a49;
-      --hobbit-berry: #915646;
-      --radius-lg: 26px;
-      --radius-md: 18px;
-      --radius-sm: 12px;
-      --grain: linear-gradient(0deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
-        repeating-linear-gradient(
-          100deg,
-          rgba(255,255,255,0.025) 0,
-          rgba(255,255,255,0.025) 2px,
-          rgba(0,0,0,0.02) 2px,
-          rgba(0,0,0,0.02) 7px
-        );
-      font-family: Georgia, "Times New Roman", serif;
-      color: var(--ink);
-      background: #0e0a07;
+      --ink: #f5e9cf;
+      --muted: rgba(245, 233, 207, 0.72);
+      --bg-0: #090604;
+      --bg-1: #130d09;
+      --bg-2: #1d140e;
+      --bark-dark: #23160f;
+      --bark-mid: #4b3120;
+      --wood-mid: #7f5633;
+      --wood-light: #bb8450;
+      --forge: #f0c36a;
+      --forge-hot: #ffdf8d;
+      --moss: #6e8b4a;
+      --ember: #c3623d;
+      --shadow: rgba(0, 0, 0, 0.42);
+      --linework: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 120'%3E%3Cg fill='none' stroke='%23140d0a' stroke-opacity='.7' stroke-linecap='round'%3E%3Cpath d='M-8 18C24 20 42 29 69 26C94 23 115 14 144 16C171 18 193 30 221 27C248 24 269 12 329 18' stroke-width='3.2'/%3E%3Cpath d='M-10 40C28 43 48 55 78 52C106 49 124 37 155 39C186 41 210 56 237 54C263 52 281 41 330 43' stroke-width='2.8'/%3E%3Cpath d='M-14 64C22 67 44 79 72 76C102 73 121 59 152 61C184 63 203 79 233 78C264 77 285 64 332 67' stroke-width='3.6'/%3E%3Cpath d='M-12 90C26 92 46 103 74 100C103 97 126 86 160 87C192 88 215 101 244 100C273 99 292 90 334 92' stroke-width='3'/%3E%3Cpath d='M44 22C41 32 39 42 37 54' stroke-width='1.5'/%3E%3Cpath d='M128 37C126 46 123 54 118 62' stroke-width='1.5'/%3E%3Cpath d='M214 25C211 36 210 48 210 59' stroke-width='1.5'/%3E%3Cpath d='M267 78C265 89 263 98 259 108' stroke-width='1.4'/%3E%3C/g%3E%3C/svg%3E");
+      --linework-soft: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 120'%3E%3Cg fill='none' stroke='%23f6d38a' stroke-opacity='.11' stroke-linecap='round'%3E%3Cpath d='M-10 20C18 17 42 26 71 24C95 22 117 14 145 16C172 18 190 27 219 25C245 23 270 14 330 17' stroke-width='1.2'/%3E%3Cpath d='M-12 64C24 61 45 74 74 72C101 70 120 58 152 61C182 64 200 76 233 75C262 74 286 63 332 65' stroke-width='1.1'/%3E%3Cpath d='M-8 94C26 90 48 102 77 100C107 98 126 87 160 88C194 89 214 103 244 101C273 99 293 91 334 93' stroke-width='1.15'/%3E%3C/g%3E%3C/svg%3E");
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at top, rgba(211, 162, 79, 0.08), transparent 35%),
-        linear-gradient(180deg, #090705, #130d09 38%, #090705 100%);
       color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at top, rgba(240,195,106,0.09), transparent 30%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1) 40%, #070504 100%);
     }
 
     .page {
-      max-width: 1480px;
+      max-width: 1360px;
       margin: 0 auto;
       padding: 32px;
     }
 
-    .intro {
+    .hero {
       position: relative;
       overflow: hidden;
-      display: grid;
-      gap: 18px;
-      padding: 24px 28px;
-      border-radius: 28px;
+      border-radius: 34px;
+      border: 1px solid rgba(240, 195, 106, 0.18);
+      box-shadow: 0 28px 60px var(--shadow);
       background:
-        radial-gradient(circle at top left, rgba(242, 231, 204, 0.07), transparent 30%),
-        linear-gradient(180deg, rgba(40, 27, 18, 0.96), rgba(16, 11, 8, 0.96));
-      border: 1px solid rgba(206, 165, 95, 0.24);
-      box-shadow: 0 22px 40px var(--shadow);
-      margin-bottom: 28px;
+        radial-gradient(circle at 50% 115%, rgba(240,195,106,0.12), transparent 28%),
+        radial-gradient(circle at 14% 8%, rgba(110,139,74,0.1), transparent 14%),
+        radial-gradient(circle at 84% 10%, rgba(110,139,74,0.08), transparent 12%),
+        linear-gradient(180deg, rgba(30,20,14,0.96), rgba(10,7,5,0.98));
+      padding: 34px 34px 28px;
     }
 
-    .intro::before {
+    .hero::before {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      opacity: 0.16;
+      opacity: 0.22;
+      background: var(--linework-soft), var(--linework);
+      background-size: 320px 120px, 320px 120px;
+      background-position: 0 0, 0 0;
+      mix-blend-mode: screen;
+    }
+
+    .bark-frame,
+    .bark-frame::before,
+    .bark-frame::after {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+    }
+
+    .bark-frame::before {
       background:
-        radial-gradient(circle at 14% 24%, rgba(242, 231, 204, 0.16), transparent 18%),
-        radial-gradient(circle at 82% 16%, rgba(211, 162, 79, 0.12), transparent 16%),
-        repeating-linear-gradient(
-          112deg,
-          rgba(255,255,255,0.02) 0 2px,
-          rgba(0,0,0,0.015) 2px 7px
-        );
-      border-radius: inherit;
+        radial-gradient(circle at 1% 12%, rgba(88,57,35,0.88), transparent 11%),
+        radial-gradient(circle at 2% 33%, rgba(70,45,27,0.84), transparent 10%),
+        radial-gradient(circle at 0% 54%, rgba(94,61,37,0.88), transparent 11%),
+        radial-gradient(circle at 4% 77%, rgba(63,42,26,0.84), transparent 10%),
+        radial-gradient(circle at 0% 97%, rgba(90,58,34,0.84), transparent 12%),
+        radial-gradient(circle at 99% 14%, rgba(92,60,36,0.86), transparent 11%),
+        radial-gradient(circle at 96% 36%, rgba(69,44,27,0.84), transparent 10%),
+        radial-gradient(circle at 100% 61%, rgba(96,63,37,0.88), transparent 11%),
+        radial-gradient(circle at 95% 86%, rgba(68,44,27,0.84), transparent 10%),
+        radial-gradient(circle at 16% 0%, rgba(90,59,35,0.84), transparent 11%),
+        radial-gradient(circle at 39% 1%, rgba(104,69,40,0.88), transparent 10%),
+        radial-gradient(circle at 68% 0%, rgba(76,49,30,0.84), transparent 10%),
+        radial-gradient(circle at 89% 0%, rgba(98,65,39,0.86), transparent 11%),
+        radial-gradient(circle at 18% 100%, rgba(89,58,34,0.84), transparent 11%),
+        radial-gradient(circle at 51% 99%, rgba(100,67,40,0.88), transparent 10%),
+        radial-gradient(circle at 83% 100%, rgba(73,48,29,0.84), transparent 11%);
+      filter: blur(7px);
+      opacity: 0.95;
+    }
+
+    .bark-frame::after {
+      inset: 10px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 8% 48%, rgba(0,0,0,0.52), transparent 10%),
+        radial-gradient(circle at 93% 34%, rgba(0,0,0,0.54), transparent 10%),
+        radial-gradient(circle at 18% 8%, rgba(0,0,0,0.28), transparent 8%),
+        radial-gradient(circle at 77% 93%, rgba(0,0,0,0.34), transparent 10%);
+      box-shadow:
+        inset 0 0 0 1px rgba(240,195,106,0.06),
+        inset 0 18px 26px rgba(73,47,28,0.22),
+        inset 0 -22px 30px rgba(0,0,0,0.34);
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: center;
     }
 
     .eyebrow {
       text-transform: uppercase;
       letter-spacing: 0.18em;
       font-size: 12px;
-      color: rgba(244, 234, 216, 0.62);
+      color: rgba(245,233,207,0.62);
+      margin-bottom: 10px;
     }
 
-    h1, h2, h3, p {
+    .title {
       margin: 0;
+      font-size: clamp(3rem, 7vw, 5.8rem);
+      line-height: 0.88;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #f6ddaa;
+      text-shadow: 0 0 22px rgba(240,195,106,0.12), 0 2px 0 rgba(66,42,24,0.95);
     }
 
-    .intro h1 {
-      font-size: clamp(2rem, 4vw, 3.6rem);
-      line-height: 0.95;
-      letter-spacing: 0.02em;
+    .subtitle {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 14px 0 18px;
+      color: rgba(246,223,171,0.88);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.95rem;
     }
 
-    .intro p {
-      max-width: 900px;
+    .subtitle::before,
+    .subtitle::after {
+      content: "";
+      height: 1px;
+      flex: 1 1 auto;
+      background: linear-gradient(90deg, transparent, rgba(240,195,106,0.7), transparent);
+    }
+
+    .copy {
+      margin: 0;
+      max-width: 48rem;
       color: var(--muted);
-      line-height: 1.55;
-      font-size: 1.02rem;
+      line-height: 1.6;
+      font-size: 1.03rem;
     }
 
-    .compare-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 24px;
+    .hero-seals {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
     }
 
-    .theme-panel {
+    .seal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(240,195,106,0.18);
+      background: rgba(0,0,0,0.22);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.74rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--forge);
+      box-shadow: 0 0 10px rgba(240,195,106,0.45);
+      flex: 0 0 auto;
+    }
+
+    .dot.moss { background: var(--moss); box-shadow: 0 0 10px rgba(110,139,74,0.38); }
+    .dot.ember { background: var(--ember); box-shadow: 0 0 10px rgba(195,98,61,0.36); }
+
+    .brand-medallion {
+      position: relative;
+      justify-self: end;
+      width: min(100%, 360px);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, rgba(240,195,106,0.18), transparent 42%),
+        linear-gradient(180deg, rgba(38,25,17,0.98), rgba(11,8,6,0.98));
+      border: 1px solid rgba(240,195,106,0.24);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 38px rgba(0,0,0,0.28), 0 0 36px rgba(240,195,106,0.08);
+    }
+
+    .brand-medallion::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: var(--linework-soft), var(--linework);
+      background-size: 240px 100px, 240px 100px;
+      opacity: 0.16;
+      mix-blend-mode: screen;
+    }
+
+    .brand-medallion svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0 0 16px rgba(240,195,106,0.12));
+    }
+
+    .studio {
+      margin-top: 26px;
       position: relative;
       overflow: hidden;
-      min-height: 900px;
-      border-radius: 30px;
-      box-shadow: 0 30px 65px var(--shadow);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
+      border-radius: 34px;
+      border: 1px solid rgba(240,195,106,0.18);
+      background:
+        radial-gradient(circle at 50% 120%, rgba(240,195,106,0.12), transparent 26%),
+        linear-gradient(180deg, rgba(24,16,11,0.98), rgba(10,7,5,0.98));
+      box-shadow: 0 28px 60px var(--shadow);
+      padding: 26px;
     }
 
-    .theme-panel::before {
+    .studio::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: var(--linework-soft), var(--linework);
+      background-size: 320px 120px, 320px 120px;
+      opacity: 0.15;
+      mix-blend-mode: screen;
+    }
+
+    .studio-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr) 320px;
+      gap: 18px;
+      min-height: 780px;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(240,195,106,0.14);
+      background:
+        linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -24px 36px rgba(0,0,0,0.18),
+        0 18px 28px rgba(0,0,0,0.22);
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: var(--linework-soft), var(--linework);
+      background-size: 320px 120px, 320px 120px;
+      opacity: 0.18;
+      mix-blend-mode: screen;
+    }
+
+    .nav-panel,
+    .inspector-panel {
+      padding: 18px;
+    }
+
+    .workspace-panel {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f3d79a;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .wood-tab,
+    .tool-button {
+      position: relative;
+      overflow: hidden;
+      border: 0;
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -12px 18px rgba(45,29,18,0.34),
+        0 10px 20px rgba(0,0,0,0.18);
+    }
+
+    .wood-tab {
+      width: 100%;
+      padding: 15px 62px 15px 16px;
+      border-radius: 18px 14px 20px 14px;
+      background:
+        linear-gradient(180deg, rgba(131,89,54,0.92), rgba(72,46,27,0.98));
+      border: 1px solid rgba(240,195,106,0.18);
+    }
+
+    .tool-button {
+      padding: 12px 56px 12px 16px;
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(127,86,51,0.96), rgba(81,52,31,0.98));
+      border: 1px solid rgba(240,195,106,0.22);
+    }
+
+    .tool-button.secondary {
+      background: linear-gradient(180deg, rgba(51,36,25,0.98), rgba(26,18,13,0.98));
+      border-color: rgba(110,139,74,0.2);
+    }
+
+    .wood-tab::before,
+    .tool-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.42;
+      background: var(--linework-soft), var(--linework);
+      background-size: 240px 90px, 240px 90px;
+      background-position: 0 0, 0 0;
+    }
+
+    .wood-tab::after,
+    .tool-button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 44'%3E%3Cg fill='none' stroke='%23120b08' stroke-opacity='.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 34C26 34 33 28 44 28C56 28 61 17 74 17C88 17 94 28 109 28' stroke-width='2.4'/%3E%3Cpath d='M43 28C39 22 35 17 30 12' stroke-width='1.5'/%3E%3Cpath d='M59 24C62 18 68 12 77 9' stroke-width='1.4'/%3E%3Cpath d='M74 17C83 14 89 14 96 17' stroke-width='1.4'/%3E%3Cpath d='M20 34C23 29 25 24 27 18' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 98px 36px;
+      opacity: 0.56;
+      mix-blend-mode: screen;
+    }
+
+    .wood-tab.active,
+    .wood-tab:hover,
+    .tool-button:hover {
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        0 0 0 1px rgba(240,195,106,0.14),
+        0 10px 24px rgba(0,0,0,0.26),
+        0 0 20px rgba(240,195,106,0.08);
+    }
+
+    .wood-tab span,
+    .tool-button span { position: relative; z-index: 1; }
+
+    .panel-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid rgba(240,195,106,0.14);
+      background:
+        linear-gradient(180deg, rgba(63,42,26,0.94), rgba(22,15,11,0.98));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -20px 30px rgba(0,0,0,0.16),
+        0 16px 26px rgba(0,0,0,0.2);
+      padding: 18px;
+    }
+
+    .panel-card::before {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
       opacity: 0.26;
+      background: var(--linework-soft), var(--linework);
+      background-size: 320px 120px, 320px 120px;
       mix-blend-mode: screen;
-      background: var(--grain);
-    }
-
-    .theme-panel::after {
-      content: "";
-      position: absolute;
-      inset: 12px;
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.06);
-      pointer-events: none;
-    }
-
-    .theme-panel .organic-rim,
-    .theme-panel .organic-canopy {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .theme-panel .organic-rim::before,
-    .theme-panel .organic-rim::after,
-    .theme-panel .organic-canopy::before,
-    .theme-panel .organic-canopy::after {
-      content: "";
-      position: absolute;
-      pointer-events: none;
-    }
-
-    .ent {
-      background:
-        radial-gradient(circle at 20% 10%, rgba(111, 140, 75, 0.18), transparent 30%),
-        radial-gradient(circle at 80% 0%, rgba(94, 139, 138, 0.12), transparent 28%),
-        linear-gradient(180deg, var(--ent-bark-1), var(--ent-bark-0) 72%);
-    }
-
-    .ent .organic-rim::before {
-      inset: 0;
-      border-radius: 30px;
-      background:
-        radial-gradient(circle at 0 18%, rgba(122, 82, 49, 0.45), transparent 16%),
-        radial-gradient(circle at 100% 28%, rgba(122, 82, 49, 0.4), transparent 18%),
-        radial-gradient(circle at 18% 100%, rgba(77, 51, 31, 0.4), transparent 18%),
-        linear-gradient(180deg, rgba(54, 36, 23, 0.3), transparent 18%, transparent 82%, rgba(22, 14, 10, 0.34));
-      mix-blend-mode: screen;
-      opacity: 0.45;
-    }
-
-    .ent .organic-rim::after {
-      inset: 8px;
-      border-radius: 24px;
-      background:
-        radial-gradient(circle at 6% 50%, rgba(23, 17, 13, 0.78), transparent 12%),
-        radial-gradient(circle at 94% 42%, rgba(23, 17, 13, 0.82), transparent 13%),
-        radial-gradient(circle at 33% 2%, rgba(23, 17, 13, 0.55), transparent 10%),
-        radial-gradient(circle at 77% 100%, rgba(23, 17, 13, 0.52), transparent 12%);
-      opacity: 0.8;
-    }
-
-    .ent .organic-canopy::before {
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0.14;
-      background:
-        radial-gradient(circle at 18% 10%, rgba(111, 140, 75, 0.85), transparent 10%),
-        radial-gradient(circle at 28% 6%, rgba(111, 140, 75, 0.7), transparent 8%),
-        radial-gradient(circle at 73% 9%, rgba(111, 140, 75, 0.82), transparent 9%),
-        radial-gradient(circle at 82% 14%, rgba(111, 140, 75, 0.62), transparent 7%),
-        radial-gradient(circle at 88% 7%, rgba(111, 140, 75, 0.72), transparent 8%);
-      filter: blur(8px);
-    }
-
-    .ent .organic-canopy::after {
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0.1;
-      background:
-        radial-gradient(circle at 14% 0%, rgba(244, 234, 216, 0.22), transparent 14%),
-        radial-gradient(circle at 80% 0%, rgba(244, 234, 216, 0.16), transparent 11%);
-      filter: blur(14px);
-    }
-
-    .hobbit {
-      background:
-        radial-gradient(circle at 20% 0%, rgba(231, 215, 179, 0.16), transparent 34%),
-        radial-gradient(circle at 90% 15%, rgba(120, 130, 75, 0.16), transparent 24%),
-        linear-gradient(180deg, #453121, var(--hobbit-soil-0) 72%);
-    }
-
-    .hobbit .organic-rim::before {
-      inset: 0;
-      border-radius: 30px;
-      background:
-        radial-gradient(circle at 8% 16%, rgba(242, 231, 204, 0.22), transparent 15%),
-        radial-gradient(circle at 92% 18%, rgba(194, 154, 73, 0.16), transparent 14%),
-        linear-gradient(180deg, rgba(255, 244, 224, 0.06), transparent 18%, transparent 84%, rgba(46, 29, 17, 0.28));
-      opacity: 0.5;
-      mix-blend-mode: screen;
-    }
-
-    .hobbit .organic-rim::after {
-      inset: 10px;
-      border-radius: 24px;
-      background:
-        radial-gradient(circle at 4% 46%, rgba(33, 21, 13, 0.62), transparent 11%),
-        radial-gradient(circle at 96% 38%, rgba(33, 21, 13, 0.62), transparent 12%);
-      opacity: 0.75;
-    }
-
-    .hobbit .organic-canopy::before {
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0.11;
-      background:
-        radial-gradient(circle at 14% 7%, rgba(242, 231, 204, 0.5), transparent 9%),
-        radial-gradient(circle at 74% 11%, rgba(120, 130, 75, 0.52), transparent 9%),
-        radial-gradient(circle at 84% 6%, rgba(194, 154, 73, 0.48), transparent 7%);
-      filter: blur(10px);
-    }
-
-    .panel-header {
-      position: relative;
-      z-index: 1;
-      padding: 28px 28px 22px;
-      display: grid;
-      gap: 14px;
-    }
-
-    .panel-title-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
-    }
-
-    .panel-title h2 {
-      font-size: clamp(1.7rem, 2.4vw, 2.7rem);
-      line-height: 0.95;
-    }
-
-    .panel-title p {
-      margin-top: 10px;
-      color: var(--muted);
-      max-width: 33rem;
-      line-height: 1.5;
-    }
-
-    .panel-badge {
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      white-space: nowrap;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(0,0,0,0.18);
-    }
-
-    .branch-band {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      min-height: 70px;
-      padding: 0 28px 18px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .branch-band svg {
-      width: 100%;
-      height: 82px;
-      overflow: visible;
-    }
-
-    .workspace {
-      position: relative;
-      z-index: 1;
-      padding: 0 28px 28px;
-      display: grid;
-      grid-template-columns: 230px minmax(0, 1fr);
-      gap: 20px;
-    }
-
-    .nav-column,
-    .main-column {
-      min-width: 0;
-    }
-
-    .stack {
-      display: grid;
-      gap: 14px;
-    }
-
-    .wood-tab,
-    .tool-button,
-    .mini-chip,
-    .field,
-    .panel-card,
-    .status-pill {
-      position: relative;
-      overflow: hidden;
-    }
-
-    .wood-tab {
-      width: 100%;
-      padding: 14px 16px;
-      text-align: left;
-      font: inherit;
-      color: inherit;
-      border: 0;
-      cursor: pointer;
-      border-radius: 16px 12px 18px 12px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 12px 24px rgba(0,0,0,0.22);
-    }
-
-    .ent .wood-tab,
-    .ent .tool-button {
-      padding-right: 58px;
-    }
-
-    .wood-tab span,
-    .tool-button span {
-      position: relative;
-      z-index: 1;
-    }
-
-    .wood-tab::before,
-    .tool-button::before,
-    .panel-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: var(--grain);
-      opacity: 0.24;
-      pointer-events: none;
-    }
-
-    .ent .wood-tab {
-      background: linear-gradient(180deg, rgba(122, 82, 49, 0.9), rgba(66, 41, 23, 0.96));
-      color: #f8efdf;
-      border: 1px solid rgba(211, 162, 79, 0.22);
-    }
-
-    .ent .wood-tab::after,
-    .ent .tool-button::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.46;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 44'%3E%3Cg fill='none' stroke='%2316163e' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 35C28 35 30 22 40 22C52 22 54 11 67 11C83 11 92 23 109 23' stroke-width='2.6'/%3E%3Cpath d='M40 22C35 17 31 13 28 8' stroke-width='1.8'/%3E%3Cpath d='M54 15C57 9 62 5 69 3' stroke-width='1.7'/%3E%3Cpath d='M70 12C77 8 83 8 89 10' stroke-width='1.7'/%3E%3Cpath d='M46 26C50 31 54 35 60 39' stroke-width='1.7'/%3E%3Cpath d='M18 34C23 30 26 26 28 22' stroke-width='1.6'/%3E%3Ccircle cx='40' cy='22' r='2.6' fill='%23d3a24f' fill-opacity='.58' stroke='none'/%3E%3Ccircle cx='67' cy='11' r='2.1' fill='%23d3a24f' fill-opacity='.52' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 98px 36px;
-      mix-blend-mode: screen;
-    }
-
-    .ent .wood-tab.active {
-      outline: 1px solid rgba(211, 162, 79, 0.5);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px rgba(211, 162, 79, 0.16), 0 18px 32px rgba(0,0,0,0.28);
-    }
-
-    .hobbit .wood-tab {
-      background: linear-gradient(180deg, rgba(157, 106, 59, 0.92), rgba(101, 66, 37, 0.98));
-      color: #fff7ea;
-      border: 1px solid rgba(231, 215, 179, 0.26);
-      border-radius: 18px;
-    }
-
-    .hobbit .wood-tab.active {
-      outline: 1px solid rgba(242, 231, 204, 0.56);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 1px rgba(242, 231, 204, 0.14), 0 18px 34px rgba(0,0,0,0.24);
-    }
-
-    .panel-card {
-      border-radius: 22px;
-      padding: 18px;
-      display: grid;
-      gap: 14px;
-      box-shadow: 0 18px 28px rgba(0,0,0,0.22);
-    }
-
-    .ent .panel-card {
-      background:
-        linear-gradient(180deg, rgba(69, 49, 33, 0.93), rgba(28, 19, 13, 0.96));
-      border: 1px solid rgba(211, 162, 79, 0.18);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.06),
-        inset 0 -18px 32px rgba(0,0,0,0.14),
-        0 18px 28px rgba(0,0,0,0.22);
-    }
-
-    .hobbit .panel-card {
-      background:
-        linear-gradient(180deg, rgba(239, 227, 199, 0.12), rgba(104, 70, 40, 0.88));
-      border: 1px solid rgba(231, 215, 179, 0.28);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        inset 0 -16px 28px rgba(0,0,0,0.1),
-        0 18px 28px rgba(0,0,0,0.22);
-    }
-
-    .ent .panel-card::after,
-    .hobbit .panel-card::after {
-      content: "";
-      position: absolute;
-      inset: 10px;
-      border-radius: 16px;
-      pointer-events: none;
-      opacity: 0.18;
-      background:
-        radial-gradient(circle at 18% 22%, rgba(255,255,255,0.18), transparent 14%),
-        radial-gradient(circle at 82% 74%, rgba(0,0,0,0.2), transparent 16%);
-      mix-blend-mode: screen;
-    }
-
-    .panel-card h3 {
-      font-size: 1.05rem;
-      letter-spacing: 0.03em;
     }
 
     .lede {
+      margin: 0 0 14px;
       color: var(--muted);
-      line-height: 1.45;
-      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
     }
 
     .field-grid {
@@ -476,469 +435,404 @@
     }
 
     .field {
-      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      min-height: 78px;
       padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      min-height: 76px;
-      display: grid;
-      gap: 7px;
-      align-content: start;
-      box-shadow: inset 0 8px 16px rgba(0,0,0,0.18);
-    }
-
-    .ent .field {
-      background: linear-gradient(180deg, rgba(15, 11, 8, 0.62), rgba(37, 24, 16, 0.7));
-      border-color: rgba(211, 162, 79, 0.15);
-      box-shadow:
-        inset 0 8px 16px rgba(0,0,0,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.03);
-    }
-
-    .hobbit .field {
-      background: linear-gradient(180deg, rgba(59, 38, 22, 0.6), rgba(34, 22, 13, 0.76));
-      border-color: rgba(242, 231, 204, 0.16);
-      box-shadow:
-        inset 0 8px 16px rgba(0,0,0,0.18),
-        inset 0 1px 0 rgba(255,255,255,0.04);
+      border: 1px solid rgba(240,195,106,0.1);
+      background:
+        linear-gradient(180deg, rgba(18,12,9,0.72), rgba(39,26,17,0.78));
+      box-shadow: inset 0 10px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03);
     }
 
     .field::before {
       content: "";
       position: absolute;
       inset: 0;
-      border-radius: inherit;
       pointer-events: none;
-      opacity: 0.18;
-      background:
-        radial-gradient(circle at 14% 18%, rgba(255,255,255,0.18), transparent 12%),
-        radial-gradient(circle at 84% 68%, rgba(0,0,0,0.22), transparent 18%);
+      opacity: 0.22;
+      background: var(--linework-soft), var(--linework);
+      background-size: 260px 100px, 260px 100px;
+      mix-blend-mode: screen;
     }
 
     .field label {
+      display: block;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.14em;
-      color: rgba(244, 234, 216, 0.58);
-    }
-
-    .field .value {
-      font-size: 0.98rem;
-      color: #fbf5e7;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .tool-button {
-      border: 0;
-      cursor: pointer;
-      padding: 12px 16px;
-      color: inherit;
-      font: inherit;
-      border-radius: 14px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(0,0,0,0.2);
-    }
-
-    .ent .tool-button {
-      background: linear-gradient(180deg, var(--ent-wood-1), var(--ent-wood-0));
-      border: 1px solid rgba(211, 162, 79, 0.28);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        inset 0 -10px 14px rgba(43, 28, 17, 0.32),
-        0 8px 18px rgba(0,0,0,0.2);
-    }
-
-    .ent .tool-button.secondary {
-      background: linear-gradient(180deg, rgba(45, 34, 24, 0.96), rgba(27, 20, 14, 0.98));
-      border-color: rgba(111, 140, 75, 0.25);
-    }
-
-    .ent .tool-button.secondary::after {
-      opacity: 0.34;
-      filter: saturate(0.72);
-    }
-
-    .ent .wood-tab::before,
-    .ent .tool-button::before {
-      opacity: 0.34;
-      background:
-        radial-gradient(circle at 16% 22%, rgba(255,255,255,0.08), transparent 11%),
-        radial-gradient(circle at 74% 68%, rgba(0,0,0,0.12), transparent 16%),
-        var(--grain);
-    }
-
-    .ent .wood-tab.active::after,
-    .ent .tool-button:hover::after {
-      opacity: 0.62;
-    }
-
-    .hobbit .tool-button {
-      background: linear-gradient(180deg, var(--hobbit-wood-1), var(--hobbit-wood-0));
-      border: 1px solid rgba(242, 231, 204, 0.28);
-    }
-
-    .hobbit .tool-button.secondary {
-      background: linear-gradient(180deg, rgba(242, 231, 204, 0.17), rgba(83, 53, 29, 0.94));
-      border-color: rgba(194, 154, 73, 0.28);
-    }
-
-    .tool-button:hover,
-    .wood-tab:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
-
-    .tool-button:active,
-    .wood-tab:active {
-      transform: translateY(1px);
-    }
-
-    .status-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .status-pill,
-    .mini-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(0,0,0,0.18);
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      flex: 0 0 auto;
-    }
-
-    .dot.moss { background: var(--ent-moss); }
-    .dot.sap { background: var(--ent-sap); }
-    .dot.ember { background: var(--ent-ember); }
-    .dot.gold { background: var(--hobbit-gold); }
-    .dot.olive { background: var(--hobbit-olive); }
-    .dot.berry { background: var(--hobbit-berry); }
-
-    .hero-art {
-      display: grid;
-      place-items: center;
-      min-height: 170px;
-      padding: 10px 0 4px;
-    }
-
-    .hero-art svg {
-      width: 100%;
-      max-width: 420px;
-      height: auto;
-      overflow: visible;
-    }
-
-    .footer-note {
+      color: rgba(245,233,207,0.58);
+      margin-bottom: 7px;
       position: relative;
       z-index: 1;
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: center;
-      padding: 0 28px 28px;
-      color: rgba(244, 234, 216, 0.72);
-      font-size: 0.95rem;
     }
 
-    .ent .footer-note,
-    .hobbit .footer-note {
-      padding-top: 6px;
+    .value {
+      position: relative;
+      z-index: 1;
+      font-size: 0.98rem;
+      color: #fbf4e5;
     }
 
-    .footer-note strong {
-      color: #fff6e4;
-      font-weight: 600;
-    }
-
-    .legend {
+    .inspector-lines {
       display: grid;
       gap: 10px;
+      position: relative;
+      z-index: 1;
     }
 
-    .legend-item {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+    .inspector-line {
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(240,195,106,0.08);
       color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .inspector-line strong { color: #fff0c8; }
+
+    .flow-plaque {
+      position: relative;
+      overflow: hidden;
+      border-radius: 26px;
+      border: 1px solid rgba(240,195,106,0.14);
+      background:
+        radial-gradient(circle at 50% 115%, rgba(240,195,106,0.1), transparent 24%),
+        linear-gradient(180deg, rgba(13,9,7,0.96), rgba(26,17,12,0.96));
+      min-height: 290px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -24px 32px rgba(0,0,0,0.18);
+    }
+
+    .flow-plaque::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.28;
+      background: var(--linework-soft), var(--linework);
+      background-size: 320px 120px, 320px 120px;
+      mix-blend-mode: screen;
+    }
+
+    .flow-rim,
+    .flow-rim::before,
+    .flow-rim::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+    }
+
+    .flow-rim::before {
+      background:
+        radial-gradient(circle at 1% 14%, rgba(88,57,35,0.86), transparent 11%),
+        radial-gradient(circle at 0% 50%, rgba(102,67,39,0.9), transparent 12%),
+        radial-gradient(circle at 4% 84%, rgba(73,48,29,0.84), transparent 11%),
+        radial-gradient(circle at 98% 18%, rgba(93,61,36,0.86), transparent 11%),
+        radial-gradient(circle at 100% 58%, rgba(102,67,39,0.9), transparent 12%),
+        radial-gradient(circle at 96% 88%, rgba(73,48,29,0.84), transparent 11%),
+        radial-gradient(circle at 18% 0%, rgba(88,57,35,0.86), transparent 11%),
+        radial-gradient(circle at 52% 1%, rgba(103,68,40,0.9), transparent 10%),
+        radial-gradient(circle at 83% 0%, rgba(75,49,29,0.84), transparent 11%),
+        radial-gradient(circle at 21% 100%, rgba(88,57,35,0.86), transparent 11%),
+        radial-gradient(circle at 57% 99%, rgba(103,68,40,0.9), transparent 10%),
+        radial-gradient(circle at 86% 100%, rgba(75,49,29,0.84), transparent 11%);
+      filter: blur(7px);
+      opacity: 0.95;
+    }
+
+    .flow-rim::after {
+      inset: 12px;
+      border-radius: 18px;
+      box-shadow: inset 0 0 0 1px rgba(240,195,106,0.08), inset 0 18px 26px rgba(60,38,24,0.22), inset 0 -20px 28px rgba(0,0,0,0.34);
+    }
+
+    .flow-svg {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      min-height: 290px;
+      padding: 12px;
+    }
+
+    .flow-svg svg {
+      width: 100%;
+      max-width: 720px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 18px rgba(240,195,106,0.08));
+    }
+
+    .notes {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .note {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      border: 1px solid rgba(240,195,106,0.12);
+      background: linear-gradient(180deg, rgba(57,38,24,0.94), rgba(21,14,10,0.98));
+      padding: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 22px rgba(0,0,0,0.18);
+    }
+
+    .note::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.22;
+      background: var(--linework-soft), var(--linework);
+      background-size: 280px 100px, 280px 100px;
+      mix-blend-mode: screen;
+    }
+
+    .note strong,
+    .note span { position: relative; z-index: 1; }
+
+    .note strong {
+      display: block;
+      color: #f3d79a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+    }
+
+    .note span {
+      color: var(--muted);
+      line-height: 1.45;
       font-size: 0.95rem;
-    }
-
-    .legend-item:last-child {
-      border-bottom: 0;
-    }
-
-    .legend-item span:last-child {
-      color: #fff7e9;
     }
 
     @media (max-width: 1080px) {
-      .compare-grid {
+      .hero-inner,
+      .studio-shell,
+      .notes {
         grid-template-columns: 1fr;
       }
 
-      .theme-panel {
-        min-height: 0;
+      .brand-medallion {
+        justify-self: start;
       }
     }
 
     @media (max-width: 760px) {
-      .page {
-        padding: 18px;
-      }
-
-      .workspace {
-        grid-template-columns: 1fr;
-      }
-
-      .field-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .panel-title-row,
-      .footer-note {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      .page { padding: 18px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .title { font-size: 2.7rem; }
+      .hero, .studio { padding: 18px; }
     }
   </style>
 </head>
 <body>
   <main class="page">
-    <section class="intro">
-      <div class="eyebrow">Theme evaluation preview</div>
-      <h1>Shirewood landing concepts</h1>
-      <p>
-        This page compares two directions for the frontend theme before any React or MUI implementation work starts.
-        The left concept leans toward <strong>Ent Workshop</strong>: heavier timber, bark, moss, sap, and root structure.
-        The right concept leans toward <strong>Hobbit Study</strong>: warmer joinery, candlelit paper, brass, and domestic craft.
-      </p>
-    </section>
-
-    <section class="compare-grid">
-      <article class="theme-panel ent">
-        <div class="organic-rim" aria-hidden="true"></div>
-        <div class="organic-canopy" aria-hidden="true"></div>
-        <header class="panel-header">
-          <div class="panel-title-row">
-            <div class="panel-title">
-              <div class="eyebrow">Direction A</div>
-              <h2>Ent Workshop</h2>
-              <p>
-                Workshop first. Heavier bark, older timber, root-like flow, and a more severe control-room posture.
-              </p>
-            </div>
-            <div class="panel-badge">Industrial / arboreal</div>
+    <section class="hero">
+      <div class="bark-frame"></div>
+      <div class="hero-inner">
+        <div>
+          <div class="eyebrow">Ent Workshop theme direction</div>
+          <h1 class="title">Ent Workshop</h1>
+          <div class="subtitle">Autonomous Runtime Forge</div>
+          <p class="copy">
+            This direction now uses your tattoo as the bark reference instead of rough broken chunks. The surfaces are built from long flowing bark channels, living grain lines, and carved root contours. The logo still provides the forge-gold illumination and medallion language, but the material texture is now river-like and grown, not rocky.
+          </p>
+          <div class="hero-seals">
+            <div class="seal-pill"><span class="dot"></span>Tattoo-derived bark linework</div>
+            <div class="seal-pill"><span class="dot moss"></span>Root and canopy structure</div>
+            <div class="seal-pill"><span class="dot ember"></span>Forge-lit runtime shell</div>
           </div>
-          <div class="status-row">
-            <div class="status-pill"><span class="dot moss"></span>Runtime healthy</div>
-            <div class="status-pill"><span class="dot sap"></span>Bindings active</div>
-            <div class="status-pill"><span class="dot ember"></span>One alert</div>
-          </div>
-        </header>
-
-        <div class="branch-band" aria-hidden="true">
-          <svg viewBox="0 0 640 82" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 44C92 44 124 20 170 20C232 20 238 61 302 61C359 61 376 29 429 29C489 29 500 52 628 52" stroke="#886039" stroke-width="4" stroke-linecap="round"/>
-            <path d="M171 20C184 30 189 39 194 61" stroke="#6F8C4B" stroke-width="3" stroke-linecap="round"/>
-            <path d="M429 29C418 39 411 50 408 66" stroke="#6F8C4B" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="170" cy="20" r="6" fill="#D3A24F"/>
-            <circle cx="302" cy="61" r="6" fill="#D3A24F"/>
-            <circle cx="429" cy="29" r="6" fill="#D3A24F"/>
+        </div>
+        <div class="brand-medallion" aria-hidden="true">
+          <svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="medForge" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#422b1b"/>
+                <stop offset="36%" stop-color="#9d6a3e"/>
+                <stop offset="68%" stop-color="#edbe79"/>
+                <stop offset="100%" stop-color="#4f311d"/>
+              </linearGradient>
+              <radialGradient id="medGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fff0b0"/>
+                <stop offset="45%" stop-color="#ffd46e"/>
+                <stop offset="100%" stop-color="#c58a28" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <circle cx="180" cy="180" r="164" fill="none" stroke="#b9893f" stroke-opacity=".62" stroke-width="4"/>
+            <circle cx="180" cy="180" r="148" fill="none" stroke="#8d6339" stroke-opacity=".35" stroke-width="2.5"/>
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M180 238C170 214 160 191 146 169C132 148 113 127 92 104" stroke="url(#medForge)" stroke-width="15"/>
+              <path d="M180 238C191 214 203 190 218 168C233 145 253 123 278 98" stroke="url(#medForge)" stroke-width="15"/>
+              <path d="M180 238C176 192 176 147 180 95C183 65 186 44 190 24" stroke="url(#medForge)" stroke-width="28"/>
+              <path d="M180 238C153 256 132 273 110 297" stroke="url(#medForge)" stroke-width="12"/>
+              <path d="M180 238C205 256 228 273 251 296" stroke="url(#medForge)" stroke-width="12"/>
+              <path d="M88 104C107 93 124 86 145 81" stroke="url(#medForge)" stroke-width="8"/>
+              <path d="M274 100C252 88 233 82 210 78" stroke="url(#medForge)" stroke-width="8"/>
+              <path d="M180 236C177 192 178 147 182 95C184 63 187 43 190 24" stroke="#f0c36a" stroke-opacity=".36" stroke-width="4"/>
+              <path d="M145 81C155 74 166 68 178 65" stroke="#f0c36a" stroke-opacity=".22" stroke-width="2.6"/>
+              <path d="M210 78C200 71 190 66 181 63" stroke="#f0c36a" stroke-opacity=".22" stroke-width="2.6"/>
+            </g>
+            <g>
+              <circle cx="180" cy="26" r="28" fill="url(#medGlow)" opacity=".88"/>
+              <circle cx="94" cy="102" r="18" fill="url(#medGlow)" opacity=".56"/>
+              <circle cx="267" cy="97" r="18" fill="url(#medGlow)" opacity=".56"/>
+              <circle cx="122" cy="288" r="18" fill="url(#medGlow)" opacity=".44"/>
+              <circle cx="239" cy="286" r="18" fill="url(#medGlow)" opacity=".44"/>
+            </g>
+            <g fill="#ffe5a2">
+              <circle cx="180" cy="26" r="8"/>
+              <circle cx="94" cy="102" r="5.6"/>
+              <circle cx="267" cy="97" r="5.6"/>
+              <circle cx="122" cy="288" r="5.2"/>
+              <circle cx="239" cy="286" r="5.2"/>
+            </g>
+            <path d="M101 315A90 90 0 0 0 259 315" fill="none" stroke="#b9893f" stroke-opacity=".7" stroke-width="14" stroke-linecap="round"/>
+            <path d="M120 327L129 310M160 336L164 315M204 336L199 315M241 326L232 309" stroke="#b9893f" stroke-width="6" stroke-linecap="round"/>
           </svg>
         </div>
+      </div>
+    </section>
 
-        <section class="workspace">
-          <div class="nav-column stack">
+    <section class="studio">
+      <div class="studio-shell">
+        <aside class="panel nav-panel">
+          <h2 class="section-title">Runtime Studio</h2>
+          <div class="nav-list">
             <button class="wood-tab active"><span>Runtime Nodes</span></button>
             <button class="wood-tab"><span>Drivers</span></button>
             <button class="wood-tab"><span>Bindings</span></button>
             <button class="wood-tab"><span>Authority</span></button>
             <button class="wood-tab"><span>Capabilities</span></button>
           </div>
+        </aside>
 
-          <div class="main-column stack">
-            <section class="panel-card">
-              <h3>Carved shell and woody control treatment</h3>
-              <p class="lede">
-                Buttons are denser, more structural, and feel cut from timber. Relationship surfaces carry the root language.
-              </p>
-              <div class="actions">
-                <button class="tool-button"><span>Start Runtime</span></button>
-                <button class="tool-button secondary"><span>Validate Bindings</span></button>
-                <button class="tool-button secondary"><span>Commission Driver</span></button>
-              </div>
-            </section>
-
-            <section class="panel-card">
-              <h3>Inset form wells</h3>
-              <div class="field-grid">
-                <div class="field">
-                  <label>Frontend endpoint</label>
-                  <div class="value">http://10.0.20.41:7000</div>
-                </div>
-                <div class="field">
-                  <label>Node assignment</label>
-                  <div class="value">pea-arm-node-01</div>
-                </div>
-                <div class="field">
-                  <label>Driver host</label>
-                  <div class="value">10.0.20.50</div>
-                </div>
-                <div class="field">
-                  <label>Authority mode</label>
-                  <div class="value">OperatorExclusive</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="panel-card">
-              <h3>Dendritic flow treatment</h3>
-              <div class="hero-art" aria-hidden="true">
-                <svg viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 88C85 88 104 36 160 36C228 36 228 136 304 136C348 136 369 98 402 98" stroke="#7A5231" stroke-width="9" stroke-linecap="round" fill="none"/>
-                  <path d="M160 36C141 57 132 77 126 108" stroke="#6F8C4B" stroke-width="5" stroke-linecap="round" fill="none"/>
-                  <path d="M304 136C290 120 284 103 279 83" stroke="#5E8B8A" stroke-width="5" stroke-linecap="round" fill="none"/>
-                  <circle cx="160" cy="36" r="10" fill="#D3A24F"/>
-                  <circle cx="304" cy="136" r="10" fill="#D3A24F"/>
-                  <circle cx="126" cy="108" r="7" fill="#6F8C4B"/>
-                  <circle cx="279" cy="83" r="7" fill="#5E8B8A"/>
-                </svg>
-              </div>
-              <div class="legend">
-                <div class="legend-item"><span>Best use</span><span>Binding and capability views</span></div>
-                <div class="legend-item"><span>Button feel</span><span>Carved, weighted, bark-edged</span></div>
-                <div class="legend-item"><span>Overall mood</span><span>Older, sterner, more workshop-like</span></div>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <footer class="footer-note">
-          <span><strong>Recommendation:</strong> best if you want the runtime console to stay dark, rooted, and operationally severe.</span>
-          <span>Strength: strongest dendritic identity.</span>
-        </footer>
-      </article>
-
-      <article class="theme-panel hobbit">
-        <div class="organic-rim" aria-hidden="true"></div>
-        <div class="organic-canopy" aria-hidden="true"></div>
-        <header class="panel-header">
-          <div class="panel-title-row">
-            <div class="panel-title">
-              <div class="eyebrow">Direction B</div>
-              <h2>Hobbit Study</h2>
-              <p>
-                Softer cabinetry, lamp warmth, cream paper surfaces, and a more welcoming interpretation of the same runtime tools.
-              </p>
+        <main class="panel workspace-panel">
+          <section class="panel-card">
+            <h2 class="section-title">Woody button language</h2>
+            <p class="lede">Buttons now use long bark-channel engraving drawn from your tattoo rather than generic grain or chunky bark breakup. The linework runs with the control, like growth rings and rivered bark.</p>
+            <div class="actions">
+              <button class="tool-button"><span>Start Runtime</span></button>
+              <button class="tool-button secondary"><span>Validate Bindings</span></button>
+              <button class="tool-button secondary"><span>Commission Driver</span></button>
             </div>
-            <div class="panel-badge">Domestic / crafted</div>
-          </div>
-          <div class="status-row">
-            <div class="status-pill"><span class="dot olive"></span>Node online</div>
-            <div class="status-pill"><span class="dot gold"></span>Config staged</div>
-            <div class="status-pill"><span class="dot berry"></span>Write lock active</div>
-          </div>
-        </header>
+          </section>
 
-        <div class="branch-band" aria-hidden="true">
-          <svg viewBox="0 0 640 82" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 51C126 51 136 24 236 24C335 24 344 59 429 59C507 59 540 37 622 37" stroke="#C29A49" stroke-width="4" stroke-linecap="round"/>
-            <path d="M236 24C247 35 255 46 264 67" stroke="#78824B" stroke-width="3" stroke-linecap="round"/>
-            <path d="M429 59C441 49 450 38 460 18" stroke="#915646" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="236" cy="24" r="6" fill="#F2E7CC"/>
-            <circle cx="429" cy="59" r="6" fill="#F2E7CC"/>
-          </svg>
-        </div>
-
-        <section class="workspace">
-          <div class="nav-column stack">
-            <button class="wood-tab active"><span>Workbench</span></button>
-            <button class="wood-tab"><span>Library</span></button>
-            <button class="wood-tab"><span>Bindings</span></button>
-            <button class="wood-tab"><span>Authority</span></button>
-            <button class="wood-tab"><span>History</span></button>
-          </div>
-
-          <div class="main-column stack">
-            <section class="panel-card">
-              <h3>Gentler shell, same technical core</h3>
-              <p class="lede">
-                The same runtime studio can feel warmer and more habitable without losing technical precision. The decorative pressure sits mostly on the shell.
-              </p>
-              <div class="actions">
-                <button class="tool-button"><span>Open Node</span></button>
-                <button class="tool-button secondary"><span>Review Bindings</span></button>
-                <button class="tool-button secondary"><span>Export History</span></button>
+          <section class="panel-card">
+            <h2 class="section-title">Inset wells</h2>
+            <div class="field-grid">
+              <div class="field">
+                <label>Frontend endpoint</label>
+                <div class="value">http://10.0.20.41:7000</div>
               </div>
-            </section>
-
-            <section class="panel-card">
-              <h3>Paper-and-joinery forms</h3>
-              <div class="field-grid">
-                <div class="field">
-                  <label>Runtime node</label>
-                  <div class="value">orchard-pump-house</div>
-                </div>
-                <div class="field">
-                  <label>Southbound frontend</label>
-                  <div class="value">Neuron / Siemens Industrial Edge</div>
-                </div>
-                <div class="field">
-                  <label>Driver set</label>
-                  <div class="value">Siemens S7, starter tags imported</div>
-                </div>
-                <div class="field">
-                  <label>Binding health</label>
-                  <div class="value">14 mapped, 2 warnings</div>
-                </div>
+              <div class="field">
+                <label>Runtime node</label>
+                <div class="value">pea-arm-node-01</div>
               </div>
-            </section>
+              <div class="field">
+                <label>Driver host</label>
+                <div class="value">10.0.20.50</div>
+              </div>
+              <div class="field">
+                <label>Authority mode</label>
+                <div class="value">OperatorExclusive</div>
+              </div>
+            </div>
+          </section>
 
-            <section class="panel-card">
-              <h3>Domestic dendritic details</h3>
-              <div class="hero-art" aria-hidden="true">
-                <svg viewBox="0 0 420 170" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 96C88 96 126 44 180 44C239 44 255 128 313 128C346 128 365 108 400 108" stroke="#9D6A3B" stroke-width="9" stroke-linecap="round" fill="none"/>
-                  <path d="M180 44C201 65 213 84 220 112" stroke="#C29A49" stroke-width="5" stroke-linecap="round" fill="none"/>
-                  <path d="M180 44C160 58 146 70 131 91" stroke="#78824B" stroke-width="5" stroke-linecap="round" fill="none"/>
-                  <circle cx="180" cy="44" r="10" fill="#F2E7CC"/>
-                  <circle cx="313" cy="128" r="10" fill="#F2E7CC"/>
-                  <circle cx="220" cy="112" r="7" fill="#C29A49"/>
-                  <circle cx="131" cy="91" r="7" fill="#78824B"/>
+          <section class="panel-card">
+            <h2 class="section-title">Tattoo-derived bark plaque</h2>
+            <div class="flow-plaque" aria-hidden="true">
+              <div class="flow-rim"></div>
+              <div class="flow-svg">
+                <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="flowWood" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#3c2718"/>
+                      <stop offset="33%" stop-color="#94663c"/>
+                      <stop offset="67%" stop-color="#e3b976"/>
+                      <stop offset="100%" stop-color="#4f321e"/>
+                    </linearGradient>
+                    <radialGradient id="flowGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#fff0b2"/>
+                      <stop offset="44%" stop-color="#ffd66f"/>
+                      <stop offset="100%" stop-color="#c78a28" stop-opacity="0"/>
+                    </radialGradient>
+                    <linearGradient id="leafFill" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#8baa61"/>
+                      <stop offset="100%" stop-color="#40522a"/>
+                    </linearGradient>
+                  </defs>
+                  <g opacity=".38">
+                    <path d="M18 256C72 256 112 225 154 225C200 225 240 258 286 258C333 258 369 224 412 224C457 224 503 256 547 256C595 256 632 231 743 231" stroke="#2b1d12" stroke-width="10" stroke-linecap="round" fill="none"/>
+                  </g>
+                  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M373 223C356 191 344 161 338 126C332 85 340 55 357 30" stroke="url(#flowWood)" stroke-width="32"/>
+                    <path d="M379 223C396 193 411 164 422 129C435 88 435 57 423 26" stroke="url(#flowWood)" stroke-width="30"/>
+                    <path d="M356 160C317 181 287 203 252 227" stroke="url(#flowWood)" stroke-width="15"/>
+                    <path d="M404 162C444 183 476 204 512 228" stroke="url(#flowWood)" stroke-width="15"/>
+                    <path d="M347 90C300 80 255 79 208 84" stroke="url(#flowWood)" stroke-width="14"/>
+                    <path d="M416 86C464 74 511 73 557 79" stroke="url(#flowWood)" stroke-width="14"/>
+                    <path d="M281 76C243 57 209 47 169 45" stroke="url(#flowWood)" stroke-width="10"/>
+                    <path d="M484 73C523 55 557 47 596 44" stroke="url(#flowWood)" stroke-width="10"/>
+                    <path d="M221 85C206 106 191 121 170 136" stroke="url(#flowWood)" stroke-width="8"/>
+                    <path d="M538 80C556 100 571 115 591 129" stroke="url(#flowWood)" stroke-width="8"/>
+
+                    <path d="M370 221C359 181 351 154 346 126C339 88 346 58 362 32" stroke="#f0c36a" stroke-opacity=".38" stroke-width="5"/>
+                    <path d="M384 221C395 185 405 159 417 129C430 95 429 61 418 29" stroke="#f0c36a" stroke-opacity=".32" stroke-width="5"/>
+                    <path d="M361 135C372 126 381 111 385 95" stroke="#1f140d" stroke-opacity=".62" stroke-width="3.5"/>
+                    <path d="M371 174C384 165 396 151 403 136" stroke="#1f140d" stroke-opacity=".62" stroke-width="3.5"/>
+                    <path d="M347 102C339 93 332 83 325 69" stroke="#1f140d" stroke-opacity=".46" stroke-width="3"/>
+                    <path d="M419 95C428 85 435 74 442 59" stroke="#1f140d" stroke-opacity=".46" stroke-width="3"/>
+                  </g>
+                  <g fill="url(#leafFill)" stroke="#243018" stroke-opacity=".55" stroke-width="1.3">
+                    <path d="M165 45C173 36 187 36 195 45C187 56 173 56 165 45Z"/>
+                    <path d="M205 39C214 29 228 30 237 39C228 50 214 50 205 39Z"/>
+                    <path d="M559 44C568 35 582 35 590 44C582 55 568 55 559 44Z"/>
+                    <path d="M518 78C527 70 539 70 547 78C539 88 527 88 518 78Z"/>
+                    <path d="M157 136C165 129 177 129 185 136C177 145 165 145 157 136Z"/>
+                    <path d="M579 129C587 122 599 122 607 129C599 138 587 138 579 129Z"/>
+                  </g>
+                  <g>
+                    <circle cx="177" cy="44" r="28" fill="url(#flowGlow)" opacity=".72"/>
+                    <circle cx="389" cy="18" r="32" fill="url(#flowGlow)" opacity=".88"/>
+                    <circle cx="576" cy="42" r="28" fill="url(#flowGlow)" opacity=".72"/>
+                    <circle cx="211" cy="138" r="18" fill="url(#flowGlow)" opacity=".5"/>
+                    <circle cx="543" cy="80" r="18" fill="url(#flowGlow)" opacity=".54"/>
+                  </g>
+                  <g fill="#ffe5a2">
+                    <circle cx="177" cy="44" r="8"/>
+                    <circle cx="389" cy="18" r="9"/>
+                    <circle cx="576" cy="42" r="8"/>
+                    <circle cx="211" cy="138" r="5.8"/>
+                    <circle cx="543" cy="80" r="5.8"/>
+                  </g>
                 </svg>
               </div>
-              <div class="legend">
-                <div class="legend-item"><span>Best use</span><span>Landing, overview, operator-facing surfaces</span></div>
-                <div class="legend-item"><span>Button feel</span><span>Smoothed joinery, brighter finish</span></div>
-                <div class="legend-item"><span>Overall mood</span><span>Warmer, calmer, more welcoming</span></div>
-              </div>
-            </section>
-          </div>
-        </section>
+            </div>
+          </section>
+        </main>
 
-        <footer class="footer-note">
-          <span><strong>Recommendation:</strong> best if you want the product to feel hand-built and hospitable rather than stern.</span>
-          <span>Strength: strongest landing-page warmth.</span>
-        </footer>
-      </article>
+        <aside class="panel inspector-panel">
+          <h2 class="section-title">Inspector</h2>
+          <div class="inspector-lines">
+            <div class="inspector-line"><strong>Material model</strong><br />Long flowing bark channels over lighter wood ridges, derived from tattoo line rhythm.</div>
+            <div class="inspector-line"><strong>Logo integration</strong><br />Forge-gold illumination and medallion seals come from the Ent Workshop lockup.</div>
+            <div class="inspector-line"><strong>Where to use bark most</strong><br />Header, nav, buttons, plaques, and section shells. Keep forms cleaner inside.</div>
+            <div class="inspector-line"><strong>What to avoid</strong><br />Chunky rock bark, random cracks, or noisy texture that hurts legibility.</div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="notes">
+        <div class="note"><strong>Texture source</strong><span>The tattoo now defines the bark and grain behavior: elongated, flowing, layered, tapered.</span></div>
+        <div class="note"><strong>Brand source</strong><span>The logo defines the emblem, forge glow, root medallion, and serif naming language.</span></div>
+        <div class="note"><strong>Implementation rule</strong><span>Use high-fidelity bark on shells and controls, not on every field or data cell.</span></div>
+      </div>
     </section>
   </main>
 </body>

@@ -415,8 +415,11 @@ export default function RuntimeStudio() {
       case 'pea':
       default:
         return (
-          <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>PEA Engineering Compatibility View</Typography>
+          <Paper sx={{ p: 3, height: '100%', backgroundImage: 'var(--ent-panel-surface), var(--ent-linework-soft), var(--ent-linework)', backgroundSize: 'auto, 320px 120px, 320px 120px' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.6 }}>
+              Engineering Compatibility
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, color: 'secondary.light' }}>PEA Definition View</Typography>
             <Typography variant="body2" color="text.secondary">Legacy PEA engineering remains available in the existing editor. Runtime Studio now treats PEA definitions as deployment targets for ARM runtime nodes and pluggable southbound frontend adapters.</Typography>
           </Paper>
         )
@@ -447,10 +450,36 @@ export default function RuntimeStudio() {
   return (
     <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Header />
-      <Box sx={{ flex: 1, p: 2, overflow: 'hidden', background: 'radial-gradient(circle at top left, rgba(155,74,33,0.22), transparent 35%), linear-gradient(180deg, #1f130d 0%, #120c09 100%)' }}>
-        <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', mb: 2, pb: 2 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '0.04em' }}>Runtime Studio</Typography>
-          <Typography variant="body2" color="text.secondary">ARM runtime nodes, southbound frontend adapters, bindings, and authority control.</Typography>
+      <Box
+        sx={{
+          flex: 1,
+          p: 2,
+          overflow: 'hidden',
+          background:
+            'radial-gradient(circle at top, rgba(240,195,106,0.08), transparent 24%), linear-gradient(180deg, #0d0906, #120c09 52%, #090604 100%)',
+        }}
+      >
+        <Box
+          sx={{
+            mb: 2,
+            p: 2.25,
+            borderRadius: '28px',
+            border: '1px solid rgba(240,195,106,0.16)',
+            backgroundImage:
+              'linear-gradient(180deg, rgba(39,26,18,0.96), rgba(13,9,7,0.98)), var(--ent-linework-soft), var(--ent-linework)',
+            backgroundSize: 'auto, 320px 120px, 320px 120px',
+            boxShadow: '0 18px 32px rgba(0,0,0,0.24)',
+          }}
+        >
+          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mb: 0.6 }}>
+            Ent Workshop Runtime Forge
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '0.06em', color: 'secondary.light', mb: 0.6 }}>
+            Runtime Studio
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            ARM runtime nodes, southbound frontend adapters, bindings, and authority control with carved shell surfaces and tattoo-derived bark linework.
+          </Typography>
         </Box>
         <RuntimeShell
           section={section}

@@ -118,6 +118,7 @@ impl TimeSeriesStore {
 
 pub struct AppState {
     pub zenoh_session: Arc<Session>,
+    pub native_s7_registry: Arc<crate::native_s7_backend::NativeS7Registry>,
     pub pea_configs: Arc<RwLock<HashMap<String, PeaConfig>>>,
     pub recipes: Arc<RwLock<HashMap<String, Recipe>>>,
     pub runtime_nodes: Arc<RwLock<HashMap<String, RuntimeNode>>>,

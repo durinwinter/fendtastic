@@ -21,12 +21,41 @@ BIND_IP=""
 DISPLAY_IP=""
 PIDS=()
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.dev.yml"
+KILL_FRONTEND_PORT=0
 
 log_info()  { echo -e "  ${CYAN}i${NC}  $*"; }
 log_ok()    { echo -e "  ${GREEN}ok${NC} $*"; }
 log_warn()  { echo -e "  ${YELLOW}!!${NC} $*"; }
 log_err()   { echo -e "  ${RED}xx${NC} $*"; }
 log_step()  { echo -e "\n${BOLD}${CYAN}== $* ==${NC}"; }
+
+usage() {
+  cat <<EOF
+Usage: ./dev.sh [--kill-frontend-port]
+
+Options:
+  --kill-frontend-port   Kill any listener on port ${PORT_FRONTEND} before startup
+  -h, --help             Show this help message
+EOF
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --kill-frontend-port)
+      KILL_FRONTEND_PORT=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      log_err "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
 
 if docker compose version &>/dev/null; then
   COMPOSE_CMD="docker compose"
@@ -72,6 +101,36 @@ check_port() {
   log_ok "Port ${port} (${service})"
 }
 
+kill_port_listeners() {
+  local port="$1"
+  local service="$2"
+  local pids=""
+
+  if command -v lsof >/dev/null 2>&1; then
+    pids="$(lsof -ti tcp:"${port}" -sTCP:LISTEN 2>/dev/null | tr '\n' ' ')"
+  fi
+
+  if [ -z "$pids" ] && command -v fuser >/dev/null 2>&1; then
+    pids="$(fuser "${port}/tcp" 2>/dev/null | tr ' ' '\n' | tr '\n' ' ')"
+  fi
+
+  if [ -z "$pids" ]; then
+    log_ok "No listeners to clear on port ${port} (${service})"
+    return 0
+  fi
+
+  log_warn "Killing listener(s) on port ${port} (${service}): ${pids}"
+  for pid in $pids; do
+    kill "$pid" 2>/dev/null || true
+  done
+  sleep 1
+  for pid in $pids; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -9 "$pid" 2>/dev/null || true
+    fi
+  done
+}
+
 clear
 log_step "Checking dependencies"
 check_command rustc "https://rustup.rs"
@@ -99,6 +158,11 @@ for proc in api-server zenoh-bridge neuron-connector; do
 done
 pkill -f "node.*vite.*${SCRIPT_DIR}/frontend" 2>/dev/null || true
 log_ok "Cleanup complete"
+
+if [ "$KILL_FRONTEND_PORT" -eq 1 ]; then
+  log_step "Clearing requested frontend port"
+  kill_port_listeners "$PORT_FRONTEND" "Frontend"
+fi
 
 log_step "Network configuration"
 BIND_IP="127.0.0.1"
@@ -153,15 +217,17 @@ export PEA_CONFIG_DIR="${SCRIPT_DIR}/data/pea-configs"
 export POL_DB_DIR="${SCRIPT_DIR}/data/pol"
 export RECIPE_DIR="${SCRIPT_DIR}/data/recipes"
 export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${BIND_IP}:${PORT_POSTGRES}/${POSTGRES_DB}"
-(cd backend && cargo run --bin api-server >/tmp/fendtastic-api.log 2>&1 &)
-PIDS+=($!)
+(cd backend && cargo run --bin api-server >/tmp/fendtastic-api.log 2>&1) &
+api_pid=$!
+PIDS+=("${api_pid}")
 sleep 2
 log_ok "API server (${BIND_IP}:${PORT_API})"
 
 log_step "Starting frontend"
 export VITE_API_URL="http://${DISPLAY_IP}:${PORT_API}/api/v1"
-(cd frontend && npx vite --host "${BIND_IP}" --port "${PORT_FRONTEND}" >/tmp/fendtastic-frontend.log 2>&1 &)
-PIDS+=($!)
+(cd frontend && npx vite --host "${BIND_IP}" --port "${PORT_FRONTEND}" >/tmp/fendtastic-frontend.log 2>&1) &
+frontend_pid=$!
+PIDS+=("${frontend_pid}")
 sleep 3
 log_ok "Frontend (${BIND_IP}:${PORT_FRONTEND})"
 
