@@ -4,23 +4,25 @@ import { Circle as CircleIcon } from '@mui/icons-material'
 import zenohService from '../services/zenohService'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { styled } from '@mui/material/styles'
+import entWorkshopBadge from '../../ent_workshop_badge.png'
 
 const barkLinework = 'var(--ent-linework-soft), var(--ent-linework)'
+const trunkRibbon = 'var(--ent-trunk-ribbon)'
 
 const NavChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== 'data-active',
 })<{ 'data-active'?: boolean }>(({ theme, 'data-active': active }) => ({
-  height: 38,
-  borderRadius: 999,
+  height: 42,
+  borderRadius: '18px 14px 20px 14px',
   fontWeight: 700,
   fontSize: '0.75rem',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  padding: '0 8px',
+  padding: '0 10px',
   color: theme.palette.text.primary,
   border: `1px solid ${active ? 'rgba(240,195,106,0.32)' : 'rgba(240,195,106,0.14)'}`,
-  backgroundImage: `radial-gradient(circle at 14% 12%, ${active ? 'rgba(110,139,74,0.16)' : 'rgba(110,139,74,0.08)'}, transparent 20%), linear-gradient(180deg, ${active ? 'rgba(127,86,51,0.96), rgba(81,52,31,0.98)' : 'rgba(51,36,25,0.98), rgba(26,18,13,0.98)'}), ${barkLinework}`,
-  backgroundSize: 'auto, auto, 240px 90px, 240px 90px',
+  backgroundImage: `radial-gradient(circle at 14% 12%, ${active ? 'rgba(110,139,74,0.16)' : 'rgba(110,139,74,0.08)'}, transparent 20%), ${trunkRibbon}, linear-gradient(180deg, ${active ? 'rgba(127,86,51,0.96), rgba(81,52,31,0.98)' : 'rgba(51,36,25,0.98), rgba(26,18,13,0.98)'}), ${barkLinework}`,
+  backgroundSize: 'auto, auto, auto, 240px 90px, 240px 90px',
   boxShadow: active
     ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(240,195,106,0.14), 0 10px 24px rgba(0,0,0,0.26), 0 0 20px rgba(240,195,106,0.08), 0 0 28px rgba(110,139,74,0.06)'
     : 'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -12px 18px rgba(45,29,18,0.28), 0 8px 18px rgba(0,0,0,0.16)',
@@ -43,8 +45,8 @@ const StatusChip = styled(Chip, {
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   border: `1px solid ${status === 'success' ? 'rgba(110,139,74,0.38)' : 'rgba(195,98,61,0.38)'}`,
-  backgroundImage: `radial-gradient(circle at 14% 12%, ${status === 'success' ? 'rgba(110,139,74,0.14)' : 'rgba(195,98,61,0.1)'}, transparent 20%), linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96)), ${barkLinework}`,
-  backgroundSize: 'auto, auto, 240px 90px, 240px 90px',
+  backgroundImage: `radial-gradient(circle at 14% 12%, ${status === 'success' ? 'rgba(110,139,74,0.14)' : 'rgba(195,98,61,0.1)'}, transparent 20%), ${trunkRibbon}, linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96)), ${barkLinework}`,
+  backgroundSize: 'auto, auto, auto, 240px 90px, 240px 90px',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 18px rgba(0,0,0,0.18)',
   color: '#f5e9cf',
   '& .MuiChip-icon': {
@@ -95,31 +97,31 @@ const Header: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             cursor: 'pointer',
-            gap: 1.5,
+            gap: 1.8,
             minWidth: 0,
           }}
           onClick={() => navigate('/')}
         >
           <Box
             sx={{
-              width: 42,
-              height: 42,
+              width: 64,
+              height: 64,
               borderRadius: '999px',
-              display: 'grid',
-              placeItems: 'center',
+              overflow: 'hidden',
               border: '1px solid rgba(240,195,106,0.24)',
-              backgroundImage: `radial-gradient(circle at 28% 22%, rgba(110,139,74,0.18), transparent 18%), radial-gradient(circle at center, rgba(240,195,106,0.18), transparent 42%), linear-gradient(180deg, rgba(38,25,17,0.98), rgba(11,8,6,0.98)), ${barkLinework}`,
-              backgroundSize: 'auto, auto, auto, 240px 90px, 240px 90px',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 20px rgba(0,0,0,0.18)',
+              backgroundImage: 'radial-gradient(circle at center, rgba(240,195,106,0.14), transparent 58%), linear-gradient(180deg, rgba(38,25,17,0.98), rgba(11,8,6,0.98))',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 24px rgba(0,0,0,0.22), 0 0 24px rgba(240,195,106,0.08)',
             }}
           >
             <Box
+              component="img"
+              src={entWorkshopBadge}
+              alt="Ent Workshop badge"
               sx={{
-                width: 10,
-                height: 10,
-                borderRadius: '999px',
-                backgroundColor: 'secondary.main',
-                boxShadow: '0 0 14px rgba(240,195,106,0.55)',
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
               }}
             />
           </Box>
@@ -131,10 +133,10 @@ const Header: React.FC = () => {
                 color: 'text.secondary',
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
-                mb: 0.4,
+                mb: 0.3,
               }}
             >
-              Ent Workshop Theme
+              Ent Workshop
             </Typography>
             <Typography
               variant="h6"
@@ -146,7 +148,7 @@ const Header: React.FC = () => {
                 lineHeight: 1,
               }}
             >
-              MURPH Control System
+              MURPH Runtime Forge
             </Typography>
           </Box>
         </Box>

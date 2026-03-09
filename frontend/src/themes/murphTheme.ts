@@ -6,7 +6,10 @@ const entLinework =
 const entLineworkSoft =
   `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 120'%3E%3Cg fill='none' stroke='%23f6d38a' stroke-opacity='.11' stroke-linecap='round'%3E%3Cpath d='M-10 20C18 17 42 26 71 24C95 22 117 14 145 16C172 18 190 27 219 25C245 23 270 14 330 17' stroke-width='1.2'/%3E%3Cpath d='M-12 64C24 61 45 74 74 72C101 70 120 58 152 61C182 64 200 76 233 75C262 74 286 63 332 65' stroke-width='1.1'/%3E%3Cpath d='M-8 94C26 90 48 102 77 100C107 98 126 87 160 88C194 89 214 103 244 101C273 99 293 91 334 93' stroke-width='1.15'/%3E%3C/g%3E%3C/svg%3E")`
 
-const carvedSurface = (top: string, bottom: string) => ({
+const trunkRibbonOverlay =
+  'linear-gradient(122deg, transparent 0 16%, rgba(38,24,15,0.42) 17%, rgba(140,94,56,0.36) 21%, rgba(240,195,106,0.12) 24%, rgba(84,55,33,0.46) 28%, transparent 33%), linear-gradient(66deg, transparent 0 44%, rgba(35,22,14,0.4) 45%, rgba(165,114,70,0.32) 49%, rgba(255,223,141,0.1) 52%, rgba(79,51,30,0.42) 56%, transparent 61%), linear-gradient(138deg, transparent 0 72%, rgba(40,26,16,0.34) 73%, rgba(160,109,66,0.28) 77%, rgba(246,210,138,0.08) 80%, rgba(73,47,29,0.36) 83%, transparent 87%)'
+
+const matteSurface = (top: string, bottom: string) => ({
   backgroundColor: bottom,
   backgroundImage: `radial-gradient(circle at 12% 10%, rgba(110,139,74,0.08), transparent 18%), radial-gradient(circle at 84% 8%, rgba(110,139,74,0.06), transparent 16%), linear-gradient(180deg, ${top}, ${bottom}), ${entLineworkSoft}, ${entLinework}`,
   backgroundSize: 'auto, auto, auto, 320px 120px, 320px 120px',
@@ -98,6 +101,7 @@ export const murphTheme = createTheme({
           '--ent-ember': '#c3623d',
           '--ent-linework': entLinework,
           '--ent-linework-soft': entLineworkSoft,
+          '--ent-trunk-ribbon': trunkRibbonOverlay,
           '--ent-panel-surface':
             'linear-gradient(180deg, rgba(63,42,26,0.94), rgba(22,15,11,0.98))',
           '--ent-shell-surface':
@@ -139,7 +143,7 @@ export const murphTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          ...carvedSurface('rgba(63,42,26,0.94)', 'rgba(22,15,11,0.98)'),
+          ...matteSurface('rgba(63,42,26,0.94)', 'rgba(22,15,11,0.98)'),
           borderRadius: 24,
           border: '1px solid rgba(240,195,106,0.14)',
           boxShadow:
@@ -150,7 +154,7 @@ export const murphTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          ...carvedSurface('rgba(63,42,26,0.94)', 'rgba(22,15,11,0.98)'),
+          ...matteSurface('rgba(63,42,26,0.94)', 'rgba(22,15,11,0.98)'),
           borderRadius: 24,
           border: '1px solid rgba(240,195,106,0.14)',
           boxShadow:
@@ -161,7 +165,7 @@ export const murphTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          ...carvedSurface('rgba(39,26,18,0.96)', 'rgba(13,9,7,0.98)'),
+          ...matteSurface('rgba(39,26,18,0.96)', 'rgba(13,9,7,0.98)'),
           borderBottom: '1px solid rgba(240,195,106,0.16)',
           boxShadow: '0 14px 32px rgba(0,0,0,0.24)',
         },
@@ -178,9 +182,9 @@ export const murphTheme = createTheme({
           border: '1px solid rgba(240,195,106,0.18)',
           boxShadow:
             'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -12px 18px rgba(45,29,18,0.34), 0 10px 20px rgba(0,0,0,0.18)',
-          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), linear-gradient(180deg, rgba(131,89,54,0.92), rgba(72,46,27,0.98)), ${entLineworkSoft}, ${entLinework}`,
-          backgroundSize: 'auto, auto, 240px 90px, 240px 90px',
-          backgroundPosition: '0 0, 0 0, 0 0, 0 0',
+          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), ${trunkRibbonOverlay}, linear-gradient(180deg, rgba(131,89,54,0.92), rgba(72,46,27,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundSize: 'auto, auto, auto, 240px 90px, 240px 90px',
+          backgroundPosition: '0 0, center, 0 0, 0 0, 0 0',
           justifyContent: 'flex-start',
           '&::after': {
             content: '""',
@@ -202,11 +206,11 @@ export const murphTheme = createTheme({
           },
         },
         outlined: {
-          backgroundImage: `radial-gradient(circle at 14% 12%, rgba(110,139,74,0.1), transparent 18%), linear-gradient(180deg, rgba(51,36,25,0.98), rgba(26,18,13,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundImage: `radial-gradient(circle at 14% 12%, rgba(110,139,74,0.1), transparent 18%), ${trunkRibbonOverlay}, linear-gradient(180deg, rgba(51,36,25,0.98), rgba(26,18,13,0.98)), ${entLineworkSoft}, ${entLinework}`,
           borderColor: 'rgba(110,139,74,0.2)',
         },
         containedPrimary: {
-          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), linear-gradient(180deg, rgba(127,86,51,0.96), rgba(81,52,31,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), ${trunkRibbonOverlay}, linear-gradient(180deg, rgba(127,86,51,0.96), rgba(81,52,31,0.98)), ${entLineworkSoft}, ${entLinework}`,
         },
       },
     },
@@ -227,7 +231,7 @@ export const murphTheme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          ...carvedSurface('rgba(18,12,9,0.72)', 'rgba(39,26,17,0.78)'),
+          ...matteSurface('rgba(18,12,9,0.72)', 'rgba(39,26,17,0.78)'),
           borderRadius: 18,
           boxShadow: 'inset 0 10px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)',
           '& fieldset': {
