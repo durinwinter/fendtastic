@@ -69,3 +69,44 @@ pub fn delete_json(dir: &str, id: &str) {
         }
     }
 }
+
+pub fn load_json<T>(path: &str) -> Option<T>
+where
+    T: DeserializeOwned,
+{
+    match fs::read_to_string(path) {
+        Ok(contents) => match serde_json::from_str::<T>(&contents) {
+            Ok(value) => Some(value),
+            Err(err) => {
+                error!("Failed to parse {}: {}", path, err);
+                None
+            }
+        },
+        Err(err) if err.kind() == io::ErrorKind::NotFound => None,
+        Err(err) => {
+            error!("Failed to read {}: {}", path, err);
+            None
+        }
+    }
+}
+
+pub fn persist_json_file<T>(path: &str, value: &T)
+where
+    T: Serialize,
+{
+    if let Some(parent) = Path::new(path).parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            error!("Failed to create dir {}: {}", parent.display(), err);
+            return;
+        }
+    }
+
+    match serde_json::to_string_pretty(value) {
+        Ok(json) => {
+            if let Err(err) = fs::write(path, json) {
+                error!("Failed to write {}: {}", path, err);
+            }
+        }
+        Err(err) => error!("Failed to serialize {}: {}", path, err),
+    }
+}

@@ -8,7 +8,7 @@ MURPH (Multi-Unit Real-time Processing & Habitat) is the next-generation control
 ### 2.1 Edge Node PEA (Process Equipment Assembly)
 - **Initial Deployment Model**: Each edge node hosts one PEA in the current runtime model.
 - **MTP Compatibility**: Each PEA exposes a Module Type Package (MTP) interface for standardized orchestration.
-- **Connectivity**: Brownfield hardware is integrated through Neuron southbound drivers and mapped onto Zenoh topic families.
+- **Connectivity**: Brownfield hardware is integrated through a pluggable southbound frontend and mapped onto Zenoh topic families. Neuron is the first implemented option, but Siemens Industrial Edge and direct drivers such as Rust7 are also valid architectural targets.
 
 ### 2.2 Centralized POL (Process Orchestration Layer)
 - **Global Visibility**: Aggregates state and telemetry from all edge nodes.

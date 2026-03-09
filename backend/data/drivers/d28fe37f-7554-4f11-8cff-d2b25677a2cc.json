@@ -1,0 +1,257 @@
+{
+  "id": "d28fe37f-7554-4f11-8cff-d2b25677a2cc",
+  "runtime_node_id": "cfaf0bc1-3607-41ea-94ca-c27156c6bbfe",
+  "pea_id": "9af4ab5f-0691-4b04-9150-f3f2b29e329a",
+  "driver_key": "siemens-s7",
+  "display_name": "S7-1200 Main",
+  "state": "Running",
+  "config": {
+    "host": "10.241.12.84",
+    "poll_ms": 1000,
+    "port": 102,
+    "rack": 0,
+    "slot": 1
+  },
+  "tag_groups": [
+    {
+      "id": "inputs",
+      "name": "Digital Inputs",
+      "description": "S7-1200 physical inputs I0.0-I0.7",
+      "tags": [
+        {
+          "id": "di0",
+          "name": "I0_0",
+          "address": "I0.0",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di1",
+          "name": "I0_1",
+          "address": "I0.1",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di2",
+          "name": "I0_2",
+          "address": "I0.2",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di3",
+          "name": "I0_3",
+          "address": "I0.3",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di4",
+          "name": "I0_4",
+          "address": "I0.4",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di5",
+          "name": "I0_5",
+          "address": "I0.5",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di6",
+          "name": "I0_6",
+          "address": "I0.6",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di7",
+          "name": "I0_7",
+          "address": "I0.7",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "id": "outputs",
+      "name": "Digital Outputs",
+      "description": "S7-1200 physical outputs Q0.0-Q0.5",
+      "tags": [
+        {
+          "id": "do0",
+          "name": "Q0_0",
+          "address": "Q0.0",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "do1",
+          "name": "Q0_1",
+          "address": "Q0.1",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "do2",
+          "name": "Q0_2",
+          "address": "Q0.2",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "do3",
+          "name": "Q0_3",
+          "address": "Q0.3",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "do4",
+          "name": "Q0_4",
+          "address": "Q0.4",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "do5",
+          "name": "Q0_5",
+          "address": "Q0.5",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "id": "markers",
+      "name": "Markers",
+      "description": "S7-1200 marker memory M0.0-M0.7, MW0, MW2",
+      "tags": [
+        {
+          "id": "m00",
+          "name": "M0_0",
+          "address": "M0.0",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m01",
+          "name": "M0_1",
+          "address": "M0.1",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m02",
+          "name": "M0_2",
+          "address": "M0.2",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m03",
+          "name": "M0_3",
+          "address": "M0.3",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m04",
+          "name": "M0_4",
+          "address": "M0.4",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m05",
+          "name": "M0_5",
+          "address": "M0.5",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m06",
+          "name": "M0_6",
+          "address": "M0.6",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "m07",
+          "name": "M0_7",
+          "address": "M0.7",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "mw0",
+          "name": "MW0",
+          "address": "M0",
+          "data_type": "Int16",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "mw2",
+          "name": "MW2",
+          "address": "M2",
+          "data_type": "Int16",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        }
+      ]
+    }
+  ],
+  "last_error": null,
+  "created_at": "2026-03-09T13:46:57.515976152Z",
+  "updated_at": "2026-03-09T14:03:30.946642903Z"
+}

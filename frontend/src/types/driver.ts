@@ -63,3 +63,22 @@ export interface DriverTag {
   scan_ms?: number | null
   attributes: Record<string, unknown>
 }
+
+export interface RemoteDriverTag {
+  name: string
+  address: string
+  data_type: DriverTag['data_type']
+  access: DriverTag['access']
+  description?: string | null
+}
+
+export interface RemoteDriverGroup {
+  name: string
+  interval?: number | null
+  tags: RemoteDriverTag[]
+}
+
+export interface DriverBrowseResponse {
+  driver_id: string
+  groups: RemoteDriverGroup[]
+}

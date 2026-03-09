@@ -25,16 +25,81 @@ interface RuntimeNodeEditorProps {
   onTest: (nodeId: string) => Promise<{ ok: boolean; runtime_node_id: string; checks: RuntimeNodeHealthCheck[] }>
 }
 
-function defaultForm(peas: PeaConfig[]): RuntimeNodeFormState {
+interface RuntimeNodeSiteDefaults {
+  architecture: RuntimeNode['architecture']
+  host: string
+  neuron: {
+    username: string
+    config_path: string
+    mode: RuntimeNode['neuron']['mode']
+  }
+}
+
+const SITE_DEFAULTS_KEY = 'runtime-node-site-defaults-v1'
+
+function derivedNodeName(peaId: string, peaCount: number): string {
+  return peaId ? `${peaId}-node` : `arm-node-${peaCount || 1}`
+}
+
+function derivedBaseUrl(host: string): string {
+  return `http://${host || 'localhost'}:7000`
+}
+
+function derivedPasswordRef(nodeName: string): string {
+  const safe = nodeName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `secret://runtime/${safe || 'default'}/neuron`
+}
+
+function loadSiteDefaults(): RuntimeNodeSiteDefaults | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(SITE_DEFAULTS_KEY)
+    return raw ? JSON.parse(raw) as RuntimeNodeSiteDefaults : null
+  } catch {
+    return null
+  }
+}
+
+function saveSiteDefaults(defaults: RuntimeNodeSiteDefaults) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(SITE_DEFAULTS_KEY, JSON.stringify(defaults))
+}
+
+function applySiteDefaults(
+  form: RuntimeNodeFormState,
+  defaults: RuntimeNodeSiteDefaults | null
+): RuntimeNodeFormState {
+  if (!defaults) return form
   return {
-    name: `arm-node-${peas.length || 1}`,
-    architecture: 'Arm64',
-    host: '10.0.20.41',
-    assigned_pea_id: peas[0]?.id ?? '',
+    ...form,
+    architecture: defaults.architecture,
+    host: defaults.host || form.host,
     neuron: {
-      base_url: 'http://10.0.20.41:7000',
+      ...form.neuron,
+      base_url: derivedBaseUrl(defaults.host || form.host),
+      username: defaults.neuron.username || form.neuron.username,
+      config_path: defaults.neuron.config_path || form.neuron.config_path,
+      mode: defaults.neuron.mode,
+    },
+  }
+}
+
+function defaultForm(peas: PeaConfig[]): RuntimeNodeFormState {
+  const assignedPeaId = peas[0]?.id ?? ''
+  const name = derivedNodeName(assignedPeaId, peas.length)
+  const host = '10.0.20.41'
+  return {
+    name,
+    architecture: 'Arm64',
+    host,
+    assigned_pea_id: assignedPeaId,
+    neuron: {
+      base_url: derivedBaseUrl(host),
       username: 'admin',
-      password_ref: 'secret://runtime/default/neuron',
+      password_ref: derivedPasswordRef(name),
       config_path: '/opt/neuron/config',
       mode: 'Hybrid',
     },
@@ -75,17 +140,78 @@ function secretHints(passwordRef: string) {
 }
 
 export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTest }: RuntimeNodeEditorProps) {
-  const [draft, setDraft] = useState<RuntimeNodeFormState>(() => defaultForm(peas))
+  const [draft, setDraft] = useState<RuntimeNodeFormState>(() => applySiteDefaults(defaultForm(peas), loadSiteDefaults()))
   const [testResult, setTestResult] = useState<{ ok: boolean; checks: RuntimeNodeHealthCheck[] } | null>(null)
   const hints = secretHints(draft.neuron.password_ref)
 
   useEffect(() => {
-    setDraft(node ? formFromNode(node) : defaultForm(peas))
+    setDraft(node ? formFromNode(node) : applySiteDefaults(defaultForm(peas), loadSiteDefaults()))
     setTestResult(null)
   }, [node, peas])
 
+  const applyRecommendedDefaults = () => {
+    setDraft((current) => {
+      const nextName = derivedNodeName(current.assigned_pea_id, peas.length)
+      return {
+        ...current,
+        name: nextName,
+        neuron: {
+          ...current.neuron,
+          base_url: derivedBaseUrl(current.host),
+          password_ref: derivedPasswordRef(nextName),
+          config_path: current.neuron.config_path || '/opt/neuron/config',
+        },
+      }
+    })
+  }
+
   const handleFieldChange = (field: 'name' | 'host' | 'assigned_pea_id', value: string) => {
-    setDraft((current) => ({ ...current, [field]: value }))
+    setDraft((current) => {
+      if (field === 'host') {
+        const shouldSyncUrl =
+          !current.neuron.base_url || current.neuron.base_url === derivedBaseUrl(current.host)
+        return {
+          ...current,
+          host: value,
+          neuron: {
+            ...current.neuron,
+            base_url: shouldSyncUrl ? derivedBaseUrl(value) : current.neuron.base_url,
+          },
+        }
+      }
+
+      if (field === 'assigned_pea_id') {
+        const previousSuggestedName = derivedNodeName(current.assigned_pea_id, peas.length)
+        const nextSuggestedName = derivedNodeName(value, peas.length)
+        const shouldSyncName = !current.name || current.name === previousSuggestedName
+        const nextName = shouldSyncName ? nextSuggestedName : current.name
+        const shouldSyncPassword =
+          !current.neuron.password_ref ||
+          current.neuron.password_ref === derivedPasswordRef(current.name) ||
+          current.neuron.password_ref === derivedPasswordRef(previousSuggestedName)
+
+        return {
+          ...current,
+          assigned_pea_id: value,
+          name: nextName,
+          neuron: {
+            ...current.neuron,
+            password_ref: shouldSyncPassword ? derivedPasswordRef(nextName) : current.neuron.password_ref,
+          },
+        }
+      }
+
+      const shouldSyncPassword =
+        !current.neuron.password_ref || current.neuron.password_ref === derivedPasswordRef(current.name)
+      return {
+        ...current,
+        name: value,
+        neuron: {
+          ...current.neuron,
+          password_ref: shouldSyncPassword ? derivedPasswordRef(value) : current.neuron.password_ref,
+        },
+      }
+    })
   }
 
   const handleArchitectureChange = (value: RuntimeNode['architecture']) => {
@@ -140,6 +266,22 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTe
     setTestResult({ ok: result.ok, checks: result.checks })
   }
 
+  const handleSaveSiteDefaults = () => {
+    saveSiteDefaults({
+      architecture: draft.architecture,
+      host: draft.host,
+      neuron: {
+        username: draft.neuron.username,
+        config_path: draft.neuron.config_path,
+        mode: draft.neuron.mode,
+      },
+    })
+  }
+
+  const handleLoadSiteDefaults = () => {
+    setDraft((current) => applySiteDefaults(current, loadSiteDefaults()))
+  }
+
   return (
     <Paper sx={{ p: 2, height: '100%', overflow: 'auto' }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Runtime Node Editor</Typography>
@@ -181,13 +323,13 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTe
           ))}
         </TextField>
         <TextField
-          label="Neuron URL"
+          label="Frontend Endpoint"
           value={draft.neuron.base_url}
           onChange={(event) => handleNeuronChange('base_url', event.target.value)}
           fullWidth
         />
         <TextField
-          label="Neuron User"
+          label="Frontend User"
           value={draft.neuron.username}
           onChange={(event) => handleNeuronChange('username', event.target.value)}
           fullWidth
@@ -207,7 +349,7 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTe
         />
         <TextField
           select
-          label="Neuron Mode"
+          label="Frontend Mode"
           value={draft.neuron.mode}
           onChange={(event) => handleNeuronModeChange(event.target.value as RuntimeNode['neuron']['mode'])}
           fullWidth
@@ -223,6 +365,15 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTe
         <Button variant="contained" onClick={handleSave} disabled={!draft.name || !draft.host || !draft.neuron.base_url}>
           {node ? 'Save Runtime Node' : 'Create Runtime Node'}
         </Button>
+        <Button variant="outlined" onClick={applyRecommendedDefaults}>
+          Apply Recommended Defaults
+        </Button>
+        <Button variant="outlined" onClick={handleLoadSiteDefaults}>
+          Load Site Defaults
+        </Button>
+        <Button variant="outlined" onClick={handleSaveSiteDefaults}>
+          Save Site Defaults
+        </Button>
         {node && (
           <Button variant="outlined" onClick={handleTest}>
             Run Connection Test
@@ -234,9 +385,15 @@ export default function RuntimeNodeEditor({ node, peas, onCreate, onUpdate, onTe
         <Alert severity="info">
           `password_ref` supports plain text, `env:NAME`, or `secret://runtime/path`.
         </Alert>
+        <Alert severity="info">
+          While values still match recommended defaults, host and PEA changes will auto-update the frontend endpoint, node name, and secret path.
+        </Alert>
+        <Alert severity="info">
+          Site defaults persist locally in the browser for architecture, host, frontend user, config path, and mode.
+        </Alert>
         {draft.neuron.mode !== 'Api' && (
           <Alert severity="info">
-            File-export modes require a writable Neuron config path on the ARM node.
+            File-export modes require a writable frontend config path on the ARM node.
           </Alert>
         )}
         {hints && (

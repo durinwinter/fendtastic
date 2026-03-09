@@ -20,13 +20,17 @@ pub struct NeuronPlugin {
 #[derive(Debug, Clone, Deserialize)]
 pub struct NeuronGroup {
     pub name: String,
-    #[serde(rename = "interval")]
-    pub _interval: Option<u64>,
+    pub interval: Option<u64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NeuronTagInfo {
     pub name: String,
+    pub address: Option<String>,
+    #[serde(rename = "type")]
+    pub data_type: Option<i32>,
+    pub attribute: Option<i32>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -41,14 +45,8 @@ struct LoginResponse {
     token: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct NeuronStateEnvelope {
-    states: Vec<NeuronNodeState>,
-}
-
 #[derive(Debug, Clone, Deserialize)]
 pub struct NeuronNodeState {
-    pub node: String,
     pub running: i64,
     pub link: i64,
     pub rtt: Option<i64>,
@@ -83,7 +81,7 @@ impl NeuronHttpClient {
 
     pub async fn test_connection(&self, conn: &NeuronConnection) -> Result<Vec<RuntimeNodeHealthCheck>> {
         let token = self.login(conn).await?;
-        let system: Value = self.request_json(Method::GET, conn, "/api/system", Some(&token), None::<&Value>).await?;
+        let system: Value = self.request_json(Method::GET, conn, "/api/v2/version", Some(&token), None::<&Value>).await?;
         let plugins = self.list_plugins(conn).await?;
 
         Ok(vec![
@@ -115,14 +113,14 @@ impl NeuronHttpClient {
     pub async fn list_plugins(&self, conn: &NeuronConnection) -> Result<Vec<NeuronPlugin>> {
         let token = self.login(conn).await?;
         let plugins: PluginEnvelope = self
-            .request_json(Method::GET, conn, "/api/neuron/plugin", Some(&token), None::<&Value>)
+            .request_json(Method::GET, conn, "/api/v2/plugin", Some(&token), None::<&Value>)
             .await?;
         Ok(plugins.plugins)
     }
 
     pub async fn get_plugin_schema(&self, conn: &NeuronConnection, schema_name: &str) -> Result<Value> {
         let token = self.login(conn).await?;
-        let url = format!("/api/neuron/schema?schema_name={}", encode_query_component(schema_name));
+        let url = format!("/api/v2/schema?schema_name={}", encode_query_component(schema_name));
         self.request_json(Method::GET, conn, &url, Some(&token), None::<&Value>)
             .await
     }
@@ -142,7 +140,7 @@ impl NeuronHttpClient {
             "plugin": plugin.name,
         });
         let create_result = self
-            .request_value(Method::POST, conn, "/api/neuron/node", Some(&token), Some(&create_payload))
+            .request_value(Method::POST, conn, "/api/v2/node", Some(&token), Some(&create_payload))
             .await;
         if let Err(err) = create_result {
             if !is_conflict_error(&err) {
@@ -157,7 +155,7 @@ impl NeuronHttpClient {
         self.request_value(
             Method::POST,
             conn,
-            "/api/neuron/node/setting",
+            "/api/v2/node/setting",
             Some(&token),
             Some(&setting_payload),
         )
@@ -174,18 +172,47 @@ impl NeuronHttpClient {
 
     pub async fn start_driver(&self, conn: &NeuronConnection, driver: &DriverInstance) -> Result<()> {
         self.sync_driver(conn, driver).await?;
-        self.node_ctl(conn, &neuron_node_name(driver), 0).await
+        // Tolerate "node is running" (2007) since sync may have auto-started it
+        match self.node_ctl(conn, &neuron_node_name(driver), 0).await {
+            Ok(()) => Ok(()),
+            Err(err) if err.to_string().contains("2007") => Ok(()),
+            Err(err) => Err(err),
+        }
     }
 
     pub async fn stop_driver(&self, conn: &NeuronConnection, driver: &DriverInstance) -> Result<()> {
-        self.node_ctl(conn, &neuron_node_name(driver), 1).await
+        // Tolerate "node not running" (2008) or "node is stopped" (2009)
+        match self.node_ctl(conn, &neuron_node_name(driver), 1).await {
+            Ok(()) => Ok(()),
+            Err(err) if err.to_string().contains("2008") || err.to_string().contains("2009") => Ok(()),
+            Err(err) => Err(err),
+        }
     }
 
     pub async fn get_node_state(&self, conn: &NeuronConnection, driver: &DriverInstance) -> Result<Option<NeuronNodeState>> {
         let token = self.login(conn).await?;
-        let url = format!("/api/neuron/node/state?node={}", encode_query_component(&neuron_node_name(driver)));
-        let states: NeuronStateEnvelope = self.request_json(Method::GET, conn, &url, Some(&token), None::<&Value>).await?;
-        Ok(states.states.into_iter().find(|state| state.node == neuron_node_name(driver)))
+        let url = format!("/api/v2/node/state?node={}", encode_query_component(&neuron_node_name(driver)));
+        let state: NeuronNodeState = self.request_json(Method::GET, conn, &url, Some(&token), None::<&Value>).await?;
+        Ok(Some(state))
+    }
+
+    pub async fn browse_driver_tags(
+        &self,
+        conn: &NeuronConnection,
+        driver: &DriverInstance,
+    ) -> Result<Vec<(NeuronGroup, Vec<NeuronTagInfo>)>> {
+        let token = self.login(conn).await?;
+        let node_name = neuron_node_name(driver);
+        let groups = self.list_groups_with_token(conn, &token, &node_name).await?;
+        let mut result = Vec::with_capacity(groups.len());
+        for group in groups {
+            let tags = self
+                .list_tags_with_token(conn, &token, &node_name, &group.name)
+                .await
+                .unwrap_or_default();
+            result.push((group, tags));
+        }
+        Ok(result)
     }
 
     pub async fn read_tag(&self, conn: &NeuronConnection, driver: &DriverInstance, group: &str, tag_name: &str) -> Result<NeuronReadTagValue> {
@@ -193,10 +220,8 @@ impl NeuronHttpClient {
         let payload = json!({
             "node": neuron_node_name(driver),
             "group": group,
-            "sync": true,
-            "query": { "name": tag_name },
         });
-        let response: ReadEnvelope = self.request_json(Method::POST, conn, "/api/neuron/read", Some(&token), Some(&payload)).await?;
+        let response: ReadEnvelope = self.request_json(Method::POST, conn, "/api/v2/read", Some(&token), Some(&payload)).await?;
         response
             .tags
             .into_iter()
@@ -212,7 +237,7 @@ impl NeuronHttpClient {
             "tag": tag_name,
             "value": value,
         });
-        self.request_value(Method::POST, conn, "/api/neuron/write", Some(&token), Some(&payload)).await?;
+        self.request_value(Method::POST, conn, "/api/v2/write", Some(&token), Some(&payload)).await?;
         Ok(())
     }
 
@@ -245,9 +270,9 @@ impl NeuronHttpClient {
         });
 
         if groups.iter().any(|existing| existing.name == group.name) {
-            self.request_value(Method::PUT, conn, "/api/neuron/group", Some(token), Some(&payload)).await?;
+            self.request_value(Method::PUT, conn, "/api/v2/group", Some(token), Some(&payload)).await?;
         } else {
-            self.request_value(Method::POST, conn, "/api/neuron/group", Some(token), Some(&payload)).await?;
+            self.request_value(Method::POST, conn, "/api/v2/group", Some(token), Some(&payload)).await?;
         }
         Ok(())
     }
@@ -272,7 +297,7 @@ impl NeuronHttpClient {
                 "group": group.name,
                 "tags": create_tags,
             });
-            self.request_value(Method::POST, conn, "/api/neuron/tags", Some(token), Some(&payload)).await?;
+            self.request_value(Method::POST, conn, "/api/v2/tags", Some(token), Some(&payload)).await?;
         }
 
         if !update_tags.is_empty() {
@@ -281,7 +306,7 @@ impl NeuronHttpClient {
                 "group": group.name,
                 "tags": update_tags,
             });
-            self.request_value(Method::PUT, conn, "/api/neuron/tags", Some(token), Some(&payload)).await?;
+            self.request_value(Method::PUT, conn, "/api/v2/tags", Some(token), Some(&payload)).await?;
         }
 
         Ok(())
@@ -293,19 +318,19 @@ impl NeuronHttpClient {
             "node": node_name,
             "cmd": cmd,
         });
-        self.request_value(Method::POST, conn, "/api/neuron/node/ctl", Some(&token), Some(&payload)).await?;
+        self.request_value(Method::POST, conn, "/api/v2/node/ctl", Some(&token), Some(&payload)).await?;
         Ok(())
     }
 
     async fn list_groups_with_token(&self, conn: &NeuronConnection, token: &str, node_name: &str) -> Result<Vec<NeuronGroup>> {
-        let url = format!("/api/neuron/group?node={}", encode_query_component(node_name));
+        let url = format!("/api/v2/group?node={}", encode_query_component(node_name));
         let groups: GroupEnvelope = self.request_json(Method::GET, conn, &url, Some(token), None::<&Value>).await?;
         Ok(groups.groups)
     }
 
     async fn list_tags_with_token(&self, conn: &NeuronConnection, token: &str, node_name: &str, group_name: &str) -> Result<Vec<NeuronTagInfo>> {
         let url = format!(
-            "/api/neuron/tags?node={}&group={}",
+            "/api/v2/tags?node={}&group={}",
             encode_query_component(node_name),
             encode_query_component(group_name)
         );
@@ -319,9 +344,9 @@ impl NeuronHttpClient {
             .ok_or_else(|| anyhow!("Neuron password is not configured or could not be resolved"))?;
         let payload = json!({
             "name": username,
-            "password": password,
+            "pass": password,
         });
-        let response: LoginResponse = self.request_json(Method::POST, conn, "/api/login", None, Some(&payload)).await?;
+        let response: LoginResponse = self.request_json(Method::POST, conn, "/api/v2/login", None, Some(&payload)).await?;
         Ok(response.token)
     }
 
@@ -378,15 +403,14 @@ fn neuron_tag_payload(tag: &DriverTag) -> Value {
         "attribute": map_tag_access(tag.access.clone()),
         "type": map_data_type(tag.data_type.clone()),
         "precision": tag.attributes.get("precision").and_then(|v| v.as_i64()).unwrap_or(0),
-        "decimal": tag.attributes.get("decimal").cloned().unwrap_or_else(|| json!(0)),
+        "decimal": tag.attributes.get("decimal").and_then(|v| v.as_f64()).unwrap_or(0.0),
         "description": tag.attributes.get("description").and_then(|v| v.as_str()).unwrap_or(""),
-        "value": tag.attributes.get("value").cloned().unwrap_or(Value::Null),
     })
 }
 
 fn map_data_type(data_type: DriverDataType) -> i32 {
     match data_type {
-        DriverDataType::Bool => 12,
+        DriverDataType::Bool => 11, // Neuron BIT type for S7 bit-level addresses
         DriverDataType::Int16 => 3,
         DriverDataType::Uint16 => 4,
         DriverDataType::Int32 => 5,

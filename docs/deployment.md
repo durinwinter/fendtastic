@@ -13,7 +13,7 @@ The default compose stack includes:
 - API server
 - frontend
 
-Neuron runtime nodes are deployed separately and registered through Runtime Studio.
+Southbound integration frontends are deployed separately and registered through Runtime Studio. Neuron is one supported frontend, but the deployment model is intended to accommodate Siemens Industrial Edge and direct driver services such as Rust7 as well.
 
 ## Manual Backend Deployment
 
@@ -56,7 +56,7 @@ WantedBy=multi-user.target
 Runtime nodes should be provisioned separately on the target ARM hosts.
 A minimal deployment should include:
 - network access to Zenoh and the API server as required
-- Neuron installed and reachable
+- at least one supported southbound integration frontend installed and reachable
 - secret material available via env vars or local secret files
 
 ## Production Checklist
@@ -64,5 +64,5 @@ A minimal deployment should include:
 - rotate default database credentials
 - secure Zenoh exposure
 - configure HTTPS for the frontend/API edge
-- provide secret material for runtime-node Neuron credentials
+- provide secret material for runtime-node integration frontend credentials
 - back up `data/` and database state

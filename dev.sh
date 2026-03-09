@@ -16,6 +16,7 @@ PORT_ZENOH_WS=8000
 PORT_API=8080
 PORT_FRONTEND=3000
 PORT_POSTGRES=5432
+PORT_NEURON_API=7000
 BIND_IP=""
 DISPLAY_IP=""
 PIDS=()
@@ -87,7 +88,7 @@ fi
 
 log_step "Cleaning up old instances"
 $COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null || true
-for cname in fendtastic-postgres fendtastic-zenoh-router fendtastic-backend fendtastic-frontend; do
+for cname in fendtastic-postgres fendtastic-zenoh-router fendtastic-neuron fendtastic-backend fendtastic-frontend; do
   if docker ps -a -q --filter "name=${cname}" 2>/dev/null | grep -q .; then
     docker stop "$cname" >/dev/null 2>&1 || true
     docker rm "$cname" >/dev/null 2>&1 || true
@@ -110,6 +111,7 @@ check_port $PORT_ZENOH_WS "Zenoh WebSocket"
 check_port $PORT_API "API Server"
 check_port $PORT_FRONTEND "Frontend"
 check_port $PORT_POSTGRES "PostgreSQL"
+check_port $PORT_NEURON_API "Default Frontend (Neuron)"
 
 log_step "Environment"
 cd "$SCRIPT_DIR"
@@ -130,13 +132,14 @@ fi
 log_ok "Frontend dependencies ready"
 
 log_step "Starting infrastructure"
-export BIND_IP PORT_POSTGRES PORT_ZENOH_TCP PORT_ZENOH_WS
+export BIND_IP PORT_POSTGRES PORT_ZENOH_TCP PORT_ZENOH_WS PORT_NEURON_API
 export POSTGRES_DB="${POSTGRES_DB:-fendtastic}"
 export POSTGRES_USER="${POSTGRES_USER:-fendtastic}"
 export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-fendtastic}"
 $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --wait
 log_ok "PostgreSQL (${BIND_IP}:${PORT_POSTGRES})"
 log_ok "Zenoh router (${BIND_IP}:${PORT_ZENOH_TCP}, ${BIND_IP}:${PORT_ZENOH_WS})"
+log_ok "Default frontend: Neuron (${BIND_IP}:${PORT_NEURON_API})"
 
 log_step "Building backend"
 (cd backend && cargo build | tail -3)
@@ -167,8 +170,9 @@ echo -e "  ${BOLD}Dashboard:${NC}    ${UNDERLINE}${CYAN}http://${DISPLAY_IP}:${P
 echo -e "  ${BOLD}API:${NC}          ${UNDERLINE}${CYAN}http://${DISPLAY_IP}:${PORT_API}${NC}"
 echo -e "  ${BOLD}Health:${NC}       ${UNDERLINE}${CYAN}http://${DISPLAY_IP}:${PORT_API}/health${NC}"
 echo -e "  ${BOLD}Zenoh WS:${NC}     ${UNDERLINE}${CYAN}ws://${DISPLAY_IP}:${PORT_ZENOH_WS}${NC}"
+echo -e "  ${BOLD}Frontend:${NC}     ${UNDERLINE}${CYAN}http://${DISPLAY_IP}:${PORT_NEURON_API}${NC} ${DIM}(Neuron default)${NC}"
 echo ""
-echo -e "  ${DIM}Configure runtime nodes and Neuron driver connections from Runtime Studio.${NC}"
-echo -e "  ${DIM}External Neuron instances are no longer launched by dev.sh.${NC}"
+echo -e "  ${DIM}Default frontend credentials (Neuron): admin / 0000${NC}"
+echo -e "  ${DIM}Configure runtime nodes in Runtime Studio to point at ${DISPLAY_IP}:${PORT_NEURON_API} or another supported frontend such as Siemens Industrial Edge or a direct driver service.${NC}"
 echo ""
 wait

@@ -48,6 +48,16 @@ services:
       - pea-configs:/app/data/pea-configs
       - pol-data:/app/data/pol
 
+  neuron:
+    image: emqx/neuron:latest
+    container_name: fendtastic-neuron
+    ports:
+      - "7000:7000"
+    volumes:
+      - neuron-data:/opt/neuron/persistence
+    environment:
+      - DISABLE_AUTH=${NEURON_DISABLE_AUTH:-0}
+
   frontend:
     build:
       context: ./frontend
@@ -62,3 +72,4 @@ volumes:
   postgres-data:
   pea-configs:
   pol-data:
+  neuron-data:

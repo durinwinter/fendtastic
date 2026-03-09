@@ -5,7 +5,7 @@
 - Rust toolchain
 - Node.js 18+
 - Docker / Docker Compose
-- Optional external runtime nodes running Neuron
+- Optional external runtime nodes running a southbound integration frontend such as Neuron, Siemens Industrial Edge, or a direct driver stack like Rust7
 
 ## Environment File
 
@@ -32,15 +32,17 @@ Runtime nodes are configured through Runtime Studio, not static env vars.
 Per node you define:
 - node name
 - host
-- Neuron base URL
+- integration frontend endpoint or runtime address
 - username
 - `password_ref`
 - config path
 - access mode (`Api`, `FileExport`, `Hybrid`)
 
+The current Runtime Studio implementation is Neuron-first, but the runtime-node model is intentionally frontend-agnostic. Neuron is one pluggable southbound frontend, not the only target.
+
 ## `password_ref` Resolution
 
-The backend currently resolves Neuron credentials in this order:
+The backend currently resolves frontend credentials in this order:
 
 1. plain string
 2. `env:NAME`
@@ -60,11 +62,11 @@ For `secret://runtime/default/neuron`, the backend checks:
 
 That starts Postgres, Zenoh, the API server, and the frontend.
 
-## External Neuron Nodes
+## External Runtime Frontends
 
-Fendtastic no longer starts a local Neuron container by default.
+Fendtastic no longer starts a local southbound frontend container by default.
 
-Use Runtime Studio to register an external node such as an ARM device running Neuron, then:
+Use Runtime Studio to register an external node such as an ARM device running Neuron, Siemens Industrial Edge, or a direct driver service, then:
 - test node connectivity
 - select a driver from the catalog
 - configure Siemens S7 or another driver

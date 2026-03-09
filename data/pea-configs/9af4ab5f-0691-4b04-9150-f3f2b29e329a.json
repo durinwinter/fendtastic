@@ -1,0 +1,172 @@
+{
+  "id": "9af4ab5f-0691-4b04-9150-f3f2b29e329a",
+  "name": "S7-1200 Process Module",
+  "version": "1.0.0",
+  "description": "Siemens S7-1200 at 10.241.12.84 — 8DI / 8DO / 8M / 2MW",
+  "writer": {
+    "name": "Fendtastic",
+    "version": "1.0.0",
+    "vendor": "Focus"
+  },
+  "services": [
+    {
+      "tag": "ProcessControl",
+      "name": "Process Control",
+      "description": "Main process control service for S7-1200",
+      "config_parameters": [],
+      "procedures": [
+        {
+          "id": 1,
+          "name": "Main Process",
+          "is_self_completing": false,
+          "is_default": true,
+          "parameters": [],
+          "process_value_outs": [
+            {
+              "type": "AnaView",
+              "tag": "mw0",
+              "name": "Marker Word 0",
+              "unit": "",
+              "v_scl_min": -32768.0,
+              "v_scl_max": 32767.0,
+              "tag_mapping": null
+            },
+            {
+              "type": "AnaView",
+              "tag": "mw2",
+              "name": "Marker Word 2",
+              "unit": "",
+              "v_scl_min": -32768.0,
+              "v_scl_max": 32767.0,
+              "tag_mapping": null
+            }
+          ],
+          "report_values": []
+        }
+      ]
+    }
+  ],
+  "active_elements": [
+    {
+      "element_type": "BinMon",
+      "tag": "DI0",
+      "name": "Digital Input 0",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI1",
+      "name": "Digital Input 1",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI2",
+      "name": "Digital Input 2",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI3",
+      "name": "Digital Input 3",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI4",
+      "name": "Digital Input 4",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI5",
+      "name": "Digital Input 5",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI6",
+      "name": "Digital Input 6",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinMon",
+      "tag": "DI7",
+      "name": "Digital Input 7",
+      "fbk_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO0",
+      "name": "Digital Output 0",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO1",
+      "name": "Digital Output 1",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO2",
+      "name": "Digital Output 2",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO3",
+      "name": "Digital Output 3",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO4",
+      "name": "Digital Output 4",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    },
+    {
+      "element_type": "BinDrv",
+      "tag": "DO5",
+      "name": "Digital Output 5",
+      "safe_pos": false,
+      "fwd_fbk_tag": null,
+      "rev_fbk_tag": null,
+      "fwd_cmd_tag": null,
+      "rev_cmd_tag": null,
+      "stop_cmd_tag": null
+    }
+  ],
+  "opcua_config": {
+    "endpoint": "opc.tcp://10.241.12.84:4840",
+    "namespace_uri": "urn:siemens:s7-1200",
+    "security_policy": "None"
+  },
+  "created_at": "2026-03-09T13:44:52Z",
+  "updated_at": "2026-03-09T13:46:35.302431479Z"
+}

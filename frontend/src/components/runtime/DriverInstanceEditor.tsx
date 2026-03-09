@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Box,
@@ -21,13 +21,16 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import {
   DriverCatalogEntry,
+  DriverBrowseResponse,
   DriverInstance,
   DriverSchemaPayload,
   DriverStatusSnapshot,
   DriverTag,
+  RemoteDriverGroup,
   TagGroup,
 } from '../../types/driver'
 import { RuntimeNode } from '../../types/runtime'
+import apiService from '../../services/apiService'
 import SchemaForm from './SchemaForm'
 import DriverStatusPanel from './DriverStatusPanel'
 import TagEditorPanel from './TagEditorPanel'
@@ -56,6 +59,19 @@ function defaultConfigFromSchema(schema: DriverSchemaPayload | null, fallbackHos
   return next
 }
 
+function mergeMissingConfigValues(
+  current: Record<string, unknown>,
+  defaults: Record<string, unknown>
+): Record<string, unknown> {
+  const next = { ...current }
+  Object.entries(defaults).forEach(([key, value]) => {
+    if (next[key] === '' || next[key] === null || typeof next[key] === 'undefined') {
+      next[key] = value
+    }
+  })
+  return next
+}
+
 function newGroup(index: number): TagGroup {
   return {
     id: `group-${Date.now()}-${index}`,
@@ -77,6 +93,152 @@ function newTag(index: number): DriverTag {
   }
 }
 
+function starterTagGroups(): TagGroup[] {
+  return [
+    {
+      id: `group-${Date.now()}-0`,
+      name: 'Main Signals',
+      description: 'Starter read/write tags for initial S7 validation',
+      tags: [
+        {
+          id: `tag-${Date.now()}-0`,
+          name: 'Flow Enable',
+          address: 'DB1,X0.0',
+          data_type: 'Bool',
+          access: 'ReadWrite',
+          scan_ms: 250,
+          attributes: {},
+        },
+        {
+          id: `tag-${Date.now()}-1`,
+          name: 'Line Pressure',
+          address: 'DB1,REAL4',
+          data_type: 'Float32',
+          access: 'Read',
+          scan_ms: 250,
+          attributes: {},
+        },
+      ],
+    },
+  ]
+}
+
+function groupId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+}
+
+function importRemoteGroups(groups: RemoteDriverGroup[]): TagGroup[] {
+  return groups.map((group) => ({
+    id: groupId('group'),
+    name: group.name,
+    description: 'Imported from runtime frontend',
+    tags: group.tags.map((tag) => ({
+      id: groupId('tag'),
+      name: tag.name,
+      address: tag.address || '',
+      data_type: tag.data_type,
+      access: tag.access,
+      scan_ms: group.interval ?? 1000,
+      attributes: tag.description ? { description: tag.description } : {},
+    })),
+  }))
+}
+
+function mergeImportedGroups(current: TagGroup[], imported: TagGroup[]): TagGroup[] {
+  const next = current.map((group) => ({
+    ...group,
+    tags: [...group.tags],
+  }))
+
+  imported.forEach((incomingGroup) => {
+    const existingGroup = next.find((group) => group.name === incomingGroup.name)
+    if (!existingGroup) {
+      next.push(incomingGroup)
+      return
+    }
+
+    incomingGroup.tags.forEach((incomingTag) => {
+      const duplicate = existingGroup.tags.some(
+        (tag) => tag.name === incomingTag.name || (tag.address && tag.address === incomingTag.address)
+      )
+      if (!duplicate) {
+        existingGroup.tags.push(incomingTag)
+      }
+    })
+  })
+
+  return next
+}
+
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let index = 0; index < line.length; index += 1) {
+    const ch = line[index]
+    if (ch === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"'
+        index += 1
+      } else {
+        inQuotes = !inQuotes
+      }
+      continue
+    }
+    if (ch === ',' && !inQuotes) {
+      cells.push(current.trim())
+      current = ''
+      continue
+    }
+    current += ch
+  }
+
+  cells.push(current.trim())
+  return cells
+}
+
+function csvToTagGroups(csvText: string): TagGroup[] {
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  if (lines.length === 0) return []
+
+  const headers = parseCsvLine(lines[0]).map((header) => header.toLowerCase())
+  const rows = lines.slice(1).map(parseCsvLine)
+  const groups = new Map<string, TagGroup>()
+
+  rows.forEach((row, index) => {
+    const record = Object.fromEntries(headers.map((header, headerIndex) => [header, row[headerIndex] ?? '']))
+    const groupName = record.group || 'Imported CSV'
+    const dataType = (record.data_type || record.type || 'String') as DriverTag['data_type']
+    const access = (record.access || 'Read') as DriverTag['access']
+    const scanMs = Number(record.scan_ms || record.interval || 1000)
+
+    if (!groups.has(groupName)) {
+      groups.set(groupName, {
+        id: groupId('group'),
+        name: groupName,
+        description: 'Imported from CSV',
+        tags: [],
+      })
+    }
+
+    groups.get(groupName)?.tags.push({
+      id: groupId(`tag-${index}`),
+      name: record.name || `Tag ${index + 1}`,
+      address: record.address || '',
+      data_type: dataType,
+      access,
+      scan_ms: Number.isFinite(scanMs) ? scanMs : 1000,
+      attributes: record.description ? { description: record.description } : {},
+    })
+  })
+
+  return Array.from(groups.values())
+}
+
 export default function DriverInstanceEditor({
   runtimeNode,
   driver,
@@ -96,6 +258,8 @@ export default function DriverInstanceEditor({
   const [writeDrafts, setWriteDrafts] = useState<Record<string, string>>({})
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
+  const [browseResult, setBrowseResult] = useState<DriverBrowseResponse | null>(null)
+  const [importMessage, setImportMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null)
 
   useEffect(() => {
     if (driver) {
@@ -157,6 +321,7 @@ export default function DriverInstanceEditor({
       driver_key: s7.key,
       display_name: `${runtimeNode.name} S7`,
       config: Object.keys(configDraft).length > 0 ? configDraft : defaultConfigFromSchema(schema, runtimeNode.host),
+      tag_groups: tagGroupsDraft,
     })
   }
 
@@ -242,6 +407,100 @@ export default function DriverInstanceEditor({
     if (selectedTagId === tagId) setSelectedTagId(null)
   }
 
+  const applyRuntimeHost = () => {
+    if (!runtimeNode) return
+    setConfigDraft((current) => ({
+      ...current,
+      host: runtimeNode.host,
+    }))
+  }
+
+  const applySchemaDefaults = () => {
+    setConfigDraft((current) =>
+      mergeMissingConfigValues(current, defaultConfigFromSchema(schema, runtimeNode?.host))
+    )
+  }
+
+  const seedStarterTags = () => {
+    const nextGroups = starterTagGroups()
+    setTagGroupsDraft(nextGroups)
+    setSelectedGroupId(nextGroups[0]?.id ?? null)
+    setSelectedTagId(nextGroups[0]?.tags[0]?.id ?? null)
+  }
+
+  const duplicateSelectedTag = () => {
+    if (!selectedGroup || !selectedTag) return
+    const duplicate: DriverTag = {
+      ...selectedTag,
+      id: `tag-${Date.now()}-dup`,
+      name: `${selectedTag.name} Copy`,
+    }
+    setTagGroupsDraft((current) =>
+      current.map((group) =>
+        group.id !== selectedGroup.id
+          ? group
+          : { ...group, tags: [...group.tags, duplicate] }
+      )
+    )
+    setSelectedTagId(duplicate.id)
+  }
+
+  const importGroupsIntoDraft = (groups: TagGroup[], sourceLabel: string) => {
+    if (groups.length === 0) {
+      setImportMessage({ severity: 'info', text: `No tags found in ${sourceLabel}.` })
+      return
+    }
+    setTagGroupsDraft((current) => mergeImportedGroups(current, groups))
+    setSelectedGroupId((current) => current ?? groups[0]?.id ?? null)
+    setSelectedTagId((current) => current ?? groups[0]?.tags[0]?.id ?? null)
+    const importedTagCount = groups.reduce((total, group) => total + group.tags.length, 0)
+    setImportMessage({
+      severity: 'success',
+      text: `Imported ${importedTagCount} tag${importedTagCount === 1 ? '' : 's'} from ${sourceLabel}.`,
+    })
+  }
+
+  const handleBrowseRemote = async () => {
+    if (!driver) return
+    try {
+      const response = await apiService.browseDriverTags(driver.id)
+      setBrowseResult(response)
+      setImportMessage({
+        severity: 'info',
+        text: `Discovered ${response.groups.reduce((total, group) => total + group.tags.length, 0)} remote tag(s).`,
+      })
+    } catch (error) {
+      setImportMessage({
+        severity: 'error',
+        text: error instanceof Error ? error.message : 'Failed to browse remote tags.',
+      })
+    }
+  }
+
+  const handleImportRemoteAll = () => {
+    if (!browseResult) return
+    importGroupsIntoDraft(importRemoteGroups(browseResult.groups), 'runtime frontend browse result')
+  }
+
+  const handleImportRemoteGroup = (group: RemoteDriverGroup) => {
+    importGroupsIntoDraft(importRemoteGroups([group]), group.name)
+  }
+
+  const handleCsvImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const text = await file.text()
+      importGroupsIntoDraft(csvToTagGroups(text), `${file.name} CSV`)
+    } catch (error) {
+      setImportMessage({
+        severity: 'error',
+        text: error instanceof Error ? error.message : 'Failed to import CSV.',
+      })
+    }
+  }
+
   return (
     <Paper sx={{ p: 2, height: '100%', overflow: 'auto' }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Driver Instance</Typography>
@@ -265,7 +524,49 @@ export default function DriverInstanceEditor({
             <Button variant="contained" onClick={handleSave}>Save And Sync</Button>
             <Button variant="contained" onClick={() => onStart(driver.id)}>Start Driver</Button>
             <Button variant="outlined" onClick={() => onStop(driver.id)}>Stop Driver</Button>
+            <Button variant="outlined" onClick={applyRuntimeHost}>
+              Use Runtime Host
+            </Button>
+            <Button variant="outlined" onClick={applySchemaDefaults}>
+              Fill Missing Defaults
+            </Button>
+            <Button variant="outlined" onClick={seedStarterTags}>
+              Seed Starter Tags
+            </Button>
+            <Button variant="outlined" onClick={() => void handleBrowseRemote()}>
+              Browse Remote Tags
+            </Button>
+            <Button variant="outlined" onClick={handleImportRemoteAll} disabled={!browseResult || browseResult.groups.length === 0}>
+              Import All Remote
+            </Button>
+            <Button variant="outlined" component="label">
+              Import CSV
+              <input hidden type="file" accept=".csv,text/csv" onChange={handleCsvImport} />
+            </Button>
           </Box>
+
+          {importMessage && <Alert severity={importMessage.severity}>{importMessage.text}</Alert>}
+
+          {browseResult && browseResult.groups.length > 0 && (
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                Remote Frontend Tags
+              </Typography>
+              <List sx={{ p: 0 }}>
+                {browseResult.groups.map((group) => (
+                  <ListItemButton key={group.name} onClick={() => handleImportRemoteGroup(group)}>
+                    <ListItemText
+                      primary={group.name}
+                      secondary={`${group.tags.length} remote tag${group.tags.length === 1 ? '' : 's'}${group.interval ? ` | ${group.interval} ms` : ''}`}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+              <Typography variant="caption" color="text.secondary">
+                Click a group to import it, or use Import All Remote.
+              </Typography>
+            </Paper>
+          )}
 
           <Divider />
 
@@ -319,9 +620,14 @@ export default function DriverInstanceEditor({
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {selectedGroup ? `${selectedGroup.name} Tags` : 'Tags'}
                   </Typography>
-                  <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={addTag}>
-                    Add Tag
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button size="small" variant="outlined" onClick={duplicateSelectedTag} disabled={!selectedTag}>
+                      Duplicate Tag
+                    </Button>
+                    <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={addTag}>
+                      Add Tag
+                    </Button>
+                  </Box>
                 </Box>
                 {!selectedGroup ? (
                   <Alert severity="info">Create or select a tag group first.</Alert>
@@ -430,9 +736,22 @@ export default function DriverInstanceEditor({
           {schema && (
             <SchemaForm schema={schema.config_schema ?? null} value={configDraft} onChange={setConfigDraft} />
           )}
-          <Button variant="contained" onClick={handleCreate} disabled={!runtimeNode.assigned_pea_id || !s7}>
-            Create Siemens S7 Driver
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button variant="outlined" onClick={applyRuntimeHost}>
+              Use Runtime Host
+            </Button>
+            <Button variant="outlined" onClick={applySchemaDefaults}>
+              Fill Missing Defaults
+            </Button>
+            <Button variant="outlined" component="label">
+              Import CSV
+              <input hidden type="file" accept=".csv,text/csv" onChange={handleCsvImport} />
+            </Button>
+            <Button variant="contained" onClick={handleCreate} disabled={!runtimeNode.assigned_pea_id || !s7}>
+              Create Siemens S7 Driver
+            </Button>
+          </Box>
+          {importMessage && <Alert severity={importMessage.severity}>{importMessage.text}</Alert>}
         </Box>
       )}
     </Paper>

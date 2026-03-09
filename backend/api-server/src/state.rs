@@ -141,6 +141,7 @@ pub struct AppState {
     pub driver_dir: String,
     pub binding_dir: String,
     pub authority_dir: String,
+    pub timeseries_config_path: String,
     pub timeseries: Arc<RwLock<TimeSeriesStore>>,
     /// Running simulator tasks keyed by simulator id
     pub running_sims: Arc<RwLock<HashMap<String, SimulatorTask>>>,

@@ -18,9 +18,9 @@ docs/
 
 ## Backend Focus Areas
 
-- `api-server`: runtime registry, bindings, authority, Neuron integration, status publication
+- `api-server`: runtime registry, bindings, authority, pluggable southbound frontend integration, status publication
 - `shared`: canonical domain models for runtime nodes, drivers, bindings, capabilities, and authority
-- `neuron-connector`: connector boundary and catalog helpers
+- `neuron-connector`: one connector boundary and catalog helper implementation; additional frontends such as Siemens Industrial Edge or direct drivers like Rust7 should fit the same architectural slot
 
 ## Frontend Focus Areas
 
@@ -49,8 +49,15 @@ flatpak-spawn --host npm run build
 ### Add a new driver catalog entry
 
 1. extend the built-in catalog in `backend/api-server/src/driver_catalog.rs`
-2. add driver-specific translation logic in the Neuron client path as needed
+2. add driver-specific translation logic in the selected frontend adapter path as needed
 3. rely on the schema-driven frontend instead of creating a one-off form
+
+### Southbound frontend strategy
+
+- Neuron is currently the first and most complete implemented frontend
+- Siemens Industrial Edge is an expected alternative frontend
+- direct adapters such as Rust7 should remain valid where a full frontend platform is unnecessary
+- docs and code should avoid assuming that all drivers are hosted by Neuron
 
 ### Add a new runtime endpoint
 

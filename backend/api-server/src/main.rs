@@ -105,6 +105,8 @@ async fn main() -> std::io::Result<()> {
         std::env::var("BINDING_DIR").unwrap_or_else(|_| "./data/bindings".to_string());
     let authority_dir =
         std::env::var("AUTHORITY_DIR").unwrap_or_else(|_| "./data/authority".to_string());
+    let timeseries_config_path = std::env::var("TIMESERIES_CONFIG_PATH")
+        .unwrap_or_else(|_| "./data/timeseries/config.json".to_string());
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
         "postgres://murph:murph@localhost:5432/murph".to_string()
     });
@@ -124,10 +126,15 @@ async fn main() -> std::io::Result<()> {
     let alarm_rules = db::load_alarm_rules(&db_client).await.unwrap_or_default();
     let blackout_windows = db::load_blackouts(&db_client).await.unwrap_or_default();
 
+    let timeseries_file_max_points = runtime_store::load_json::<timeseries_handlers::TimeSeriesConfigRecord>(
+        &timeseries_config_path,
+    )
+    .map(|config| config.max_points_per_key);
     let timeseries_max_points = std::env::var("TIMESERIES_MAX_POINTS_PER_KEY")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| *value >= 32)
+        .or(timeseries_file_max_points.filter(|value| *value >= 32))
         .unwrap_or(86400);
     let timeseries = Arc::new(RwLock::new(TimeSeriesStore::new(timeseries_max_points)));
 
@@ -156,6 +163,7 @@ async fn main() -> std::io::Result<()> {
         driver_dir,
         binding_dir,
         authority_dir,
+        timeseries_config_path,
         timeseries: timeseries.clone(),
         running_sims: Arc::new(RwLock::new(HashMap::new())),
     });
@@ -316,7 +324,7 @@ async fn main() -> std::io::Result<()> {
         });
     }
 
-    // Poll Neuron periodically so driver status stays fresh even without user actions.
+    // Poll the currently configured southbound frontend periodically so driver status stays fresh even without user actions.
     {
         let state = app_state.clone();
         tokio::spawn(async move {
@@ -358,7 +366,7 @@ async fn main() -> std::io::Result<()> {
 
                     match client.get_node_state(&runtime_node.neuron, &driver).await {
                         Ok(Some(remote_state)) => {
-                            snapshot.remote_running = Some(remote_state.running == 1);
+                            snapshot.remote_running = Some(remote_state.running == 3);
                             snapshot.remote_link = Some(remote_state.link);
                             snapshot.remote_rtt = remote_state.rtt;
                         }

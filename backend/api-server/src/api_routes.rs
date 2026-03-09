@@ -70,6 +70,7 @@ pub fn configure_api(cfg: &mut web::ServiceConfig) {
         .route("/drivers/{id}", web::get().to(driver_handlers::get_driver))
         .route("/drivers/{id}", web::put().to(driver_handlers::update_driver))
         .route("/drivers/{id}", web::delete().to(driver_handlers::delete_driver))
+        .route("/drivers/{id}/browse", web::get().to(driver_handlers::browse_driver_tags))
         .route("/drivers/{id}/start", web::post().to(driver_handlers::start_driver))
         .route("/drivers/{id}/status", web::get().to(driver_handlers::get_driver_status))
         .route("/drivers/{id}/stop", web::post().to(driver_handlers::stop_driver))
@@ -229,6 +230,21 @@ mod tests {
 
         let request = test::TestRequest::post()
             .uri("/api/v1/bindings/example/read")
+            .to_request();
+        let response = test::call_service(&app, request).await;
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[actix_web::test]
+    async fn driver_browse_route_is_registered() {
+        let app = test::init_service(
+            App::new().service(web::scope("/api/v1").configure(configure_api)),
+        )
+        .await;
+
+        let request = test::TestRequest::get()
+            .uri("/api/v1/drivers/example/browse")
             .to_request();
         let response = test::call_service(&app, request).await;
 

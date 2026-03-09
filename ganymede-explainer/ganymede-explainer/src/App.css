@@ -432,8 +432,19 @@
   border-color: rgba(255, 170, 0, 0.5);
 }
 
-.nav-control-btn:hover:not(:disabled) {
+.hud-nav-controls:hover:not(:disabled) {
   box-shadow: 0 0 25px var(--accent-blue);
   text-shadow: 0 0 10px var(--accent-blue);
   border-color: var(--accent-blue);
+}
+
+.dynamic-logs {
+  position: absolute;
+  top: 100px;
+  left: 50px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent-blue);
+  pointer-events: none;
+  z-index: 90;
 }

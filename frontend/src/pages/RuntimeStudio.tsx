@@ -10,6 +10,7 @@ import RuntimeHealthPanel from '../components/runtime/RuntimeHealthPanel'
 import DriverCatalogPanel from '../components/runtime/DriverCatalogPanel'
 import DriverInstanceEditor from '../components/runtime/DriverInstanceEditor'
 import BindingDesigner from '../components/runtime/BindingDesigner'
+import BindingHistoryPanel from '../components/runtime/BindingHistoryPanel'
 import AuthorityPanel from '../components/runtime/AuthorityPanel'
 import apiService from '../services/apiService'
 import zenohService from '../services/zenohService'
@@ -343,51 +344,54 @@ export default function RuntimeStudio() {
         )
       case 'binding':
         return (
-          <BindingDesigner
-            runtimeNode={selectedNode}
-            driver={selectedDriver}
-            binding={selectedBinding}
-            pea={selectedPea}
-            onCreate={async (payload) => {
-              await apiService.createBinding(payload)
-              await loadAll()
-            }}
-            onUpdate={async (id, payload) => {
-              await apiService.updateBinding(id, payload)
-              await loadAll()
-            }}
-            onValidate={async (id) => {
-              await apiService.validateBinding(id)
-              await loadAll()
-            }}
-            onRead={async (bindingId, canonicalTag) => {
-              const result = await apiService.readBindingTag(bindingId, { canonical_tag: canonicalTag })
-              setBindingValues((current) => ({
-                ...current,
-                [canonicalTag]: result.result.value,
-              }))
-              if (selectedDriver) {
-                setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
-              }
-              return result
-            }}
-            onWrite={async (bindingId, canonicalTag, value) => {
-              const result = await apiService.writeBindingTag(bindingId, {
-                canonical_tag: canonicalTag,
-                value,
-                actor_id: 'operator-console-1',
-                actor_class: 'Operator',
-              })
-              setBindingValues((current) => ({
-                ...current,
-                [canonicalTag]: value,
-              }))
-              if (selectedDriver) {
-                setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
-              }
-              return result
-            }}
-          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.6fr 0.9fr', gap: 2, height: '100%' }}>
+            <BindingDesigner
+              runtimeNode={selectedNode}
+              driver={selectedDriver}
+              binding={selectedBinding}
+              pea={selectedPea}
+              onCreate={async (payload) => {
+                await apiService.createBinding(payload)
+                await loadAll()
+              }}
+              onUpdate={async (id, payload) => {
+                await apiService.updateBinding(id, payload)
+                await loadAll()
+              }}
+              onValidate={async (id) => {
+                await apiService.validateBinding(id)
+                await loadAll()
+              }}
+              onRead={async (bindingId, canonicalTag) => {
+                const result = await apiService.readBindingTag(bindingId, { canonical_tag: canonicalTag })
+                setBindingValues((current) => ({
+                  ...current,
+                  [canonicalTag]: result.result.value,
+                }))
+                if (selectedDriver) {
+                  setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
+                }
+                return result
+              }}
+              onWrite={async (bindingId, canonicalTag, value) => {
+                const result = await apiService.writeBindingTag(bindingId, {
+                  canonical_tag: canonicalTag,
+                  value,
+                  actor_id: 'operator-console-1',
+                  actor_class: 'Operator',
+                })
+                setBindingValues((current) => ({
+                  ...current,
+                  [canonicalTag]: value,
+                }))
+                if (selectedDriver) {
+                  setDriverStatus(await apiService.getDriverStatus(selectedDriver.id))
+                }
+                return result
+              }}
+            />
+            <BindingHistoryPanel binding={selectedBinding} bindingValues={bindingValues} />
+          </Box>
         )
       case 'authority':
         return (
@@ -413,7 +417,7 @@ export default function RuntimeStudio() {
         return (
           <Paper sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>PEA Engineering Compatibility View</Typography>
-            <Typography variant="body2" color="text.secondary">Legacy PEA engineering remains available in the existing editor. Runtime Studio now treats PEA definitions as deployment targets for ARM runtime nodes and Neuron drivers.</Typography>
+            <Typography variant="body2" color="text.secondary">Legacy PEA engineering remains available in the existing editor. Runtime Studio now treats PEA definitions as deployment targets for ARM runtime nodes and pluggable southbound frontend adapters.</Typography>
           </Paper>
         )
     }
@@ -446,7 +450,7 @@ export default function RuntimeStudio() {
       <Box sx={{ flex: 1, p: 2, overflow: 'hidden', background: 'radial-gradient(circle at top left, rgba(155,74,33,0.22), transparent 35%), linear-gradient(180deg, #1f130d 0%, #120c09 100%)' }}>
         <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.08)', mb: 2, pb: 2 }}>
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '0.04em' }}>Runtime Studio</Typography>
-          <Typography variant="body2" color="text.secondary">ARM runtime nodes, Neuron drivers, bindings, and authority control.</Typography>
+          <Typography variant="body2" color="text.secondary">ARM runtime nodes, southbound frontend adapters, bindings, and authority control.</Typography>
         </Box>
         <RuntimeShell
           section={section}

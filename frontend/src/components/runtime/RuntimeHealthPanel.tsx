@@ -27,7 +27,7 @@ export default function RuntimeHealthPanel({ node, status }: RuntimeHealthPanelP
       </Box>
       <Typography variant="body2">{node.name}</Typography>
       <Typography variant="body2" color="text.secondary">Host: {node.host}</Typography>
-      <Typography variant="body2" color="text.secondary">Mode: {node.neuron.mode}</Typography>
+      <Typography variant="body2" color="text.secondary">Frontend Mode: {node.neuron.mode}</Typography>
       <Typography variant="body2" color="text.secondary">
         Checks: {checks.length ? `${okCount}/${checks.length}` : 'pending'}
       </Typography>

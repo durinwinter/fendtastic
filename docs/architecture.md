@@ -2,7 +2,7 @@
 
 ## Active Runtime Model
 
-Fendtastic is now centered on explicit runtime nodes and Neuron-backed drivers.
+Fendtastic is centered on explicit runtime nodes and pluggable southbound integration frontends.
 
 ```text
 Frontend (Runtime Studio)
@@ -14,7 +14,10 @@ API Server (registry, authority, bindings, runtime status)
         |
         +--> Runtime nodes (1 PEA : 1 node)
                 |
-                +--> Neuron driver instances
+                +--> Southbound integration frontend
+                        +--> Neuron
+                        +--> Siemens Industrial Edge
+                        +--> Direct drivers such as Rust7
                 +--> Southbound protocols such as Siemens S7
 ```
 
@@ -35,12 +38,12 @@ API Server (registry, authority, bindings, runtime status)
 ### Runtime Nodes
 - Usually ARM edge computers
 - Run one PEA in the current operating model
-- Connect to Neuron for southbound protocol access
+- Connect to a pluggable southbound integration frontend for protocol access
 
-### Neuron
-- Hosts southbound driver instances
-- Provides driver configuration and tag management
-- First supported vertical slice is Siemens S7 read/write
+### Southbound Integration Frontends
+- Neuron is the first supported frontend and currently the most complete path in the implementation
+- Other intended frontends include Siemens Industrial Edge and direct driver adapters such as Rust7
+- Runtime Studio and the backend should treat these as interchangeable frontend choices behind the same runtime-node and binding model
 
 ## Primary Topic Families
 
@@ -61,8 +64,8 @@ API Server (registry, authority, bindings, runtime status)
 4. REST endpoints provide initial snapshots for non-subscribers
 
 ### Driver Read/Write
-1. Operator configures a runtime node and Neuron driver instance
-2. Canonical PEA tags are bound to Neuron tags
+1. Operator configures a runtime node and a selected southbound integration frontend
+2. Canonical PEA tags are bound to frontend-specific tags
 3. Writes are checked against authority state in the API server
-4. API server executes Neuron read/write calls
+4. API server executes frontend-specific read/write calls
 5. Status and last-operation records are published to Zenoh

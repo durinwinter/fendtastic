@@ -4,7 +4,7 @@ import { Recipe } from '../types/recipe'
 import { ZenohNode, KeyEntry, NodeConfigRequest, ConfigUpdateRequest } from '../types/mesh'
 import { RuntimeNode, RuntimeNodeHealthCheck, RuntimeNodeStatusSnapshot } from '../types/runtime'
 import { AuthorityAuditRecord, AuthorityState } from '../types/authority'
-import { DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
+import { DriverBrowseResponse, DriverCatalogEntry, DriverInstance, DriverSchemaPayload, DriverStatusSnapshot } from '../types/driver'
 import { BindingReadResponse, BindingValidationSummary, BindingWriteResponse, PeaBinding } from '../types/binding'
 import { TimeSeriesConfig, TimeSeriesQueryResponse } from '../types/timeseries'
 
@@ -238,6 +238,11 @@ class ApiService {
     const response = await this.client.get(`/drivers/catalog/${driverKey}/schema`, {
       params: runtimeNodeId ? { runtime_node_id: runtimeNodeId } : {},
     })
+    return response.data
+  }
+
+  async browseDriverTags(id: string): Promise<DriverBrowseResponse> {
+    const response = await this.client.get(`/drivers/${id}/browse`)
     return response.data
   }
 

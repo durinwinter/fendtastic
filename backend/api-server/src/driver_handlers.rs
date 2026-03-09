@@ -18,6 +18,7 @@ pub struct CreateDriverRequest {
     pub driver_key: String,
     pub display_name: String,
     pub config: serde_json::Value,
+    pub tag_groups: Option<Vec<TagGroup>>,
 }
 
 #[derive(serde::Deserialize)]
@@ -46,6 +47,28 @@ pub struct WriteTagRequest {
     pub pea_id: String,
     pub actor_id: String,
     pub actor_class: ActorClass,
+}
+
+#[derive(serde::Serialize)]
+pub struct DriverBrowseResponse {
+    pub driver_id: String,
+    pub groups: Vec<DriverBrowseGroup>,
+}
+
+#[derive(serde::Serialize)]
+pub struct DriverBrowseGroup {
+    pub name: String,
+    pub interval: Option<u64>,
+    pub tags: Vec<DriverBrowseTag>,
+}
+
+#[derive(serde::Serialize)]
+pub struct DriverBrowseTag {
+    pub name: String,
+    pub address: String,
+    pub data_type: DriverDataType,
+    pub access: TagAccess,
+    pub description: Option<String>,
 }
 
 pub async fn get_driver_catalog(state: web::Data<AppState>) -> impl Responder {
@@ -136,7 +159,7 @@ pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>
     let mut snapshot = current_driver_status(&state, &driver).await;
     if let Ok(remote_state) = client.get_node_state(&runtime_node.neuron, &driver).await {
         if let Some(remote_state) = remote_state {
-            snapshot.remote_running = Some(remote_state.running == 1);
+            snapshot.remote_running = Some(remote_state.running == 3);
             snapshot.remote_link = Some(remote_state.link);
             snapshot.remote_rtt = remote_state.rtt;
             snapshot.updated_at = chrono::Utc::now();
@@ -150,6 +173,50 @@ pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>
     }
 
     HttpResponse::Ok().json(snapshot)
+}
+
+pub async fn browse_driver_tags(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    let client = NeuronHttpClient::new();
+    let driver = {
+        let drivers = state.driver_instances.read().await;
+        match drivers.get(id.as_str()) {
+            Some(driver) => driver.clone(),
+            None => {
+                return HttpResponse::NotFound()
+                    .json(serde_json::json!({"error": "Driver not found"}))
+            }
+        }
+    };
+    let runtime_node = match resolve_runtime_node(&state, &driver).await {
+        Ok(runtime_node) => runtime_node,
+        Err(response) => return response,
+    };
+
+    match client.browse_driver_tags(&runtime_node.neuron, &driver).await {
+        Ok(groups) => HttpResponse::Ok().json(DriverBrowseResponse {
+            driver_id: driver.id,
+            groups: groups
+                .into_iter()
+                .map(|(group, tags)| DriverBrowseGroup {
+                    name: group.name,
+                    interval: group.interval,
+                    tags: tags
+                        .into_iter()
+                        .map(|tag| DriverBrowseTag {
+                            name: tag.name,
+                            address: tag.address.unwrap_or_default(),
+                            data_type: remote_data_type(tag.data_type),
+                            access: remote_tag_access(tag.attribute),
+                            description: tag.description,
+                        })
+                        .collect(),
+                })
+                .collect(),
+        }),
+        Err(err) => HttpResponse::BadGateway().json(serde_json::json!({
+            "error": err.to_string()
+        })),
+    }
 }
 
 pub async fn create_driver(state: web::Data<AppState>, body: web::Json<CreateDriverRequest>) -> impl Responder {
@@ -177,7 +244,11 @@ pub async fn create_driver(state: web::Data<AppState>, body: web::Json<CreateDri
         display_name: body.display_name.clone(),
         state: DriverInstanceState::Created,
         config: body.config.clone(),
-        tag_groups: default_tag_groups(&body.driver_key),
+        tag_groups: body
+            .tag_groups
+            .clone()
+            .filter(|groups| !groups.is_empty())
+            .unwrap_or_else(|| default_tag_groups(&body.driver_key)),
         last_error: None,
         created_at: now,
         updated_at: now,
@@ -667,6 +738,28 @@ fn merge_status_defaults(
         snapshot.last_error = last_error.or_else(|| driver.last_error.clone());
     }
     snapshot
+}
+
+fn remote_data_type(data_type: Option<i32>) -> DriverDataType {
+    match data_type.unwrap_or_default() {
+        11 | 12 => DriverDataType::Bool,
+        3 => DriverDataType::Int16,
+        4 => DriverDataType::Uint16,
+        5 => DriverDataType::Int32,
+        6 => DriverDataType::Uint32,
+        9 => DriverDataType::Float32,
+        10 => DriverDataType::Float64,
+        13 => DriverDataType::String,
+        _ => DriverDataType::String,
+    }
+}
+
+fn remote_tag_access(access: Option<i32>) -> TagAccess {
+    match access.unwrap_or(0x01) {
+        0x02 => TagAccess::Write,
+        0x03 => TagAccess::ReadWrite,
+        _ => TagAccess::Read,
+    }
 }
 
 async fn current_driver_status(state: &web::Data<AppState>, driver: &DriverInstance) -> DriverStatusSnapshot {

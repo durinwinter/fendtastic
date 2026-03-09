@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse, Responder};
 use serde::Deserialize;
 
+use crate::runtime_store;
 use crate::state::{AppState, TimeSeriesPoint};
 
 #[derive(Deserialize)]
@@ -17,6 +18,11 @@ pub struct TsQuery {
 
 #[derive(Deserialize)]
 pub struct TsConfigUpdateRequest {
+    pub max_points_per_key: usize,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct TimeSeriesConfigRecord {
     pub max_points_per_key: usize,
 }
 
@@ -65,6 +71,12 @@ pub async fn update_ts_config(
 
     let mut store = state.timeseries.write().await;
     store.set_max_points_per_key(body.max_points_per_key);
+    runtime_store::persist_json_file(
+        &state.timeseries_config_path,
+        &TimeSeriesConfigRecord {
+            max_points_per_key: store.max_points_per_key,
+        },
+    );
     HttpResponse::Ok().json(serde_json::json!({
         "max_points_per_key": store.max_points_per_key,
         "key_count": store.data.len(),

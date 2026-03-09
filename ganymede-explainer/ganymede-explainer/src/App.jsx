@@ -436,6 +436,91 @@ const Starfield = () => {
   );
 };
 
+// --- PHASE 8: TECHNICAL HALLUCINATION COMPONENTS ---
+
+const SpatialHUD = () => {
+  const { mouse } = useThree()
+  return (
+    <group>
+      {/* 3D Brackets in space for parallax depth */}
+      {[[-6, 4, 0], [6, 4, 0], [-6, -4, 0], [6, -4, 0]].map((pos, i) => (
+        <Float key={i} speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+          <mesh position={pos}>
+            <boxGeometry args={[0.5, 0.02, 0.02]} />
+            <meshStandardMaterial emissive="#00f2ff" emissiveIntensity={2} color="#00f2ff" />
+          </mesh>
+          <mesh position={[pos[0], pos[1] + (pos[1] > 0 ? -0.25 : 0.25), pos[2]]}>
+            <boxGeometry args={[0.02, 0.5, 0.02]} />
+            <meshStandardMaterial emissive="#00f2ff" emissiveIntensity={2} color="#00f2ff" />
+          </mesh>
+        </Float>
+      ))}
+    </group>
+  )
+}
+
+const DynamicLogs = () => {
+  const [logs, setLogs] = useState([])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newLog = `LOG_${Math.random().toString(16).slice(2, 10).toUpperCase()} // AUTH_${Math.floor(Math.random() * 9999)}`
+      setLogs(prev => [newLog, ...prev].slice(0, 15))
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="dynamic-logs">
+      {logs.map((log, i) => (
+        <motion.div
+          key={log + i}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 0.4, x: 0 }}
+          style={{ marginBottom: '4px' }}
+        >
+          {log}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+const CustomCursor = () => {
+  const [points, setPoints] = useState([])
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      const newPoint = { x: e.clientX, y: e.clientY, id: Date.now() }
+      setPoints(prev => [newPoint, ...prev].slice(0, 20))
+    }
+    window.addEventListener('mousemove', handleMove)
+    return () => window.removeEventListener('mousemove', handleMove)
+  }, [])
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
+      {points.map((p, i) => (
+        <motion.div
+          key={p.id}
+          initial={{ scale: 1, opacity: 0.8 }}
+          animate={{ scale: 0, opacity: 0 }}
+          style={{
+            position: 'absolute',
+            left: p.x,
+            top: p.y,
+            width: '4px',
+            height: '4px',
+            background: '#00f2ff',
+            borderRadius: '50%',
+            boxShadow: '0 0 10px #00f2ff'
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 // --- DIAGRAMS ---
 
 const ReferenceArchitectureDiagram = () => (
@@ -696,8 +781,9 @@ function App() {
             <GanymedeMoon />
             <TechnicalGrid isNavigating={isNavigating} />
             <DigitalOoze />
-            <SentinelGuide active={activeTab !== 'HOME'} />
+            <SentinelGuide />
             <DataDebris count={200} />
+            <SpatialHUD />
 
             {/* DATA MONOLITHS (Phase 6 Navigation) */}
             {['PEA', 'POL', 'INTENT', 'SECURITY'].map((tab, i) => (
@@ -720,7 +806,7 @@ function App() {
               />
               <Noise opacity={0.1} />
               <ChromaticAberration offset={[0.005, 0.005]} />
-              {isNavigating && <Glitch duration={[0.1, 0.2]} strength={[0.3, 0.5]} ratio={0.5} />}
+              <Glitch duration={[0.2, 0.4]} strength={[0.5, 0.8]} ratio={0.8} />
             </EffectComposer>
           </Suspense>
         </Canvas>
@@ -728,6 +814,8 @@ function App() {
 
       <Starfield />
       <ScanlineOverlay />
+      <DynamicLogs />
+      <CustomCursor />
 
       {/* HUD Tabs */}
       <nav className="hud-tabs">

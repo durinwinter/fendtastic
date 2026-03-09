@@ -23,6 +23,8 @@ chrono.workspace = true
 uuid.workspace = true
 tokio-postgres.workspace = true
 reqwest.workspace = true
+async-trait.workspace = true
+rust7.workspace = true
 
 shared = { path = "../shared" }
 

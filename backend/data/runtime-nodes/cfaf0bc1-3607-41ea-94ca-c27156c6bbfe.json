@@ -1,0 +1,17 @@
+{
+  "id": "cfaf0bc1-3607-41ea-94ca-c27156c6bbfe",
+  "name": "local-neuron",
+  "architecture": "Amd64",
+  "host": "127.0.0.1",
+  "neuron": {
+    "base_url": "http://127.0.0.1:7000",
+    "username": "admin",
+    "password_ref": "0000",
+    "config_path": null,
+    "mode": "Api"
+  },
+  "assigned_pea_id": "9af4ab5f-0691-4b04-9150-f3f2b29e329a",
+  "status": "Degraded",
+  "created_at": "2026-03-08T02:20:04.522757365Z",
+  "updated_at": "2026-03-09T13:46:57.505432816Z"
+}

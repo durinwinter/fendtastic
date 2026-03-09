@@ -4,6 +4,8 @@
 
 This implementation adds full RFC 001 (I3X - Industrial Information Interface eXchange) compatibility to the Fendtastic/Underhill system. The I3x server exposes all PEAs (Process Equipment Assets) and their structure through a standardized REST API that is compatible with the I3X Explorer graphical interface.
 
+The I3X layer is intentionally independent of the southbound integration frontend. Whether a PEA reaches devices through Neuron, Siemens Industrial Edge, or direct drivers such as Rust7 does not change the I3X surface exposed by the API server.
+
 **Key Features:**
 - Full RFC 4.1 Discovery API (Namespaces, ObjectTypes, ObjectInstances, Relationships)
 - RFC 4.2 Values API (Current values, historical data, updates)

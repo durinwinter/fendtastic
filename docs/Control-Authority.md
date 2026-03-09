@@ -31,6 +31,8 @@ The platform is **domain-agnostic**. System functionality is defined entirely by
 
 The platform coordinates automation modules deployed across distributed runtime nodes.
 
+Implementation note: references to Neuron in example diagrams should be read as examples of a southbound integration frontend, not as the only supported option. The same control-authority model is intended to apply when the runtime node uses Siemens Industrial Edge or direct drivers such as Rust7.
+
 Each automation module represents a **Packaged Equipment Assembly (PEA)** containing:
 
 • device integrations
@@ -3018,4 +3020,3 @@ One thing that would elevate this even further (and make it **very publishable**
 That would standardize the vocabulary for capabilities so PEAs from different vendors can compose automatically.
 
 It’s basically the **missing semantic layer for industrial automation**.
-
