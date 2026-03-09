@@ -1,0 +1,8 @@
+{
+  "pea_id": "9af4ab5f-0691-4b04-9150-f3f2b29e329a",
+  "mode": "OperatorExclusive",
+  "owner_actor_id": "test",
+  "owner_actor_class": "Operator",
+  "updated_at": "2026-03-09T18:23:55.037725179Z",
+  "reason": "Testing native S7 write"
+}

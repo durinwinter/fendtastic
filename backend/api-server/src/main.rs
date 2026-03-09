@@ -14,11 +14,14 @@ mod binding_handlers;
 mod binding_validation;
 mod control_plane_status;
 mod db;
+mod driver_backend;
 mod driver_catalog;
 mod driver_handlers;
 mod handlers;
 mod i3x_handlers;
 mod mesh_handlers;
+mod native_s7_backend;
+mod neuron_backend;
 mod neuron_client;
 mod pea_handlers;
 mod pol_handlers;
@@ -54,7 +57,7 @@ async fn ingest_timeseries_sample(
 fn default_driver_status_snapshot(driver: &DriverInstance) -> DriverStatusSnapshot {
     DriverStatusSnapshot {
         driver_id: driver.id.clone(),
-        node_name: neuron_client::neuron_node_name(driver),
+        node_name: driver_handlers::node_name_for_driver(driver),
         state: driver.state.clone(),
         remote_running: None,
         remote_link: None,
@@ -140,6 +143,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState {
         zenoh_session: Arc::new(zenoh_session),
+        native_s7_registry: Arc::new(native_s7_backend::NativeS7Registry::new()),
         pea_configs: Arc::new(RwLock::new(pea_configs)),
         recipes: Arc::new(RwLock::new(recipes)),
         runtime_nodes: Arc::new(RwLock::new(runtime_nodes)),
@@ -324,11 +328,10 @@ async fn main() -> std::io::Result<()> {
         });
     }
 
-    // Poll the currently configured southbound frontend periodically so driver status stays fresh even without user actions.
+    // Poll the currently configured southbound drivers periodically so driver status stays fresh even without user actions.
     {
         let state = app_state.clone();
         tokio::spawn(async move {
-            let client = neuron_client::NeuronHttpClient::new();
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
             loop {
                 interval.tick().await;
@@ -348,8 +351,15 @@ async fn main() -> std::io::Result<()> {
                 };
 
                 for driver in drivers {
-                    let Some(runtime_node) = runtime_nodes.get(&driver.runtime_node_id).cloned() else {
-                        continue;
+                    let runtime_node = runtime_nodes.get(&driver.runtime_node_id).cloned();
+
+                    let backend = match driver_backend::resolve_backend(
+                        &driver,
+                        runtime_node.as_ref(),
+                        &state.native_s7_registry,
+                    ) {
+                        Ok(b) => b,
+                        Err(_) => continue,
                     };
 
                     let mut snapshot = {
@@ -360,14 +370,14 @@ async fn main() -> std::io::Result<()> {
                             .unwrap_or_else(|| default_driver_status_snapshot(&driver))
                     };
 
-                    snapshot.node_name = neuron_client::neuron_node_name(&driver);
+                    snapshot.node_name = driver_handlers::node_name_for_driver(&driver);
                     snapshot.state = driver.state.clone();
                     snapshot.last_error = driver.last_error.clone();
 
-                    match client.get_node_state(&runtime_node.neuron, &driver).await {
+                    match backend.get_driver_state(&driver).await {
                         Ok(Some(remote_state)) => {
-                            snapshot.remote_running = Some(remote_state.running == 3);
-                            snapshot.remote_link = Some(remote_state.link);
+                            snapshot.remote_running = Some(remote_state.running);
+                            snapshot.remote_link = remote_state.link;
                             snapshot.remote_rtt = remote_state.rtt;
                         }
                         Ok(None) => {

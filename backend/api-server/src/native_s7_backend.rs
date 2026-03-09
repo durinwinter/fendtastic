@@ -5,9 +5,8 @@ use serde_json::{json, Value};
 use shared::domain::driver::{DriverDataType, DriverInstance};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::sync::{mpsc, oneshot, RwLock};
-use tracing::{error, info, warn};
+use tracing::info;
 
 use crate::driver_backend::*;
 
@@ -124,6 +123,7 @@ fn parse_db_address(addr: &str) -> Result<S7Address> {
 // Worker thread command protocol
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 enum S7Command {
     Connect {
         host: String,
@@ -265,6 +265,7 @@ impl NativeS7Registry {
         tx
     }
 
+    #[allow(dead_code)]
     async fn remove_worker(&self, driver_id: &str) {
         if let Some(tx) = self.workers.write().await.remove(driver_id) {
             let _ = tx.send(S7Command::Shutdown).await;
@@ -552,9 +553,8 @@ fn encode_value(value: &Value, data_type: &DriverDataType, byte_width: usize) ->
             // For Bool byte-level or unknown, write raw
             let n = value.as_i64().unwrap_or(0);
             let mut buf = vec![0u8; byte_width.max(1)];
-            if !buf.is_empty() {
-                buf[buf.len() - 1] = n as u8;
-            }
+            let last = buf.len() - 1;
+            buf[last] = n as u8;
             Ok(buf)
         }
     }

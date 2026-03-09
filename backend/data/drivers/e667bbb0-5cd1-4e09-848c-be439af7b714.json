@@ -1,0 +1,87 @@
+{
+  "id": "e667bbb0-5cd1-4e09-848c-be439af7b714",
+  "runtime_node_id": "cfaf0bc1-3607-41ea-94ca-c27156c6bbfe",
+  "pea_id": "9af4ab5f-0691-4b04-9150-f3f2b29e329a",
+  "driver_key": "siemens-s7-native",
+  "display_name": "S7-1200 Native Direct",
+  "state": "Running",
+  "config": {
+    "host": "10.241.12.84",
+    "port": 102,
+    "rack": 0,
+    "slot": 1
+  },
+  "tag_groups": [
+    {
+      "id": "inputs",
+      "name": "Digital Inputs",
+      "description": "S7-1200 physical inputs",
+      "tags": [
+        {
+          "id": "di0",
+          "name": "I0_0",
+          "address": "I0.0",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di1",
+          "name": "I0_1",
+          "address": "I0.1",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "di2",
+          "name": "I0_2",
+          "address": "I0.2",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": 250,
+          "attributes": {}
+        }
+      ]
+    },
+    {
+      "id": "markers",
+      "name": "Markers",
+      "description": "Marker registers",
+      "tags": [
+        {
+          "id": "m00",
+          "name": "M0_0",
+          "address": "M0.0",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": 250,
+          "attributes": {}
+        },
+        {
+          "id": "mw0",
+          "name": "MW0",
+          "address": "MW0",
+          "data_type": "Int16",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        },
+        {
+          "id": "mw2",
+          "name": "MW2",
+          "address": "MW2",
+          "data_type": "Int16",
+          "access": "ReadWrite",
+          "scan_ms": 500,
+          "attributes": {}
+        }
+      ]
+    }
+  ],
+  "last_error": null,
+  "created_at": "2026-03-09T18:15:07.210262285Z",
+  "updated_at": "2026-03-09T18:17:13.830465090Z"
+}

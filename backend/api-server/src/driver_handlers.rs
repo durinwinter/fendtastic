@@ -1,7 +1,9 @@
 use crate::authority_service;
+use crate::driver_backend::{self, DriverBackend};
 use crate::neuron_client::NeuronHttpClient;
 use crate::runtime_store;
 use crate::state::AppState;
+use std::sync::Arc;
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::Value;
 use shared::domain::authority::{ActorClass, AuthorityState};
@@ -71,6 +73,18 @@ pub struct DriverBrowseTag {
     pub description: Option<String>,
 }
 
+async fn resolve_backend_for_driver(
+    state: &web::Data<AppState>,
+    driver: &DriverInstance,
+) -> Result<Arc<dyn DriverBackend>, HttpResponse> {
+    let runtime_node = {
+        let nodes = state.runtime_nodes.read().await;
+        nodes.get(&driver.runtime_node_id).cloned()
+    };
+    driver_backend::resolve_backend(driver, runtime_node.as_ref(), &state.native_s7_registry)
+        .map_err(|e| HttpResponse::BadRequest().json(serde_json::json!({"error": e.to_string()})))
+}
+
 pub async fn get_driver_catalog(state: web::Data<AppState>) -> impl Responder {
     let catalog = state.driver_catalog.read().await;
     HttpResponse::Ok().json(catalog.clone())
@@ -92,26 +106,29 @@ pub async fn get_driver_schema(
         }
     };
 
-    if let Some(runtime_node_id) = &query.runtime_node_id {
-        let runtime_node = {
-            let runtime_nodes = state.runtime_nodes.read().await;
-            runtime_nodes.get(runtime_node_id).cloned()
-        };
-        if let Some(runtime_node) = runtime_node {
-            let client = NeuronHttpClient::new();
-            match client.get_driver_schema(&runtime_node.neuron, driver_key.as_str()).await {
-                Ok(config_schema) => {
-                    return HttpResponse::Ok().json(serde_json::json!({
-                        "key": catalog_entry.key,
-                        "name": catalog_entry.name,
-                        "vendor": catalog_entry.vendor,
-                        "direction": catalog_entry.direction,
-                        "config_schema": config_schema,
-                        "tag_schema": catalog_entry.tag_schema,
-                        "source": "neuron",
-                    }))
+    // Only fetch remote schema for Neuron-backed drivers
+    if catalog_entry.vendor == "Neuron" {
+        if let Some(runtime_node_id) = &query.runtime_node_id {
+            let runtime_node = {
+                let runtime_nodes = state.runtime_nodes.read().await;
+                runtime_nodes.get(runtime_node_id).cloned()
+            };
+            if let Some(runtime_node) = runtime_node {
+                let client = NeuronHttpClient::new();
+                match client.get_driver_schema(&runtime_node.neuron, driver_key.as_str()).await {
+                    Ok(config_schema) => {
+                        return HttpResponse::Ok().json(serde_json::json!({
+                            "key": catalog_entry.key,
+                            "name": catalog_entry.name,
+                            "vendor": catalog_entry.vendor,
+                            "direction": catalog_entry.direction,
+                            "config_schema": config_schema,
+                            "tag_schema": catalog_entry.tag_schema,
+                            "source": "neuron",
+                        }))
+                    }
+                    Err(_) => {}
                 }
-                Err(_) => {}
             }
         }
     }
@@ -134,7 +151,6 @@ pub async fn list_drivers(state: web::Data<AppState>) -> impl Responder {
 }
 
 pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let client = NeuronHttpClient::new();
     let driver = {
         let drivers = state.driver_instances.read().await;
         match drivers.get(id.as_str()) {
@@ -145,22 +161,12 @@ pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>
             }
         }
     };
-    let runtime_node = {
-        let runtime_nodes = state.runtime_nodes.read().await;
-        match runtime_nodes.get(&driver.runtime_node_id) {
-            Some(runtime_node) => runtime_node.clone(),
-            None => {
-                return HttpResponse::BadRequest()
-                    .json(serde_json::json!({"error": "Runtime node not found"}))
-            }
-        }
-    };
 
     let mut snapshot = current_driver_status(&state, &driver).await;
-    if let Ok(remote_state) = client.get_node_state(&runtime_node.neuron, &driver).await {
-        if let Some(remote_state) = remote_state {
-            snapshot.remote_running = Some(remote_state.running == 3);
-            snapshot.remote_link = Some(remote_state.link);
+    if let Ok(backend) = resolve_backend_for_driver(&state, &driver).await {
+        if let Ok(Some(remote_state)) = backend.get_driver_state(&driver).await {
+            snapshot.remote_running = Some(remote_state.running);
+            snapshot.remote_link = remote_state.link;
             snapshot.remote_rtt = remote_state.rtt;
             snapshot.updated_at = chrono::Utc::now();
             state
@@ -176,7 +182,6 @@ pub async fn get_driver_status(state: web::Data<AppState>, id: web::Path<String>
 }
 
 pub async fn browse_driver_tags(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let client = NeuronHttpClient::new();
     let driver = {
         let drivers = state.driver_instances.read().await;
         match drivers.get(id.as_str()) {
@@ -187,20 +192,20 @@ pub async fn browse_driver_tags(state: web::Data<AppState>, id: web::Path<String
             }
         }
     };
-    let runtime_node = match resolve_runtime_node(&state, &driver).await {
-        Ok(runtime_node) => runtime_node,
+    let backend = match resolve_backend_for_driver(&state, &driver).await {
+        Ok(b) => b,
         Err(response) => return response,
     };
 
-    match client.browse_driver_tags(&runtime_node.neuron, &driver).await {
+    match backend.browse_tags(&driver).await {
         Ok(groups) => HttpResponse::Ok().json(DriverBrowseResponse {
             driver_id: driver.id,
             groups: groups
                 .into_iter()
-                .map(|(group, tags)| DriverBrowseGroup {
+                .map(|group| DriverBrowseGroup {
                     name: group.name,
                     interval: group.interval,
-                    tags: tags
+                    tags: group.tags
                         .into_iter()
                         .map(|tag| DriverBrowseTag {
                             name: tag.name,
@@ -295,20 +300,11 @@ pub async fn update_driver(state: web::Data<AppState>, id: web::Path<String>, bo
     updated_driver.updated_at = chrono::Utc::now();
 
     if matches!(updated_driver.state, DriverInstanceState::Running) {
-        let runtime_node = {
-            let runtime_nodes = state.runtime_nodes.read().await;
-            match runtime_nodes.get(&updated_driver.runtime_node_id) {
-                Some(runtime_node) => runtime_node.clone(),
-                None => {
-                    return HttpResponse::BadRequest()
-                        .json(serde_json::json!({"error": "Runtime node not found"}))
-                }
+        if let Ok(backend) = resolve_backend_for_driver(&state, &updated_driver).await {
+            if let Err(err) = backend.sync_driver(&updated_driver).await {
+                updated_driver.last_error = Some(err.to_string());
+                updated_driver.state = DriverInstanceState::Error;
             }
-        };
-        let client = NeuronHttpClient::new();
-        if let Err(err) = client.sync_driver(&runtime_node.neuron, &updated_driver).await {
-            updated_driver.last_error = Some(err.to_string());
-            updated_driver.state = DriverInstanceState::Error;
         }
     }
 
@@ -319,7 +315,7 @@ pub async fn update_driver(state: web::Data<AppState>, id: web::Path<String>, bo
         .await
         .insert(updated_driver.id.clone(), updated_driver.clone());
     let mut snapshot = current_driver_status(&state, &updated_driver).await;
-    snapshot.node_name = crate::neuron_client::neuron_node_name(&updated_driver);
+    snapshot.node_name = node_name_for_driver(&updated_driver);
     snapshot.state = updated_driver.state.clone();
     snapshot.last_error = updated_driver.last_error.clone();
     snapshot.updated_at = chrono::Utc::now();
@@ -343,7 +339,6 @@ pub async fn delete_driver(state: web::Data<AppState>, id: web::Path<String>) ->
 }
 
 pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let client = NeuronHttpClient::new();
     let driver_snapshot = {
         let drivers = state.driver_instances.read().await;
         match drivers.get(id.as_str()) {
@@ -354,18 +349,12 @@ pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> 
             }
         }
     };
-    let runtime_node = {
-        let runtime_nodes = state.runtime_nodes.read().await;
-        match runtime_nodes.get(&driver_snapshot.runtime_node_id) {
-            Some(runtime_node) => runtime_node.clone(),
-            None => {
-                return HttpResponse::BadRequest()
-                    .json(serde_json::json!({"error": "Runtime node not found"}))
-            }
-        }
+    let backend = match resolve_backend_for_driver(&state, &driver_snapshot).await {
+        Ok(b) => b,
+        Err(response) => return response,
     };
 
-    match client.start_driver(&runtime_node.neuron, &driver_snapshot).await {
+    match backend.start_driver(&driver_snapshot).await {
         Ok(()) => {
             let mut drivers = state.driver_instances.write().await;
             let Some(driver) = drivers.get_mut(id.as_str()) else {
@@ -416,7 +405,6 @@ pub async fn start_driver(state: web::Data<AppState>, id: web::Path<String>) -> 
 }
 
 pub async fn stop_driver(state: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let client = NeuronHttpClient::new();
     let driver_snapshot = {
         let drivers = state.driver_instances.read().await;
         match drivers.get(id.as_str()) {
@@ -427,18 +415,12 @@ pub async fn stop_driver(state: web::Data<AppState>, id: web::Path<String>) -> i
             }
         }
     };
-    let runtime_node = {
-        let runtime_nodes = state.runtime_nodes.read().await;
-        match runtime_nodes.get(&driver_snapshot.runtime_node_id) {
-            Some(runtime_node) => runtime_node.clone(),
-            None => {
-                return HttpResponse::BadRequest()
-                    .json(serde_json::json!({"error": "Runtime node not found"}))
-            }
-        }
+    let backend = match resolve_backend_for_driver(&state, &driver_snapshot).await {
+        Ok(b) => b,
+        Err(response) => return response,
     };
 
-    match client.stop_driver(&runtime_node.neuron, &driver_snapshot).await {
+    match backend.stop_driver(&driver_snapshot).await {
         Ok(()) => {
             let mut drivers = state.driver_instances.write().await;
             let Some(driver) = drivers.get_mut(id.as_str()) else {
@@ -558,24 +540,12 @@ fn resolve_driver_tag(driver: &DriverInstance, tag_id: &str) -> Option<DriverTag
     })
 }
 
-async fn resolve_runtime_node(
-    state: &web::Data<AppState>,
-    driver: &DriverInstance,
-) -> Result<shared::domain::runtime::RuntimeNode, HttpResponse> {
-    let runtime_nodes = state.runtime_nodes.read().await;
-    runtime_nodes
-        .get(&driver.runtime_node_id)
-        .cloned()
-        .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({"error": "Runtime node not found"})))
-}
-
 pub(crate) async fn execute_driver_read(
     state: &web::Data<AppState>,
     driver: &DriverInstance,
     tag_id: &str,
 ) -> Result<serde_json::Value, HttpResponse> {
-    let client = NeuronHttpClient::new();
-    let runtime_node = resolve_runtime_node(state, driver).await?;
+    let backend = resolve_backend_for_driver(state, driver).await?;
     let Some(tag_context) = resolve_driver_tag(driver, tag_id) else {
         return Err(HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})));
     };
@@ -586,14 +556,14 @@ pub(crate) async fn execute_driver_read(
         })));
     }
 
-    match client
-        .read_tag(&runtime_node.neuron, driver, &tag_context.group_name, &tag_context.tag.name)
+    match backend
+        .read_tag(driver, &tag_context.group_name, &tag_context.tag.name)
         .await
     {
         Ok(read_result) => {
             let message = read_result
                 .error
-                .and_then(|code| if code == 0 { None } else { Some(format!("Neuron error {}", code)) });
+                .and_then(|code| if code == 0 { None } else { Some(format!("Driver error {}", code)) });
             let snapshot = update_last_read(
                 state,
                 driver,
@@ -633,8 +603,7 @@ pub(crate) async fn execute_driver_write(
     tag_id: &str,
     value: Value,
 ) -> Result<DriverWriteResponse, HttpResponse> {
-    let client = NeuronHttpClient::new();
-    let runtime_node = resolve_runtime_node(state, driver).await?;
+    let backend = resolve_backend_for_driver(state, driver).await?;
     let Some(tag_context) = resolve_driver_tag(driver, tag_id) else {
         return Err(HttpResponse::NotFound().json(serde_json::json!({"error": "Tag not found"})));
     };
@@ -645,8 +614,8 @@ pub(crate) async fn execute_driver_write(
         })));
     }
 
-    match client
-        .write_tag(&runtime_node.neuron, driver, &tag_context.group_name, &tag_context.tag.name, value.clone())
+    match backend
+        .write_tag(driver, &tag_context.group_name, &tag_context.tag.name, value.clone())
         .await
     {
         Ok(()) => {
@@ -679,41 +648,72 @@ pub(crate) async fn execute_driver_write(
 }
 
 fn default_tag_groups(driver_key: &str) -> Vec<TagGroup> {
-    if driver_key != "siemens-s7" {
-        return Vec::new();
+    match driver_key {
+        "siemens-s7" => vec![TagGroup {
+            id: "main".to_string(),
+            name: "Main Signals".to_string(),
+            description: Some("Starter read/write tags for initial S7 validation".to_string()),
+            tags: vec![
+                DriverTag {
+                    id: "tag-flow-enable".to_string(),
+                    name: "Flow Enable".to_string(),
+                    address: "DB1,X0.0".to_string(),
+                    data_type: DriverDataType::Bool,
+                    access: TagAccess::ReadWrite,
+                    scan_ms: Some(250),
+                    attributes: serde_json::json!({}),
+                },
+                DriverTag {
+                    id: "tag-line-pressure".to_string(),
+                    name: "Line Pressure".to_string(),
+                    address: "DB1,REAL4".to_string(),
+                    data_type: DriverDataType::Float32,
+                    access: TagAccess::Read,
+                    scan_ms: Some(250),
+                    attributes: serde_json::json!({}),
+                },
+            ],
+        }],
+        "siemens-s7-native" => vec![TagGroup {
+            id: "main".to_string(),
+            name: "Main Signals".to_string(),
+            description: Some("Default I/O tags for native S7 connection".to_string()),
+            tags: vec![
+                DriverTag {
+                    id: "tag-input-0-0".to_string(),
+                    name: "I0_0".to_string(),
+                    address: "I0.0".to_string(),
+                    data_type: DriverDataType::Bool,
+                    access: TagAccess::Read,
+                    scan_ms: Some(250),
+                    attributes: serde_json::json!({}),
+                },
+                DriverTag {
+                    id: "tag-output-0-0".to_string(),
+                    name: "Q0_0".to_string(),
+                    address: "Q0.0".to_string(),
+                    data_type: DriverDataType::Bool,
+                    access: TagAccess::ReadWrite,
+                    scan_ms: Some(250),
+                    attributes: serde_json::json!({}),
+                },
+            ],
+        }],
+        _ => Vec::new(),
     }
+}
 
-    vec![TagGroup {
-        id: "main".to_string(),
-        name: "Main Signals".to_string(),
-        description: Some("Starter read/write tags for initial S7 validation".to_string()),
-        tags: vec![
-            DriverTag {
-                id: "tag-flow-enable".to_string(),
-                name: "Flow Enable".to_string(),
-                address: "DB1,X0.0".to_string(),
-                data_type: DriverDataType::Bool,
-                access: TagAccess::ReadWrite,
-                scan_ms: Some(250),
-                attributes: serde_json::json!({}),
-            },
-            DriverTag {
-                id: "tag-line-pressure".to_string(),
-                name: "Line Pressure".to_string(),
-                address: "DB1,REAL4".to_string(),
-                data_type: DriverDataType::Float32,
-                access: TagAccess::Read,
-                scan_ms: Some(250),
-                attributes: serde_json::json!({}),
-            },
-        ],
-    }]
+pub(crate) fn node_name_for_driver(driver: &DriverInstance) -> String {
+    match driver.driver_key.as_str() {
+        "siemens-s7-native" => format!("native-s7-{}", &driver.id[..8.min(driver.id.len())]),
+        _ => crate::neuron_client::neuron_node_name(driver),
+    }
 }
 
 fn default_status_snapshot(driver: &DriverInstance) -> DriverStatusSnapshot {
     DriverStatusSnapshot {
         driver_id: driver.id.clone(),
-        node_name: crate::neuron_client::neuron_node_name(driver),
+        node_name: node_name_for_driver(driver),
         state: driver.state.clone(),
         remote_running: None,
         remote_link: None,
@@ -859,11 +859,11 @@ mod tests {
     }
 
     #[test]
-    fn default_status_snapshot_uses_neuron_node_name() {
+    fn default_status_snapshot_uses_node_name() {
         let driver = sample_driver();
         let snapshot = default_status_snapshot(&driver);
         assert_eq!(snapshot.driver_id, driver.id);
-        assert_eq!(snapshot.node_name, crate::neuron_client::neuron_node_name(&driver));
+        assert_eq!(snapshot.node_name, node_name_for_driver(&driver));
         assert!(snapshot.remote_running.is_none());
     }
 
