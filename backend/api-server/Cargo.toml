@@ -25,6 +25,9 @@ tokio-postgres.workspace = true
 reqwest.workspace = true
 async-trait.workspace = true
 rust7.workspace = true
+quick-xml.workspace = true
+actix-multipart.workspace = true
+futures-util.workspace = true
 
 shared = { path = "../shared" }
 

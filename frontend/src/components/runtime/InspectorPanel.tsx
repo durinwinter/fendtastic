@@ -14,8 +14,8 @@ export default function InspectorPanel({ title, lines, status = 'ok' }: Inspecto
       sx={{
         p: 2.25,
         height: '100%',
-        backgroundImage: 'var(--ent-shell-surface), var(--ent-linework-soft), var(--ent-linework)',
-        backgroundSize: 'auto, 320px 120px, 320px 120px',
+        backgroundImage: 'var(--ent-canopy-glow), var(--ent-shell-surface), var(--ent-linework-soft), var(--ent-linework)',
+        backgroundSize: 'auto, auto, 320px 120px, 320px 120px',
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

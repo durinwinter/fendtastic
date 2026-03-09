@@ -456,7 +456,7 @@ export default function RuntimeStudio() {
           p: 2,
           overflow: 'hidden',
           background:
-            'radial-gradient(circle at top, rgba(240,195,106,0.08), transparent 24%), linear-gradient(180deg, #0d0906, #120c09 52%, #090604 100%)',
+            'radial-gradient(circle at 10% 2%, rgba(110,139,74,0.18), transparent 16%), radial-gradient(circle at 88% 6%, rgba(110,139,74,0.1), transparent 14%), radial-gradient(circle at top, rgba(240,195,106,0.08), transparent 24%), linear-gradient(180deg, #0d0906, #120c09 52%, #090604 100%)',
         }}
       >
         <Box
@@ -466,8 +466,8 @@ export default function RuntimeStudio() {
             borderRadius: '28px',
             border: '1px solid rgba(240,195,106,0.16)',
             backgroundImage:
-              'linear-gradient(180deg, rgba(39,26,18,0.96), rgba(13,9,7,0.98)), var(--ent-linework-soft), var(--ent-linework)',
-            backgroundSize: 'auto, 320px 120px, 320px 120px',
+              'radial-gradient(circle at 10% 14%, rgba(110,139,74,0.18), transparent 18%), radial-gradient(circle at 88% 12%, rgba(110,139,74,0.1), transparent 14%), linear-gradient(180deg, rgba(39,26,18,0.96), rgba(13,9,7,0.98)), var(--ent-linework-soft), var(--ent-linework)',
+            backgroundSize: 'auto, auto, auto, 320px 120px, 320px 120px',
             boxShadow: '0 18px 32px rgba(0,0,0,0.24)',
           }}
         >

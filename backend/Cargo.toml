@@ -58,6 +58,13 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 # S7 native protocol
 rust7 = "0.1"
 
+# XML parsing
+quick-xml = "0.37"
+
+# Multipart file upload
+actix-multipart = "0.7"
+futures-util = "0.3"
+
 [profile.release]
 opt-level = 3
 lto = true

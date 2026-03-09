@@ -829,6 +829,96 @@ async fn publish_driver_status(
     let _ = state.zenoh_session.put(&topic, payload).await;
 }
 
+pub async fn import_driver_tags(
+    state: web::Data<AppState>,
+    id: web::Path<String>,
+    mut payload: actix_multipart::Multipart,
+) -> impl Responder {
+    use futures_util::{StreamExt, TryStreamExt};
+
+    // Read the uploaded file
+    let mut file_bytes: Vec<u8> = Vec::new();
+    let mut filename = String::from("unknown.csv");
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        if let Some(disposition) = field.content_disposition() {
+            if let Some(name) = disposition.get_filename() {
+                filename = name.to_string();
+            }
+        }
+        while let Some(Ok(chunk)) = field.next().await {
+            file_bytes.extend_from_slice(&chunk);
+        }
+        break; // only process first file
+    }
+
+    if file_bytes.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({"error": "No file uploaded"}));
+    }
+
+    // Parse the TIA file
+    let tia_tags = match crate::tia_importer::parse_tia_file(&filename, &file_bytes) {
+        Ok(tags) => tags,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": format!("Failed to parse TIA file: {}", e)
+            }));
+        }
+    };
+
+    let imported_groups = crate::tia_importer::to_tag_groups(tia_tags);
+    let imported_count: usize = imported_groups.iter().map(|g| g.tags.len()).sum();
+
+    // Merge with existing driver
+    let mut drivers = state.driver_instances.write().await;
+    let driver = match drivers.get_mut(id.as_str()) {
+        Some(d) => d,
+        None => {
+            return HttpResponse::NotFound().json(serde_json::json!({"error": "Driver not found"}));
+        }
+    };
+
+    // Collect existing tag IDs to avoid duplicates
+    let existing_ids: std::collections::HashSet<String> = driver
+        .tag_groups
+        .iter()
+        .flat_map(|g| g.tags.iter().map(|t| t.id.clone()))
+        .collect();
+
+    for imported_group in imported_groups {
+        // Find existing group with same name, or create new
+        let existing_group = driver.tag_groups.iter_mut().find(|g| g.name == imported_group.name);
+
+        let new_tags: Vec<DriverTag> = imported_group
+            .tags
+            .into_iter()
+            .filter(|t| !existing_ids.contains(&t.id))
+            .collect();
+
+        if let Some(group) = existing_group {
+            group.tags.extend(new_tags);
+        } else if !new_tags.is_empty() {
+            driver.tag_groups.push(TagGroup {
+                id: imported_group.id,
+                name: imported_group.name,
+                description: imported_group.description,
+                tags: new_tags,
+            });
+        }
+    }
+
+    driver.updated_at = chrono::Utc::now();
+
+    let updated_driver = driver.clone();
+    runtime_store::persist_json(&state.driver_dir, &updated_driver.id, &updated_driver);
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "driver": updated_driver,
+        "imported_tags": imported_count,
+        "filename": filename,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

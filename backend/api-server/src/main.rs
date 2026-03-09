@@ -31,6 +31,7 @@ mod runtime_store;
 mod scenario_handlers;
 mod simulator;
 mod state;
+mod tia_importer;
 mod timeseries_handlers;
 mod websocket;
 

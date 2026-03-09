@@ -39,8 +39,8 @@ export default function RuntimeShell({
           borderRadius: '30px',
           border: '1px solid rgba(240,195,106,0.12)',
           backgroundImage:
-            'radial-gradient(circle at 50% 120%, rgba(240,195,106,0.1), transparent 26%), linear-gradient(180deg, rgba(24,16,11,0.98), rgba(10,7,5,0.98)), var(--ent-linework-soft), var(--ent-linework)',
-          backgroundSize: 'auto, auto, 320px 120px, 320px 120px',
+            'radial-gradient(circle at 14% 8%, rgba(110,139,74,0.14), transparent 16%), radial-gradient(circle at 82% 10%, rgba(110,139,74,0.1), transparent 14%), radial-gradient(circle at 50% 120%, rgba(240,195,106,0.1), transparent 26%), linear-gradient(180deg, rgba(24,16,11,0.98), rgba(10,7,5,0.98)), var(--ent-linework-soft), var(--ent-linework)',
+          backgroundSize: 'auto, auto, auto, auto, 320px 120px, 320px 120px',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 28px rgba(0,0,0,0.22)',
           p: 2,
         }}

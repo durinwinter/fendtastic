@@ -8,9 +8,9 @@ const entLineworkSoft =
 
 const carvedSurface = (top: string, bottom: string) => ({
   backgroundColor: bottom,
-  backgroundImage: `linear-gradient(180deg, ${top}, ${bottom}), ${entLineworkSoft}, ${entLinework}`,
-  backgroundSize: 'auto, 320px 120px, 320px 120px',
-  backgroundPosition: '0 0, 0 0, 0 0',
+  backgroundImage: `radial-gradient(circle at 12% 10%, rgba(110,139,74,0.08), transparent 18%), radial-gradient(circle at 84% 8%, rgba(110,139,74,0.06), transparent 16%), linear-gradient(180deg, ${top}, ${bottom}), ${entLineworkSoft}, ${entLinework}`,
+  backgroundSize: 'auto, auto, auto, 320px 120px, 320px 120px',
+  backgroundPosition: '0 0, 0 0, 0 0, 0 0, 0 0',
 })
 
 export const murphTheme = createTheme({
@@ -104,6 +104,8 @@ export const murphTheme = createTheme({
             'linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96))',
           '--ent-well-surface':
             'linear-gradient(180deg, rgba(18,12,9,0.72), rgba(39,26,17,0.78))',
+          '--ent-canopy-glow':
+            'radial-gradient(circle at 12% 10%, rgba(110,139,74,0.08), transparent 18%), radial-gradient(circle at 84% 8%, rgba(110,139,74,0.06), transparent 16%)',
         },
         'html, body, #root': {
           minHeight: '100%',
@@ -113,7 +115,7 @@ export const murphTheme = createTheme({
           minHeight: '100vh',
           backgroundColor: '#090604',
           backgroundImage:
-            'radial-gradient(circle at top, rgba(240,195,106,0.09), transparent 30%), linear-gradient(180deg, #090604, #130d09 40%, #070504 100%)',
+            'radial-gradient(circle at 12% 0%, rgba(110,139,74,0.16), transparent 16%), radial-gradient(circle at 88% 4%, rgba(110,139,74,0.1), transparent 14%), radial-gradient(circle at top, rgba(240,195,106,0.09), transparent 30%), linear-gradient(180deg, #090604, #130d09 40%, #070504 100%)',
           color: '#f5e9cf',
           scrollbarColor: '#b9874b #130d09',
           '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
@@ -176,9 +178,9 @@ export const murphTheme = createTheme({
           border: '1px solid rgba(240,195,106,0.18)',
           boxShadow:
             'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -12px 18px rgba(45,29,18,0.34), 0 10px 20px rgba(0,0,0,0.18)',
-          backgroundImage: `linear-gradient(180deg, rgba(131,89,54,0.92), rgba(72,46,27,0.98)), ${entLineworkSoft}, ${entLinework}`,
-          backgroundSize: 'auto, 240px 90px, 240px 90px',
-          backgroundPosition: '0 0, 0 0, 0 0',
+          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), linear-gradient(180deg, rgba(131,89,54,0.92), rgba(72,46,27,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundSize: 'auto, auto, 240px 90px, 240px 90px',
+          backgroundPosition: '0 0, 0 0, 0 0, 0 0',
           justifyContent: 'flex-start',
           '&::after': {
             content: '""',
@@ -200,11 +202,11 @@ export const murphTheme = createTheme({
           },
         },
         outlined: {
-          backgroundImage: `linear-gradient(180deg, rgba(51,36,25,0.98), rgba(26,18,13,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundImage: `radial-gradient(circle at 14% 12%, rgba(110,139,74,0.1), transparent 18%), linear-gradient(180deg, rgba(51,36,25,0.98), rgba(26,18,13,0.98)), ${entLineworkSoft}, ${entLinework}`,
           borderColor: 'rgba(110,139,74,0.2)',
         },
         containedPrimary: {
-          backgroundImage: `linear-gradient(180deg, rgba(127,86,51,0.96), rgba(81,52,31,0.98)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundImage: `radial-gradient(circle at 12% 12%, rgba(110,139,74,0.12), transparent 20%), linear-gradient(180deg, rgba(127,86,51,0.96), rgba(81,52,31,0.98)), ${entLineworkSoft}, ${entLinework}`,
         },
       },
     },
@@ -216,8 +218,8 @@ export const murphTheme = createTheme({
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
           border: '1px solid rgba(240,195,106,0.16)',
-          backgroundImage: `linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96)), ${entLineworkSoft}, ${entLinework}`,
-          backgroundSize: 'auto, 240px 90px, 240px 90px',
+          backgroundImage: `radial-gradient(circle at 14% 12%, rgba(110,139,74,0.1), transparent 18%), linear-gradient(180deg, rgba(49,33,22,0.92), rgba(18,12,9,0.96)), ${entLineworkSoft}, ${entLinework}`,
+          backgroundSize: 'auto, auto, 240px 90px, 240px 90px',
           color: '#f5e9cf',
         },
       },

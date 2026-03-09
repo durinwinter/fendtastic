@@ -23,8 +23,8 @@ export default function SectionNav({ section, onChange }: SectionNavProps) {
         p: 2,
         borderRadius: '28px',
         border: '1px solid rgba(240,195,106,0.14)',
-        backgroundImage: 'var(--ent-panel-surface), var(--ent-linework-soft), var(--ent-linework)',
-        backgroundSize: 'auto, 320px 120px, 320px 120px',
+        backgroundImage: 'var(--ent-canopy-glow), var(--ent-panel-surface), var(--ent-linework-soft), var(--ent-linework)',
+        backgroundSize: 'auto, auto, 320px 120px, 320px 120px',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -24px 32px rgba(0,0,0,0.18), 0 18px 28px rgba(0,0,0,0.22)',
       }}
     >
@@ -48,7 +48,7 @@ export default function SectionNav({ section, onChange }: SectionNavProps) {
               justifyContent: 'flex-start',
               width: '100%',
               ...(section === item.id
-                ? { boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(240,195,106,0.14), 0 10px 24px rgba(0,0,0,0.26), 0 0 20px rgba(240,195,106,0.08)' }
+                ? { boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(240,195,106,0.14), 0 10px 24px rgba(0,0,0,0.26), 0 0 20px rgba(240,195,106,0.08), 0 0 24px rgba(110,139,74,0.07)' }
                 : {}),
             }}
           >
