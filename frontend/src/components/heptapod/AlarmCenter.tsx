@@ -44,7 +44,7 @@ const AlarmCenter: React.FC = () => {
   const [newRule, setNewRule] = useState({
     name: '',
     severity: 'warning',
-    source_pattern: 'murph/habitat/nodes/',
+    source_pattern: 'entmoot/habitat/nodes/',
     event_pattern: '',
     enabled: true,
   })
@@ -89,18 +89,13 @@ const AlarmCenter: React.FC = () => {
       void loadBlackouts()
     }, 4000)
 
-    const unsubscribeMurph = zenohService.subscribe('murph/habitat/nodes/+/pea/+/swimlane/alarm', () => {
-      void loadAlarms()
-    })
-    // Legacy compatibility for older simulator/data publishers.
-    const unsubscribeLegacy = zenohService.subscribe('fendtastic/pea/+/swimlane/alarm', () => {
+    const unsubscribeMurph = zenohService.subscribe('entmoot/habitat/nodes/+/pea/+/swimlane/alarm', () => {
       void loadAlarms()
     })
 
     return () => {
       clearInterval(refresh)
       unsubscribeMurph()
-      unsubscribeLegacy()
     }
   }, [])
 
@@ -132,7 +127,7 @@ const AlarmCenter: React.FC = () => {
     setNewRule({
       name: '',
       severity: 'warning',
-      source_pattern: 'murph/habitat/nodes/',
+      source_pattern: 'entmoot/habitat/nodes/',
       event_pattern: '',
       enabled: true,
     })

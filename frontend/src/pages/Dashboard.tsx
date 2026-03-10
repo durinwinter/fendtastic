@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Paper,
   Typography,
-  CircularProgress,
-  Button,
   Chip,
-  Fade,
   FormControl,
   InputLabel,
   Select,
@@ -15,77 +12,85 @@ import {
   ListItem,
   ListItemText,
 } from '@mui/material'
-import { PlayArrow, Stop, Agriculture } from '@mui/icons-material'
+import { Agriculture } from '@mui/icons-material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
 import TimeSeriesChart from '../components/TimeSeriesChart'
 import Header from '../components/Header'
-import apiService from '../services/apiService'
 import SpotValues from '../components/SpotValues'
 import Coobie from '../components/Coobie'
+import zenohService from '../services/zenohService'
+
+type LivePea = {
+  id: string
+  nodeId: string
+  name: string
+  deployed: boolean
+  running: boolean
+  serviceCount: number
+  lastSeen: number
+}
+
+function parsePeaKey(key: string): { nodeId: string; peaId: string } | null {
+  const parts = key.split('/')
+  const nodeIndex = parts.indexOf('nodes')
+  const peaIndex = parts.indexOf('pea')
+  if (nodeIndex < 0 || peaIndex < 0 || nodeIndex >= parts.length - 1 || peaIndex >= parts.length - 1) {
+    return null
+  }
+  return {
+    nodeId: parts[nodeIndex + 1],
+    peaId: parts[peaIndex + 1],
+  }
+}
 
 const Dashboard: React.FC = () => {
-  const [simRunning, setSimRunning] = useState(false)
-  const [simLoading, setSimLoading] = useState(false)
-  const [selectedScenarioId, setSelectedScenarioId] = useState('baseline_cycle')
-  const [simScenarios, setSimScenarios] = useState<Array<{
-    id: string
-    name: string
-    description: string
-    duration_s: number
-    tick_ms: number
-    time_ratio: number
-  }>>([])
-
-  const checkSimStatus = useCallback(async () => {
-    try {
-      const status = await apiService.getSimulatorStatus()
-      setSimRunning(status.running)
-      if (status.running && status.scenario_id) {
-        setSelectedScenarioId(status.scenario_id)
-      }
-    } catch { /* API not available */ }
-  }, [])
-
-  useEffect(() => { checkSimStatus() }, [checkSimStatus])
+  const [peas, setPeas] = useState<Record<string, LivePea>>({})
+  const [selectedPeaId, setSelectedPeaId] = useState('')
+  const [nowMs, setNowMs] = useState(Date.now())
+  const [zenohConnected, setZenohConnected] = useState(zenohService.isConnected)
 
   useEffect(() => {
-    const loadScenarios = async () => {
-      try {
-        const res = await apiService.getSimulatorScenarios()
-        setSimScenarios(res.scenarios || [])
-        if (res.scenarios?.length && !res.scenarios.some(s => s.id === selectedScenarioId)) {
-          setSelectedScenarioId(res.scenarios[0].id)
+    const unsubConnection = zenohService.onConnectionChange(setZenohConnected)
+
+    const upsertPea = (payload: any) => {
+      const key = typeof payload?._key === 'string' ? payload._key : ''
+      const ids = parsePeaKey(key)
+      if (!ids) return
+      setPeas((current) => {
+        const next = {
+          ...current,
+          [ids.peaId]: {
+            id: ids.peaId,
+            nodeId: ids.nodeId,
+            name: typeof payload?.name === 'string' ? payload.name : current[ids.peaId]?.name || ids.peaId,
+            deployed: payload?.deployed === true || current[ids.peaId]?.deployed === true,
+            running: payload?.running === true,
+            serviceCount: Array.isArray(payload?.services) ? payload.services.length : current[ids.peaId]?.serviceCount || 0,
+            lastSeen: Date.now(),
+          },
         }
-      } catch {
-        // API may be unavailable in some local setups.
-      }
+        if (!selectedPeaId) {
+          setSelectedPeaId(ids.peaId)
+        }
+        return next
+      })
     }
-    loadScenarios()
-  }, [selectedScenarioId])
 
-  useEffect(() => {
-    const interval = setInterval(checkSimStatus, 3000)
-    return () => clearInterval(interval)
-  }, [checkSimStatus])
+    const unsubStatus = zenohService.subscribe('entmoot/habitat/nodes/+/pea/+/status', upsertPea)
+    const unsubConfig = zenohService.subscribe('entmoot/habitat/nodes/+/pea/+/config', upsertPea)
+    const clock = setInterval(() => setNowMs(Date.now()), 5000)
 
-  const toggleSimulator = async () => {
-    setSimLoading(true)
-    try {
-      if (simRunning) {
-        await apiService.stopSimulator()
-        setSimRunning(false)
-      } else {
-        await apiService.startSimulator(selectedScenarioId)
-        setSimRunning(true)
-      }
-    } catch (e: any) {
-      console.error('Simulator toggle failed:', e)
-    } finally {
-      setSimLoading(false)
+    return () => {
+      unsubConnection()
+      unsubStatus()
+      unsubConfig()
+      clearInterval(clock)
     }
-  }
+  }, [selectedPeaId])
 
-  const selectedScenario = simScenarios.find((scenario) => scenario.id === selectedScenarioId) ?? null
+  const peaList = useMemo(() => Object.values(peas).sort((a, b) => b.lastSeen - a.lastSeen), [peas])
+  const activePea = selectedPeaId ? peas[selectedPeaId] : peaList[0]
+  const activeOnline = activePea ? nowMs - activePea.lastSeen < 15_000 : false
 
   return (
     <Box sx={{
@@ -99,7 +104,6 @@ const Dashboard: React.FC = () => {
     }}>
       <Header />
 
-      {/* Control Bar */}
       <Box sx={{
         display: 'flex',
         alignItems: 'center',
@@ -111,65 +115,54 @@ const Dashboard: React.FC = () => {
       }}>
         <Agriculture sx={{ color: 'success.main', fontSize: 24 }} />
         <Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: '0.05em' }}>
-          FENdt Vario 1001
+          {activePea?.name || 'No live PEA context'}
         </Typography>
         <Chip
           size="small"
-          label={simRunning ? 'ONLINE' : 'OFFLINE'}
+          label={activeOnline ? 'ONLINE' : 'AWAITING BUS'}
           sx={{
             height: 20,
             fontSize: '0.65rem',
             fontWeight: 800,
             borderRadius: 1,
-            backgroundColor: simRunning ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-            color: simRunning ? 'success.main' : 'text.secondary',
-            border: `1px solid ${simRunning ? '#2ECC71' : '#444'}`
+            backgroundColor: activeOnline ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+            color: activeOnline ? 'success.main' : 'text.secondary',
+            border: `1px solid ${activeOnline ? '#2ECC71' : '#444'}`
           }}
         />
-        <FormControl size="small" sx={{ minWidth: 240 }}>
-          <InputLabel id="scenario-select-label">Scenario</InputLabel>
+        <Chip
+          size="small"
+          label={zenohConnected ? 'ZENOH BUS CONNECTED' : 'ZENOH BUS OFFLINE'}
+          sx={{
+            height: 20,
+            fontSize: '0.65rem',
+            fontWeight: 800,
+            borderRadius: 1,
+            backgroundColor: zenohConnected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+            color: zenohConnected ? 'success.main' : 'text.secondary',
+            border: `1px solid ${zenohConnected ? '#2ECC71' : '#444'}`
+          }}
+        />
+        <Chip size="small" label={`${peaList.length} PEAs discovered`} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }} />
+        <FormControl size="small" sx={{ minWidth: 240, ml: 'auto' }}>
+          <InputLabel id="pea-select-label">Active PEA</InputLabel>
           <Select
-            labelId="scenario-select-label"
-            value={selectedScenarioId}
-            label="Scenario"
-            onChange={(e) => setSelectedScenarioId(String(e.target.value))}
-            disabled={simRunning || simLoading}
+            labelId="pea-select-label"
+            value={activePea?.id || ''}
+            label="Active PEA"
+            onChange={(e) => setSelectedPeaId(String(e.target.value))}
           >
-            {(simScenarios.length > 0 ? simScenarios : [{ id: 'baseline_cycle', name: 'Baseline Work Cycle' }]).map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.name}
+            {peaList.map((pea) => (
+              <MenuItem key={pea.id} value={pea.id}>
+                {pea.name}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-        <Button
-          size="small"
-          variant="contained"
-          color={simRunning ? 'error' : 'success'}
-          startIcon={simLoading ? <CircularProgress size={14} color="inherit" /> : simRunning ? <Stop /> : <PlayArrow />}
-          onClick={toggleSimulator}
-          disabled={simLoading}
-          sx={{ ml: 'auto', px: 2, py: 0.5, borderRadius: 1 }}
-        >
-          {simRunning ? 'STOP SIM' : 'START SIM'}
-        </Button>
       </Box>
 
-      <Box sx={{
-        flex: 1,
-        display: 'flex',
-        overflow: 'hidden'
-      }}>
-        {/* Main Content (Left) */}
-        <Box sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          p: 2,
-          gap: 2,
-          overflow: 'hidden'
-        }}>
-          {/* System Timeline */}
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, gap: 2, overflow: 'hidden' }}>
           <Paper sx={{ flex: '0 0 auto', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box sx={{ px: 2, py: 0.5, borderBottom: '1px solid #2A2A2A', display: 'flex', alignItems: 'center' }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em', fontSize: '0.65rem' }}>
@@ -181,7 +174,6 @@ const Dashboard: React.FC = () => {
             </Box>
           </Paper>
 
-          {/* Telemetry */}
           <Paper sx={{ flex: '1 1 35%', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box sx={{ px: 2, py: 0.5, borderBottom: '1px solid #2A2A2A' }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em', fontSize: '0.65rem' }}>
@@ -193,7 +185,6 @@ const Dashboard: React.FC = () => {
             </Box>
           </Paper>
 
-          {/* Machine View */}
           <Paper sx={{ flex: 1, p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #2A2A2A' }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em' }}>
@@ -208,29 +199,25 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 2 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary">Asset</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>Fendt Vario 1001</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{activePea?.name || 'No live PEA'}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="caption" color="text.secondary">State</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700, color: simRunning ? 'success.main' : 'warning.main' }}>
-                      {simRunning ? 'Executing' : 'Standby'}
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: activeOnline ? 'success.main' : 'warning.main' }}>
+                      {activePea?.running ? 'Executing' : activePea?.deployed ? 'Deployed' : activeOnline ? 'Observed' : 'Awaiting data'}
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Scenario</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {selectedScenario?.name ?? 'Baseline Work Cycle'}
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Node</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{activePea?.nodeId || '--'}</Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" color="text.secondary">Tick Rate</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {selectedScenario?.tick_ms ?? 1000} ms
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Services</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{activePea?.serviceCount ?? 0}</Typography>
                   </Box>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  3D visualization is disabled in this build. Use telemetry, swimlanes, and live metrics for current state verification.
+                  Dashboard state is sourced from live `entmoot` PEA traffic. Historical trends remain backed by the Zenoh-fed time-series store.
                 </Typography>
               </Paper>
 
@@ -240,35 +227,20 @@ const Dashboard: React.FC = () => {
                 </Typography>
                 <List dense sx={{ p: 0 }}>
                   <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="Verify simulator state" secondary={simRunning ? 'Simulator active and publishing telemetry' : 'Simulator stopped'} />
+                    <ListItemText primary="Verify Zenoh bus connectivity" secondary={zenohConnected ? 'WebSocket relay is connected to the live substrate.' : 'Frontend is not currently receiving bus updates.'} />
                   </ListItem>
                   <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="Review telemetry trends" secondary="Use the timeline and telemetry panels above for sequence validation." />
+                    <ListItemText primary="Confirm active PEA heartbeat" secondary={activeOnline ? `Last status seen for ${activePea?.id ?? 'selected PEA'} within the live window.` : 'No recent status frame for the selected PEA yet.'} />
                   </ListItem>
                   <ListItem sx={{ px: 0 }}>
-                    <ListItemText primary="Check live metrics" secondary="Spot values remain the primary operational readout." />
+                    <ListItemText primary="Review telemetry and alarms" secondary="Trend panels remain useful only when backed by live entmoot traffic." />
                   </ListItem>
                 </List>
               </Paper>
-
-              {!simRunning && (
-                <Fade in={!simRunning}>
-                  <Box sx={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)'
-                  }}>
-                    <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.1em', color: '#fff' }}>
-                      SIMULATOR OFFLINE
-                    </Typography>
-                  </Box>
-                </Fade>
-              )}
             </Box>
           </Paper>
         </Box>
 
-        {/* Live Metrics Sidebar (Right) */}
         <Box sx={{
           width: 300,
           backgroundColor: '#0B0B0B',
@@ -282,14 +254,13 @@ const Dashboard: React.FC = () => {
             <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', color: 'primary.main' }}>
               LIVE METRICS
             </Typography>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#2ECC71', boxShadow: '0 0 8px #2ECC71' }} />
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: zenohConnected ? '#2ECC71' : '#555', boxShadow: zenohConnected ? '0 0 8px #2ECC71' : 'none' }} />
           </Box>
 
           <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
             <SpotValues />
           </Box>
 
-          {/* Coobie Placement */}
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222' }}>
             <Coobie />
           </Box>

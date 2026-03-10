@@ -814,7 +814,7 @@ async fn update_status_error(
 
 fn driver_status_topic(driver: &DriverInstance) -> String {
     format!(
-        "murph/runtime/nodes/{}/drivers/{}/status",
+        "entmoot/runtime/nodes/{}/drivers/{}/status",
         driver.runtime_node_id, driver.id
     )
 }
@@ -944,7 +944,7 @@ mod tests {
         let driver = sample_driver();
         assert_eq!(
             driver_status_topic(&driver),
-            "murph/runtime/nodes/runtime-1/drivers/driver-12345678/status"
+            "entmoot/runtime/nodes/runtime-1/drivers/driver-12345678/status"
         );
     }
 

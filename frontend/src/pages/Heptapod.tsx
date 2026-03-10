@@ -23,7 +23,7 @@ const Heptapod: React.FC = () => {
 
             <Box sx={{ p: 3, flex: 1, overflow: 'auto' }}>
                 <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 'bold' }}>
-                    MURPH Habitat Orchestration
+                    Entmoot Habitat Orchestration
                 </Typography>
 
                 <Tabs value={tab} onChange={(_, next) => setTab(next)} sx={{ mb: 2 }}>

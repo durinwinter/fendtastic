@@ -29,7 +29,7 @@ const RANGE_OPTIONS = [
 ] as const
 
 function bindingValueKey(binding: PeaBinding, canonicalTag: string): string {
-  return `murph/runtime/nodes/${binding.runtime_node_id}/pea/${binding.pea_id}/bindings/${canonicalTag}/value`
+  return `entmoot/runtime/nodes/${binding.runtime_node_id}/pea/${binding.pea_id}/bindings/${canonicalTag}/value`
 }
 
 function safeFileStem(value: string): string {

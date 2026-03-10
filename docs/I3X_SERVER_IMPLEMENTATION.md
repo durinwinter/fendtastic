@@ -97,7 +97,7 @@ curl -s http://localhost:8080/api/v1/namespaces | jq .
 
 [
   {
-    "uri": "https://underhill.murph/ns/pea",
+    "uri": "https://underhill.entmoot/ns/pea",
     "displayName": "Underhill PEA Equipment"
   },
   {
@@ -120,13 +120,13 @@ curl -s 'http://localhost:8080/api/v1/objecttypes' | jq .
   {
     "elementId": "BaseEquipment",
     "displayName": "Base Equipment Type",
-    "namespaceUri": "https://underhill.murph/ns/pea",
+    "namespaceUri": "https://underhill.entmoot/ns/pea",
     "schema": { ... }
   },
   {
     "elementId": "PEAType",
     "displayName": "Process Equipment Asset",
-    "namespaceUri": "https://underhill.murph/ns/pea",
+    "namespaceUri": "https://underhill.entmoot/ns/pea",
     "schema": { ... }
   },
   ...
@@ -136,7 +136,7 @@ curl -s 'http://localhost:8080/api/v1/objecttypes' | jq .
 **Filter by namespace:**
 
 ```bash
-curl -s 'http://localhost:8080/api/v1/objecttypes?namespaceUri=https://underhill.murph/ns/pea'
+curl -s 'http://localhost:8080/api/v1/objecttypes?namespaceUri=https://underhill.entmoot/ns/pea'
 ```
 
 **Get specific type:**
@@ -147,7 +147,7 @@ curl -s 'http://localhost:8080/api/v1/objecttypes/PEAType' | jq .
 {
   "elementId": "PEAType",
   "displayName": "Process Equipment Asset",
-  "namespaceUri": "https://underhill.murph/ns/pea",
+  "namespaceUri": "https://underhill.entmoot/ns/pea",
   "schema": {
     "type": "object",
     "properties": {
@@ -208,7 +208,7 @@ curl -s http://localhost:8080/api/v1/objects | jq . | head -60
     "typeId": "BaseEquipment",
     "parentId": null,
     "isComposition": true,
-    "namespaceUri": "https://underhill.murph/ns/pea"
+    "namespaceUri": "https://underhill.entmoot/ns/pea"
   },
   {
     "elementId": "d0f5df66-6f07-4e6d-a7bd-b8e76f2a57d5",
@@ -216,7 +216,7 @@ curl -s http://localhost:8080/api/v1/objects | jq . | head -60
     "typeId": "FendtVarioPEA",
     "parentId": "underhill-base",
     "isComposition": true,
-    "namespaceUri": "https://underhill.murph/ns/pea"
+    "namespaceUri": "https://underhill.entmoot/ns/pea"
   },
   {
     "elementId": "d0f5df66-6f07-4e6d-a7bd-b8e76f2a57d5-plow",
@@ -224,7 +224,7 @@ curl -s http://localhost:8080/api/v1/objects | jq . | head -60
     "typeId": "ServiceType",
     "parentId": "d0f5df66-6f07-4e6d-a7bd-b8e76f2a57d5",
     "isComposition": true,
-    "namespaceUri": "https://underhill.murph/ns/pea"
+    "namespaceUri": "https://underhill.entmoot/ns/pea"
   },
   {
     "elementId": "d0f5df66-6f07-4e6d-a7bd-b8e76f2a57d5-plow-proc-1",
@@ -232,7 +232,7 @@ curl -s http://localhost:8080/api/v1/objects | jq . | head -60
     "typeId": "ProcedureType",
     "parentId": "d0f5df66-6f07-4e6d-a7bd-b8e76f2a57d5-plow",
     "isComposition": false,
-    "namespaceUri": "https://underhill.murph/ns/pea"
+    "namespaceUri": "https://underhill.entmoot/ns/pea"
   },
   ...
 ]
@@ -249,7 +249,7 @@ curl -s 'http://localhost:8080/api/v1/objects/d0f5df66-6f07-4e6d-a7bd-b8e76f2a57
   "typeId": "FendtVarioPEA",
   "parentId": "underhill-base",
   "isComposition": true,
-  "namespaceUri": "https://underhill.murph/ns/pea"
+  "namespaceUri": "https://underhill.entmoot/ns/pea"
 }
 ```
 
@@ -270,7 +270,7 @@ curl -s 'http://localhost:8080/api/v1/objects/underhill-base/related' | jq . | h
     "typeId": "FendtVarioPEA",
     "parentId": "underhill-base",
     "isComposition": true,
-    "namespaceUri": "https://underhill.murph/ns/pea",
+    "namespaceUri": "https://underhill.entmoot/ns/pea",
     "subject": "underhill-base",
     "relationshipType": "HasChildren",
     "relationshipTypeInverse": "HasParent"

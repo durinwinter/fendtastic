@@ -17,8 +17,8 @@ const ModuleList: React.FC = () => {
 
     useEffect(() => {
         // Subscribe to module updates
-        // Topic: murph/habitat/modules/+/status
-        const unsubscribe = zenohService.subscribe('murph/habitat/modules/+/status', (data) => {
+        // Topic: entmoot/habitat/modules/+/status
+        const unsubscribe = zenohService.subscribe('entmoot/habitat/modules/+/status', (data) => {
             // Logic to update module list based on incoming data
             // For now, we'll just log it as we haven't implemented the backend part yet
             console.log('Module status update:', data)

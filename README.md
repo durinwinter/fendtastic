@@ -1,6 +1,8 @@
 # Fendtastic
 
-Fendtastic is a runtime-oriented automation platform built around PEA engineering, runtime-node management, pluggable southbound integration frontends, authority control, and Zenoh-based status distribution.
+Fendtastic is a vertical-agnostic automation substrate built around PEA engineering, runtime-node management, pluggable southbound integration frontends, authority control, and Zenoh-based status distribution.
+
+It is not intended to be the final operator application for every vertical. Instead, it provides the control-data, runtime, networking, and PEA/MTP substrate that vertical capability extensions build on top of.
 
 ## Current Architecture
 
@@ -62,6 +64,7 @@ Copy `.env.example` to `.env` and adjust what you need for local API, Postgres, 
 
 - [Control Authority Specification](Control-Authority.md)
 - [Architecture](docs/architecture.md)
+- [Capability Extension Contract](docs/capability-extension-contract.md)
 - [Configuration](docs/configuration.md)
 - [Development](docs/development.md)
 - [Deployment](docs/deployment.md)

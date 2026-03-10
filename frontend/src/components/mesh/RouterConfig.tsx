@@ -260,7 +260,7 @@ const RouterConfig: React.FC = () => {
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 <Chip icon={<WifiIcon />} label="TCP :7447" size="small" variant="outlined" />
                 <Chip icon={<WifiIcon />} label="WS :8000" size="small" variant="outlined" />
-                <Chip icon={<StorageIcon />} label="Memory Storage: fendtastic/**" size="small" variant="outlined" />
+                <Chip icon={<StorageIcon />} label="Memory Storage: entmoot/**" size="small" variant="outlined" />
                 <Chip icon={<SensorsIcon />} label="Multicast Scouting" size="small" variant="outlined" />
               </Box>
             </CardContent>

@@ -180,11 +180,11 @@ pub async fn get_links(state: web::Data<AppState>) -> impl Responder {
     }
 }
 
-// ─── GET /mesh/keys?prefix=fendtastic/** ─────────────────────────────────────
+// ─── GET /mesh/keys?prefix=entmoot/** ────────────────────────────────────────
 
 /// Lists stored keys and their latest values by querying the Zenoh storage.
 pub async fn get_keys(state: web::Data<AppState>, query: web::Query<KeysQuery>) -> impl Responder {
-    let prefix = query.prefix.as_deref().unwrap_or("fendtastic/**");
+    let prefix = query.prefix.as_deref().unwrap_or("entmoot/**");
 
     let session = &*state.zenoh_session;
 
@@ -292,7 +292,7 @@ pub async fn generate_node_config(body: web::Json<serde_json::Value>) -> impl Re
         .unwrap_or_default();
     let multicast_scouting = body["multicast_scouting"].as_bool().unwrap_or(true);
     let storage_enabled = body["storage_enabled"].as_bool().unwrap_or(false);
-    let storage_key_expr = body["storage_key_expr"].as_str().unwrap_or("fendtastic/**");
+    let storage_key_expr = body["storage_key_expr"].as_str().unwrap_or("entmoot/**");
 
     let mut config = serde_json::json!({
         "mode": mode,

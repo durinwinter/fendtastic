@@ -40,6 +40,35 @@ Per node you define:
 
 The current Runtime Studio implementation is Neuron-first, but the runtime-node model is intentionally frontend-agnostic. Neuron is one pluggable southbound frontend, not the only target.
 
+## Capability Extension Context
+
+Vertical applications should consume process context from the engineered PEA namespace emitted by `fendtastic`.
+
+Relevant topic families:
+
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/announce`
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/status`
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/config`
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/services/{service_tag}/state`
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/services/{service_tag}/command`
+- `entmoot/habitat/nodes/{node_id}/pea/{pea_id}/data/{data_item}`
+
+Vertical applications may also consume substrate/runtime context from:
+
+- `entmoot/runtime/nodes/{runtime_id}/status`
+- `entmoot/runtime/nodes/{runtime_id}/drivers/{driver_id}/status`
+- `entmoot/habitat/pea/{pea_id}/authority`
+
+The intended model is:
+- `fendtastic` publishes authoritative PLC and PEA context
+- capability extensions subscribe to that namespace
+- capability extensions add direct specialty sensors only where needed
+- derived outputs are published under an extension-specific namespace, not back into authoritative PEA topics
+
+See also:
+- [Capability Extension Contract](./capability-extension-contract.md)
+- [Ceres Station Integration Spec](./ceres-station-integration-spec.md)
+
 ## `password_ref` Resolution
 
 The backend currently resolves frontend credentials in this order:
@@ -72,3 +101,5 @@ Use Runtime Studio to register an external node such as an ARM device running Ne
 - configure Siemens S7 or another driver
 - define tag groups and tags
 - bind canonical PEA tags
+
+Those bindings become the stable process-context surface that vertical applications should consume rather than binding directly to PLC addresses.

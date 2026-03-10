@@ -6,7 +6,7 @@ use crate::state::{AppState, TimeSeriesPoint};
 
 #[derive(Deserialize)]
 pub struct TsQuery {
-    /// Zenoh key expression (exact key, e.g. "murph/runtime/nodes/node-1/pea/pea-1/bindings/active.pump.pv/value")
+    /// Zenoh key expression (exact key, e.g. "entmoot/runtime/nodes/node-1/pea/pea-1/bindings/active.pump.pv/value")
     pub key: String,
     /// Start of range as Unix milliseconds
     pub start_ms: i64,

@@ -419,62 +419,6 @@ class ApiService {
     return response.data
   }
 
-  // ─── Simulator ──────────────────────────────────────────────────────────
-
-  async startSimulator(
-    scenarioId?: string
-  ): Promise<{
-    status: string
-    simulator: string
-    pea_id: string
-    scenario_id?: string
-    scenario_name?: string
-    started_at?: string
-    duration_s?: number
-    tick_ms?: number
-    time_ratio?: number
-  }> {
-    const response = await this.client.post('/simulator/start', null, {
-      params: scenarioId ? { scenario_id: scenarioId } : {},
-    })
-    return response.data
-  }
-
-  async stopSimulator(): Promise<{ status: string; simulator: string }> {
-    const response = await this.client.post('/simulator/stop')
-    return response.data
-  }
-
-  async getSimulatorStatus(): Promise<{
-    running: boolean
-    simulator: string
-    pea_id: string
-    scenario_id: string
-    scenario_name: string
-    started_at: string
-    duration_s: number
-    tick_ms: number
-    time_ratio: number
-  }> {
-    const response = await this.client.get('/simulator/status')
-    return response.data
-  }
-
-  async getSimulatorScenarios(): Promise<{
-    scenarios: Array<{
-      id: string
-      name: string
-      description: string
-      duration_s: number
-      tick_ms: number
-      time_ratio: number
-    }>
-    count: number
-  }> {
-    const response = await this.client.get('/simulator/scenarios')
-    return response.data
-  }
-
   // ─── Time-Series Historical Data ──────────────────────────────────────────
 
   async getTsLatest(): Promise<Record<string, { t: number; v: unknown }>> {

@@ -76,6 +76,7 @@ pub fn configure_api(cfg: &mut web::ServiceConfig) {
         .route("/drivers/{id}/stop", web::post().to(driver_handlers::stop_driver))
         .route("/drivers/{id}/read", web::post().to(driver_handlers::read_driver_tag))
         .route("/drivers/{id}/write", web::post().to(driver_handlers::write_driver_tag))
+        .route("/drivers/{id}/import", web::post().to(driver_handlers::import_driver_tags))
         // Bindings
         .route("/bindings", web::get().to(binding_handlers::list_bindings))
         .route("/bindings", web::post().to(binding_handlers::create_binding))
@@ -123,11 +124,6 @@ pub fn configure_api(cfg: &mut web::ServiceConfig) {
             "/mesh/generate-config",
             web::post().to(mesh_handlers::generate_node_config),
         )
-        // Simulator
-        .route("/simulator/start", web::post().to(crate::simulator::start_standalone))
-        .route("/simulator/scenarios", web::get().to(crate::simulator::list_scenarios))
-        .route("/simulator/stop", web::post().to(crate::simulator::stop_standalone))
-        .route("/simulator/status", web::get().to(crate::simulator::get_status))
         // Durins-Forge Scenario Launcher
         .route("/scenarios", web::get().to(scenario_handlers::list_scenarios))
         .route("/scenarios/launch", web::post().to(scenario_handlers::launch_scenario))

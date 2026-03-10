@@ -47,10 +47,10 @@ const COLOR_PALETTE = [
   { border: '#00BCD4', bg: 'rgba(0, 188, 212, 0.1)' },
 ]
 
-/** Extract a short display label from a Zenoh key like "fendtastic/pea/fendt-vario-1001/data/engine_temp" */
+/** Extract a short display label from a substrate key like "entmoot/habitat/nodes/node-a/pea/line-1/data/engine_temp" */
 function keyToLabel(key: string): string {
   const parts = key.split('/')
-  // For fendtastic/pea/{id}/data/{tag} pattern, return just the tag
+  // For entmoot/.../data/{tag} pattern, return just the tag
   const dataIdx = parts.indexOf('data')
   if (dataIdx >= 0 && dataIdx < parts.length - 1) {
     return parts[dataIdx + 1].replace(/_/g, ' ')
@@ -312,7 +312,7 @@ const TimeSeriesChart: React.FC = () => {
         ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
             <Typography variant="body2" color="text.secondary">
-              No time-series data yet. Data appears as Zenoh values are published to fendtastic/**.
+              No time-series data yet. Data appears as Zenoh values are published to entmoot/**.
             </Typography>
           </Box>
         )}

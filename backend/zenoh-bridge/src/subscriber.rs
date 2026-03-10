@@ -5,11 +5,11 @@ pub async fn run(session: Session) {
     info!("Starting Zenoh subscriber");
 
     let subscriber = session
-        .declare_subscriber("fendtastic/**")
+        .declare_subscriber("entmoot/**")
         .await
         .expect("Failed to create subscriber");
 
-    info!("Subscribed to fendtastic/**");
+    info!("Subscribed to entmoot/**");
 
     loop {
         match subscriber.recv_async().await {
@@ -33,9 +33,9 @@ pub async fn run(session: Session) {
 }
 
 async fn process_sample(key: &str, _payload: &str) {
-    if key.starts_with("murph/runtime/") || key.starts_with("murph/habitat/") {
+    if key.starts_with("entmoot/runtime/") || key.starts_with("entmoot/habitat/") {
         info!("Processing runtime event: {}", key);
-    } else if key.starts_with("fendtastic/commands/") {
+    } else if key.starts_with("entmoot/commands/") {
         info!("Processing command: {}", key);
     }
 }

@@ -91,12 +91,9 @@ const PeaConnectionsDesigner: React.FC = () => {
         setEdges(normalized)
       }
     }
-    const unsubscribeMurph = zenohService.subscribe('murph/pol/topology', onTopology)
-    // Legacy bridge support.
-    const unsubscribeLegacy = zenohService.subscribe('fendtastic/pol/topology', onTopology)
+    const unsubscribeMurph = zenohService.subscribe('entmoot/pol/topology', onTopology)
     return () => {
       unsubscribeMurph()
-      unsubscribeLegacy()
     }
   }, [])
 

@@ -232,7 +232,7 @@ pub(crate) async fn publish_read_snapshot(
 
 pub(crate) fn binding_value_topic(binding: &PeaBinding, mapping: &TagBinding) -> String {
     format!(
-        "murph/runtime/nodes/{}/pea/{}/bindings/{}/value",
+        "entmoot/runtime/nodes/{}/pea/{}/bindings/{}/value",
         binding.runtime_node_id, binding.pea_id, mapping.canonical_tag
     )
 }

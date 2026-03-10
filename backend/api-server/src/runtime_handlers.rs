@@ -91,7 +91,7 @@ pub async fn get_runtime_node_status(state: web::Data<AppState>, id: web::Path<S
     let _ = state
         .zenoh_session
         .put(
-            &format!("murph/runtime/nodes/{}/status", node.id),
+            &format!("entmoot/runtime/nodes/{}/status", node.id),
             serde_json::to_string(&snapshot).unwrap_or_else(|_| "{}".to_string()),
         )
         .await;

@@ -1,180 +1,159 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Tooltip } from '@mui/material'
-import apiService from '../services/apiService'
+import zenohService from '../services/zenohService'
 
-interface SwimlanEvent {
+type SwimlaneEvent = {
   startMs: number
   endMs: number
   label: string
   color: string
 }
 
-interface LaneData {
+type LaneData = {
   id: string
   label: string
   color: string
-  events: SwimlanEvent[]
+  events: SwimlaneEvent[]
 }
 
+const WINDOW_MS = 5 * 60_000
+const TICK_MS = 2000
+
 const STATE_COLORS: Record<string, string> = {
-  IDLE: '#6EC72D',
-  OPERATING: '#3498DB',
-  MAINTENANCE: '#F39C12',
-  STOPPED: '#95a5a6',
+  running: '#6EC72D',
+  deployed: '#3498DB',
+  idle: '#95a5a6',
+  stopped: '#95a5a6',
+}
+
+const ACTION_COLORS: Record<string, string> = {
+  start: '#3498DB',
+  stop: '#F39C12',
+  deploy: '#8E6DD8',
+  undeploy: '#A1553A',
 }
 
 const ALARM_COLORS: Record<string, string> = {
+  info: '#2ECC71',
   warning: '#F39C12',
   critical: '#E74C3C',
 }
 
-const POLL_INTERVAL = 2000
-const WINDOW_MS = 5 * 60_000
+function labelForStatus(payload: Record<string, unknown>): string {
+  if (payload.running === true) return 'running'
+  if (payload.deployed === true) return 'deployed'
+  return 'idle'
+}
 
-function extractField(v: unknown, field: string): string | undefined {
-  if (v && typeof v === 'object' && field in (v as Record<string, unknown>)) {
-    return String((v as Record<string, unknown>)[field])
-  }
-  return undefined
+function addEvent(
+  setter: React.Dispatch<React.SetStateAction<LaneData[]>>,
+  laneId: string,
+  event: SwimlaneEvent,
+) {
+  setter((current) => current.map((lane) => {
+    if (lane.id !== laneId) return lane
+    const next = [...lane.events, event].filter((item) => item.endMs >= Date.now() - WINDOW_MS)
+    return { ...lane, events: next }
+  }))
 }
 
 const SwimlaneDiagram: React.FC = () => {
+  const [windowEnd, setWindowEnd] = useState(Date.now())
   const [lanes, setLanes] = useState<LaneData[]>([
     { id: 'machine-state', label: 'STATE', color: '#6EC72D', events: [] },
     { id: 'user-actions', label: 'ACTIONS', color: '#3498DB', events: [] },
     { id: 'alarms', label: 'ALARMS', color: '#E74C3C', events: [] },
   ])
-  const [windowStart, setWindowStart] = useState(Date.now() - WINDOW_MS)
-  const [windowEnd, setWindowEnd] = useState(Date.now())
 
-  const fetchEvents = useCallback(async () => {
-    const now = Date.now()
-    const start = now - WINDOW_MS
-    setWindowStart(start)
-    setWindowEnd(now)
+  useEffect(() => {
+    const unsubStatus = zenohService.subscribe('entmoot/habitat/nodes/+/pea/+/status', (payload) => {
+      const key = typeof payload?._key === 'string' ? payload._key : ''
+      const parts = key.split('/')
+      const peaIndex = parts.indexOf('pea')
+      const peaId = peaIndex >= 0 && peaIndex < parts.length - 1 ? parts[peaIndex + 1] : 'pea'
+      const statusLabel = payload && typeof payload === 'object'
+        ? labelForStatus(payload as Record<string, unknown>)
+        : 'idle'
+      const now = Date.now()
+      addEvent(setLanes, 'machine-state', {
+        startMs: now,
+        endMs: now + 12_000,
+        label: `${peaId} ${statusLabel}`,
+        color: STATE_COLORS[statusLabel] || '#6EC72D',
+      })
+      setWindowEnd(now)
+    })
 
-    try {
-      const keys = await apiService.getTsKeys()
-      const stateKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/state'))
-      const actionKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/action'))
-      const alarmKey = (keys.keys || []).find((k: string) => k.includes('/swimlane/alarm'))
+    const unsubActions = zenohService.subscribe('entmoot/runtime/nodes/+/pea/+/lifecycle', (payload) => {
+      const key = typeof payload?._key === 'string' ? payload._key : ''
+      const parts = key.split('/')
+      const peaIndex = parts.indexOf('pea')
+      const peaId = peaIndex >= 0 && peaIndex < parts.length - 1 ? parts[peaIndex + 1] : 'pea'
+      const action = payload && typeof payload === 'object' && typeof payload.action === 'string'
+        ? payload.action.toLowerCase()
+        : 'event'
+      const now = Date.now()
+      addEvent(setLanes, 'user-actions', {
+        startMs: now,
+        endMs: now + 4000,
+        label: `${peaId} ${action}`,
+        color: ACTION_COLORS[action] || '#3498DB',
+      })
+      setWindowEnd(now)
+    })
 
-      const results = await Promise.all([
-        stateKey ? apiService.queryTimeSeries(stateKey, start, now) : null,
-        actionKey ? apiService.queryTimeSeries(actionKey, start, now) : null,
-        alarmKey ? apiService.queryTimeSeries(alarmKey, start, now) : null,
-      ])
+    const unsubAlarms = zenohService.subscribe('entmoot/habitat/nodes/+/pea/+/swimlane/alarm', (payload) => {
+      const severity = payload && typeof payload === 'object' && typeof payload.severity === 'string'
+        ? payload.severity.toLowerCase()
+        : 'warning'
+      const alarmLabel = payload && typeof payload === 'object' && typeof payload.alarm === 'string'
+        ? payload.alarm
+        : 'alarm'
+      const now = Date.now()
+      addEvent(setLanes, 'alarms', {
+        startMs: now,
+        endMs: now + 15_000,
+        label: alarmLabel,
+        color: ALARM_COLORS[severity] || '#E74C3C',
+      })
+      setWindowEnd(now)
+    })
 
-      const stateEvents: SwimlanEvent[] = []
-      if (results[0]?.points?.length) {
-        const pts = results[0].points
-        let currentState = extractField(pts[0].v, 'state') || 'IDLE'
-        let spanStart = pts[0].t
+    const timer = setInterval(() => {
+      const now = Date.now()
+      setWindowEnd(now)
+      setLanes((current) => current.map((lane) => ({
+        ...lane,
+        events: lane.events.filter((event) => event.endMs >= now - WINDOW_MS),
+      })))
+    }, TICK_MS)
 
-        for (let i = 1; i < pts.length; i++) {
-          const state = extractField(pts[i].v, 'state') || currentState
-          if (state !== currentState) {
-            stateEvents.push({
-              startMs: spanStart,
-              endMs: pts[i].t,
-              label: currentState,
-              color: STATE_COLORS[currentState] || '#6EC72D',
-            })
-            currentState = state
-            spanStart = pts[i].t
-          }
-        }
-        stateEvents.push({
-          startMs: spanStart,
-          endMs: now,
-          label: currentState,
-          color: STATE_COLORS[currentState] || '#6EC72D',
-        })
-      }
-
-      const actionEvents: SwimlanEvent[] = []
-      if (results[1]?.points?.length) {
-        for (const pt of results[1].points) {
-          const action = extractField(pt.v, 'action')
-          if (action) {
-            actionEvents.push({
-              startMs: pt.t - 1500,
-              endMs: pt.t + 1500,
-              label: action,
-              color: '#3498DB',
-            })
-          }
-        }
-      }
-
-      const alarmEvents: SwimlanEvent[] = []
-      if (results[2]?.points?.length) {
-        const pts = results[2].points
-        let alarmStart: number | null = null
-        let alarmLabel = ''
-        let alarmSeverity = 'warning'
-
-        for (const pt of pts) {
-          const active = extractField(pt.v, 'active')
-          const alarm = extractField(pt.v, 'alarm') || ''
-          const severity = extractField(pt.v, 'severity') || 'warning'
-
-          if (active === 'true' && alarm) {
-            if (alarmStart === null) {
-              alarmStart = pt.t
-              alarmLabel = alarm
-              alarmSeverity = severity
-            }
-          } else if (alarmStart !== null) {
-            alarmEvents.push({
-              startMs: alarmStart,
-              endMs: pt.t,
-              label: alarmLabel,
-              color: ALARM_COLORS[alarmSeverity] || '#E74C3C',
-            })
-            alarmStart = null
-          }
-        }
-        if (alarmStart !== null) {
-          alarmEvents.push({
-            startMs: alarmStart,
-            endMs: now,
-            label: alarmLabel,
-            color: ALARM_COLORS[alarmSeverity] || '#E74C3C',
-          })
-        }
-      }
-
-      setLanes([
-        { id: 'machine-state', label: 'STATE', color: '#6EC72D', events: stateEvents },
-        { id: 'user-actions', label: 'ACTIONS', color: '#3498DB', events: actionEvents },
-        { id: 'alarms', label: 'ALARMS', color: '#E74C3C', events: alarmEvents },
-      ])
-    } catch {
-      // keep previous data
+    return () => {
+      unsubStatus()
+      unsubActions()
+      unsubAlarms()
+      clearInterval(timer)
     }
   }, [])
 
-  useEffect(() => {
-    fetchEvents()
-    const interval = setInterval(fetchEvents, POLL_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchEvents])
+  const windowStart = windowEnd - WINDOW_MS
+  const range = WINDOW_MS
 
-  const range = windowEnd - windowStart
-
-  // Time axis labels (every minute)
-  const timeLabels: { pct: number; label: string }[] = []
-  const step = 60_000
-  const firstTick = Math.ceil(windowStart / step) * step
-  for (let t = firstTick; t <= windowEnd; t += step) {
-    const pct = ((t - windowStart) / range) * 100
-    timeLabels.push({ pct, label: new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
-  }
+  const timeLabels = useMemo(() => {
+    const ticks: Array<{ pct: number; label: string }> = []
+    const step = 60_000
+    const firstTick = Math.ceil(windowStart / step) * step
+    for (let t = firstTick; t <= windowEnd; t += step) {
+      ticks.push({
+        pct: ((t - windowStart) / range) * 100,
+        label: new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      })
+    }
+    return ticks
+  }, [range, windowEnd, windowStart])
 
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', px: 2, py: 1 }}>
-      {/* Time axis */}
       <Box sx={{ position: 'relative', height: 16, mb: 0.5, flexShrink: 0 }}>
         {timeLabels.map((tick, i) => (
           <Typography
@@ -194,11 +173,9 @@ const SwimlaneDiagram: React.FC = () => {
         ))}
       </Box>
 
-      {/* Compact lanes */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         {lanes.map((lane) => (
           <Box key={lane.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Inline lane label */}
             <Typography
               variant="caption"
               sx={{
@@ -213,7 +190,6 @@ const SwimlaneDiagram: React.FC = () => {
             >
               {lane.label}
             </Typography>
-            {/* Lane track */}
             <Box sx={{
               position: 'relative',
               flex: 1,
@@ -230,7 +206,7 @@ const SwimlaneDiagram: React.FC = () => {
                 if (width <= 0) return null
 
                 return (
-                  <Tooltip key={idx} title={event.label} arrow placement="top">
+                  <Tooltip key={`${lane.id}-${idx}-${event.startMs}`} title={event.label} arrow placement="top">
                     <Box
                       sx={{
                         position: 'absolute',

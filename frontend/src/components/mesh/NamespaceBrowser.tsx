@@ -95,7 +95,7 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, depth, selectedKey, onSelect 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 const NamespaceBrowser: React.FC = () => {
-  const [prefix, setPrefix] = useState('murph/habitat/**')
+  const [prefix, setPrefix] = useState('entmoot/habitat/**')
   const [keys, setKeys] = useState<KeyEntry[]>([])
   const [tree, setTree] = useState<KeyTreeNode | null>(null)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)

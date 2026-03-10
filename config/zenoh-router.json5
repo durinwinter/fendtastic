@@ -41,8 +41,8 @@
           key_expr: "fendtastic/**",
           volume: "memory",
         },
-        murph: {
-          key_expr: "murph/**",
+        entmoot: {
+          key_expr: "entmoot/**",
           volume: "memory",
         },
       },

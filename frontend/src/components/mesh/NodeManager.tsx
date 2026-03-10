@@ -17,7 +17,7 @@ const NodeManager: React.FC = () => {
   const [connectEndpoints, setConnectEndpoints] = useState<string[]>(['tcp/localhost:7447'])
   const [multicastScouting, setMulticastScouting] = useState(true)
   const [storageEnabled, setStorageEnabled] = useState(false)
-  const [storageKeyExpr, setStorageKeyExpr] = useState('fendtastic/**')
+  const [storageKeyExpr, setStorageKeyExpr] = useState('entmoot/**')
   const [generatedConfig, setGeneratedConfig] = useState<string | null>(null)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false, message: '', severity: 'success',

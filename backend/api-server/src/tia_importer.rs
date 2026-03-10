@@ -12,19 +12,129 @@ pub struct TiaTag {
     pub address: String,
     pub comment: Option<String>,
     pub table_name: Option<String>,
+    pub hmi_writeable: Option<bool>,
 }
 
 /// Auto-detect format by filename extension and parse.
 pub fn parse_tia_file(filename: &str, content: &[u8]) -> Result<Vec<TiaTag>> {
     let lower = filename.to_lowercase();
-    if lower.ends_with(".xml") {
+    if lower.ends_with(".xlsx") || lower.ends_with(".xls") {
+        parse_xlsx(content)
+    } else if lower.ends_with(".xml") {
         parse_xml(content)
     } else if lower.ends_with(".csv") || lower.ends_with(".txt") || lower.ends_with(".tsv") {
         parse_csv(content)
     } else {
-        // Try XML first, fall back to CSV
-        parse_xml(content).or_else(|_| parse_csv(content))
+        // Try XLSX first, then XML, then CSV
+        parse_xlsx(content)
+            .or_else(|_| parse_xml(content))
+            .or_else(|_| parse_csv(content))
     }
+}
+
+/// Parse a TIA Portal XLSX export (e.g. PLCTags.xlsx).
+///
+/// Expected columns (case-insensitive):
+///   Name, Path, Data Type, Logical Address, Comment, Hmi Writeable
+fn parse_xlsx(content: &[u8]) -> Result<Vec<TiaTag>> {
+    use calamine::{Reader as XlsxReader, Xlsx, open_workbook_from_rs};
+    use std::io::Cursor;
+
+    let cursor = Cursor::new(content);
+    let mut workbook: Xlsx<_> = open_workbook_from_rs(cursor)
+        .map_err(|e| anyhow::anyhow!("Failed to open XLSX: {}", e))?;
+
+    let mut tags = Vec::new();
+
+    for sheet_name in workbook.sheet_names().to_vec() {
+        let range = workbook
+            .worksheet_range(&sheet_name)
+            .map_err(|e| anyhow::anyhow!("Failed to read sheet '{}': {}", sheet_name, e))?;
+
+        let mut rows = range.rows();
+        let header_row = match rows.next() {
+            Some(row) => row,
+            None => continue,
+        };
+
+        // Map column indices by header name (case-insensitive)
+        let headers: Vec<String> = header_row
+            .iter()
+            .map(|c| c.to_string().trim().to_lowercase())
+            .collect();
+
+        let name_idx = headers.iter().position(|h| h == "name");
+        let path_idx = headers.iter().position(|h| h == "path");
+        let type_idx = headers
+            .iter()
+            .position(|h| h == "data type" || h == "datatype" || h == "data_type");
+        let addr_idx = headers
+            .iter()
+            .position(|h| h == "logical address" || h == "address" || h == "logicaladdress");
+        let comment_idx = headers.iter().position(|h| h == "comment" || h == "description");
+        let writable_idx = headers
+            .iter()
+            .position(|h| h == "hmi writeable" || h == "hmi writable");
+
+        let name_idx = match name_idx {
+            Some(i) => i,
+            None => continue, // skip sheets without a Name column
+        };
+        let addr_idx = match addr_idx {
+            Some(i) => i,
+            None => continue,
+        };
+
+        for row in rows {
+            let name = row.get(name_idx).map(|c| c.to_string()).unwrap_or_default();
+            let name = name.trim().to_string();
+            if name.is_empty() {
+                continue;
+            }
+
+            let address = row.get(addr_idx).map(|c| c.to_string()).unwrap_or_default();
+            let address = address.trim().to_string();
+            if address.is_empty() {
+                continue;
+            }
+
+            let data_type = type_idx
+                .and_then(|i| row.get(i))
+                .map(|c| c.to_string().trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "Bool".to_string());
+
+            let comment = comment_idx
+                .and_then(|i| row.get(i))
+                .map(|c| c.to_string().trim().to_string())
+                .filter(|s| !s.is_empty());
+
+            let table_name = path_idx
+                .and_then(|i| row.get(i))
+                .map(|c| c.to_string().trim().to_string())
+                .filter(|s| !s.is_empty());
+
+            let hmi_writeable = writable_idx.and_then(|i| row.get(i)).map(|c| {
+                let s = c.to_string().trim().to_lowercase();
+                s == "true" || s == "1" || s == "yes"
+            });
+
+            tags.push(TiaTag {
+                name,
+                data_type,
+                address,
+                comment,
+                table_name,
+                hmi_writeable,
+            });
+        }
+    }
+
+    if tags.is_empty() {
+        anyhow::bail!("No PLC tags found in XLSX file");
+    }
+
+    Ok(tags)
 }
 
 /// Parse TIA Portal Openness XML export.
@@ -54,7 +164,6 @@ fn parse_xml(content: &[u8]) -> Result<Vec<TiaTag>> {
     let mut tags = Vec::new();
     let mut buf = Vec::new();
 
-    // Parsing state
     let mut current_table_name: Option<String> = None;
     let mut in_tag_table = false;
     let mut in_plc_tag = false;
@@ -62,7 +171,6 @@ fn parse_xml(content: &[u8]) -> Result<Vec<TiaTag>> {
     let mut current_element = String::new();
     let mut in_comment = false;
 
-    // Current tag fields
     let mut tag_name: Option<String> = None;
     let mut tag_data_type: Option<String> = None;
     let mut tag_address: Option<String> = None;
@@ -72,12 +180,12 @@ fn parse_xml(content: &[u8]) -> Result<Vec<TiaTag>> {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Eof) => break,
             Ok(Event::Start(ref e)) => {
-                let local = String::from_utf8_lossy(e.local_name().as_ref()).to_string();
+                let local = String::from_utf8_lossy(e.name().as_ref()).to_string();
                 match local.as_str() {
-                    "PlcTagTable" => {
+                    "SW.Tags.PlcTagTable" | "PlcTagTable" => {
                         in_tag_table = true;
                     }
-                    "PlcTag" => {
+                    "SW.Tags.PlcTag" | "PlcTag" => {
                         in_plc_tag = true;
                         tag_name = None;
                         tag_data_type = None;
@@ -97,20 +205,23 @@ fn parse_xml(content: &[u8]) -> Result<Vec<TiaTag>> {
                 }
             }
             Ok(Event::End(ref e)) => {
-                let local = String::from_utf8_lossy(e.local_name().as_ref()).to_string();
+                let local = String::from_utf8_lossy(e.name().as_ref()).to_string();
                 match local.as_str() {
-                    "PlcTagTable" => {
+                    "SW.Tags.PlcTagTable" | "PlcTagTable" => {
                         in_tag_table = false;
                         current_table_name = None;
                     }
-                    "PlcTag" => {
+                    "SW.Tags.PlcTag" | "PlcTag" => {
                         if let (Some(name), Some(addr)) = (tag_name.take(), tag_address.take()) {
                             tags.push(TiaTag {
                                 name,
-                                data_type: tag_data_type.take().unwrap_or_else(|| "Bool".to_string()),
+                                data_type: tag_data_type
+                                    .take()
+                                    .unwrap_or_else(|| "Bool".to_string()),
                                 address: addr,
                                 comment: tag_comment.take(),
                                 table_name: current_table_name.clone(),
+                                hmi_writeable: None,
                             });
                         }
                         in_plc_tag = false;
@@ -161,7 +272,7 @@ fn parse_xml(content: &[u8]) -> Result<Vec<TiaTag>> {
 
 /// Parse a tab- or semicolon-delimited CSV export.
 ///
-/// Expected header (case-insensitive): Name, Data type, Address, Comment
+/// Expected header (case-insensitive): Name, Path, Data Type, Logical Address, Comment
 /// Delimiter auto-detected: tab, semicolon, or comma.
 fn parse_csv(content: &[u8]) -> Result<Vec<TiaTag>> {
     let text = String::from_utf8_lossy(content);
@@ -169,7 +280,6 @@ fn parse_csv(content: &[u8]) -> Result<Vec<TiaTag>> {
 
     let header = lines.next().context("CSV file is empty")?;
 
-    // Auto-detect delimiter
     let delimiter = if header.contains('\t') {
         '\t'
     } else if header.contains(';') {
@@ -178,14 +288,31 @@ fn parse_csv(content: &[u8]) -> Result<Vec<TiaTag>> {
         ','
     };
 
-    let columns: Vec<String> = header.split(delimiter).map(|s| s.trim().to_lowercase()).collect();
+    let columns: Vec<String> = header
+        .split(delimiter)
+        .map(|s| s.trim().to_lowercase())
+        .collect();
 
-    let name_idx = columns.iter().position(|c| c == "name")
+    let name_idx = columns
+        .iter()
+        .position(|c| c == "name")
         .context("CSV missing 'Name' column")?;
-    let type_idx = columns.iter().position(|c| c == "data type" || c == "datatype" || c == "data_type" || c == "type");
-    let addr_idx = columns.iter().position(|c| c == "address" || c == "logical address" || c == "logicaladdress")
-        .context("CSV missing 'Address' column")?;
-    let comment_idx = columns.iter().position(|c| c == "comment" || c == "description");
+    let path_idx = columns.iter().position(|c| c == "path");
+    let type_idx = columns
+        .iter()
+        .position(|c| c == "data type" || c == "datatype" || c == "data_type" || c == "type");
+    let addr_idx = columns
+        .iter()
+        .position(|c| {
+            c == "address" || c == "logical address" || c == "logicaladdress"
+        })
+        .context("CSV missing 'Address' or 'Logical Address' column")?;
+    let comment_idx = columns
+        .iter()
+        .position(|c| c == "comment" || c == "description");
+    let writable_idx = columns
+        .iter()
+        .position(|c| c == "hmi writeable" || c == "hmi writable");
 
     let mut tags = Vec::new();
 
@@ -203,6 +330,7 @@ fn parse_csv(content: &[u8]) -> Result<Vec<TiaTag>> {
         let data_type = type_idx
             .and_then(|i| fields.get(i))
             .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "Bool".to_string());
 
         let comment = comment_idx
@@ -210,12 +338,23 @@ fn parse_csv(content: &[u8]) -> Result<Vec<TiaTag>> {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
 
+        let table_name = path_idx
+            .and_then(|i| fields.get(i))
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+
+        let hmi_writeable = writable_idx.and_then(|i| fields.get(i)).map(|s| {
+            let s = s.trim().to_lowercase();
+            s == "true" || s == "1" || s == "yes"
+        });
+
         tags.push(TiaTag {
             name: name.to_string(),
             data_type,
             address: address.to_string(),
             comment,
-            table_name: None,
+            table_name,
+            hmi_writeable,
         });
     }
 
@@ -246,13 +385,16 @@ fn map_data_type(tia_type: &str) -> DriverDataType {
     }
 }
 
-/// Infer read/write access from the address area.
-fn infer_access(address: &str) -> TagAccess {
+/// Infer read/write access from the address area and optional HMI writeable flag.
+fn infer_access(address: &str, hmi_writeable: Option<bool>) -> TagAccess {
     let normalized = normalize_address(address).to_uppercase();
     if normalized.starts_with('I') {
+        // Physical inputs are read-only regardless of HMI flag
+        TagAccess::Read
+    } else if let Some(false) = hmi_writeable {
+        // Explicitly marked not writeable
         TagAccess::Read
     } else {
-        // Q, M, DB are all writable
         TagAccess::ReadWrite
     }
 }
@@ -260,7 +402,13 @@ fn infer_access(address: &str) -> TagAccess {
 /// Generate a stable tag ID from the tag name.
 fn slugify(name: &str) -> String {
     name.chars()
-        .map(|c| if c.is_alphanumeric() { c.to_ascii_lowercase() } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
         .collect::<String>()
         .trim_matches('_')
         .to_string()
@@ -268,7 +416,7 @@ fn slugify(name: &str) -> String {
 
 /// Convert parsed TIA tags into TagGroups.
 ///
-/// Groups by `table_name` if present, otherwise by address area (Inputs, Outputs, Markers, Data Blocks).
+/// Groups by `table_name` (Path column) if present, otherwise by address area.
 pub fn to_tag_groups(tags: Vec<TiaTag>) -> Vec<TagGroup> {
     let mut groups: HashMap<String, Vec<DriverTag>> = HashMap::new();
 
@@ -291,7 +439,10 @@ pub fn to_tag_groups(tags: Vec<TiaTag>) -> Vec<TagGroup> {
 
         let mut attributes = serde_json::Map::new();
         if let Some(comment) = &tag.comment {
-            attributes.insert("description".to_string(), serde_json::Value::String(comment.clone()));
+            attributes.insert(
+                "description".to_string(),
+                serde_json::Value::String(comment.clone()),
+            );
         }
 
         let driver_tag = DriverTag {
@@ -299,7 +450,7 @@ pub fn to_tag_groups(tags: Vec<TiaTag>) -> Vec<TagGroup> {
             name: tag.name,
             address,
             data_type: map_data_type(&tag.data_type),
-            access: infer_access(&tag.address),
+            access: infer_access(&tag.address, tag.hmi_writeable),
             scan_ms: None,
             attributes: serde_json::Value::Object(attributes),
         };
@@ -320,7 +471,6 @@ pub fn to_tag_groups(tags: Vec<TiaTag>) -> Vec<TagGroup> {
         })
         .collect();
 
-    // Sort groups by name for stable output
     result.sort_by(|a, b| a.name.cmp(&b.name));
     result
 }
@@ -350,17 +500,19 @@ mod tests {
 
     #[test]
     fn test_infer_access() {
-        assert_eq!(infer_access("%I0.0"), TagAccess::Read);
-        assert_eq!(infer_access("%Q0.0"), TagAccess::ReadWrite);
-        assert_eq!(infer_access("%MW10"), TagAccess::ReadWrite);
-        assert_eq!(infer_access("%DB1.DBW0"), TagAccess::ReadWrite);
-        assert_eq!(infer_access("I0.0"), TagAccess::Read);
+        assert_eq!(infer_access("%I0.0", None), TagAccess::Read);
+        assert_eq!(infer_access("%Q0.0", None), TagAccess::ReadWrite);
+        assert_eq!(infer_access("%MW10", None), TagAccess::ReadWrite);
+        assert_eq!(infer_access("%MW10", Some(false)), TagAccess::Read);
+        assert_eq!(infer_access("%MW10", Some(true)), TagAccess::ReadWrite);
+        assert_eq!(infer_access("%I0.0", Some(true)), TagAccess::Read); // inputs always read
     }
 
     #[test]
     fn test_slugify() {
         assert_eq!(slugify("Start_Button"), "start_button");
         assert_eq!(slugify("Motor Speed"), "motor_speed");
+        assert_eq!(slugify("S1_AI_1(Flash_Tank_Level)"), "s1_ai_1_flash_tank_level");
         assert_eq!(slugify("DB1_Value"), "db1_value");
     }
 
@@ -411,14 +563,24 @@ mod tests {
 
     #[test]
     fn test_parse_csv_tab() {
-        let csv = b"Name\tData type\tAddress\tComment\nStart_Button\tBool\t%I0.0\tMain start\nMotor_Speed\tInt\t%MW10\t";
+        let csv =
+            b"Name\tData type\tAddress\tComment\nStart_Button\tBool\t%I0.0\tMain start\nMotor_Speed\tInt\t%MW10\t";
         let tags = parse_csv(csv).unwrap();
         assert_eq!(tags.len(), 2);
         assert_eq!(tags[0].name, "Start_Button");
         assert_eq!(tags[0].address, "%I0.0");
         assert_eq!(tags[0].comment.as_deref(), Some("Main start"));
         assert_eq!(tags[1].name, "Motor_Speed");
-        assert!(tags[1].comment.is_none()); // empty string filtered out
+        assert!(tags[1].comment.is_none());
+    }
+
+    #[test]
+    fn test_parse_csv_with_path() {
+        let csv = b"Name\tPath\tData Type\tLogical Address\tComment\tHmi Writeable\nS1_DI_0\tCPU_IO\tBool\t%I0.0\t\tTrue\nS1_DO_0\tCPU_IO\tBool\t%Q0.0\t\tTrue";
+        let tags = parse_csv(csv).unwrap();
+        assert_eq!(tags.len(), 2);
+        assert_eq!(tags[0].table_name.as_deref(), Some("CPU_IO"));
+        assert_eq!(tags[0].hmi_writeable, Some(true));
     }
 
     #[test]
@@ -440,6 +602,7 @@ mod tests {
                 address: "%I0.0".to_string(),
                 comment: None,
                 table_name: None,
+                hmi_writeable: None,
             },
             TiaTag {
                 name: "Valve".to_string(),
@@ -447,6 +610,7 @@ mod tests {
                 address: "%Q0.0".to_string(),
                 comment: None,
                 table_name: None,
+                hmi_writeable: None,
             },
             TiaTag {
                 name: "Speed".to_string(),
@@ -454,15 +618,16 @@ mod tests {
                 address: "%MW0".to_string(),
                 comment: Some("Speed value".to_string()),
                 table_name: None,
+                hmi_writeable: None,
             },
         ];
 
         let groups = to_tag_groups(tags);
-        assert_eq!(groups.len(), 3); // Inputs, Markers, Outputs
+        assert_eq!(groups.len(), 3);
 
         let inputs = groups.iter().find(|g| g.name == "Inputs").unwrap();
         assert_eq!(inputs.tags.len(), 1);
-        assert_eq!(inputs.tags[0].address, "I0.0"); // normalized
+        assert_eq!(inputs.tags[0].address, "I0.0");
         assert_eq!(inputs.tags[0].access, TagAccess::Read);
 
         let outputs = groups.iter().find(|g| g.name == "Outputs").unwrap();
@@ -482,6 +647,7 @@ mod tests {
                 address: "%I0.0".to_string(),
                 comment: None,
                 table_name: Some("My Table".to_string()),
+                hmi_writeable: None,
             },
             TiaTag {
                 name: "Tag2".to_string(),
@@ -489,6 +655,7 @@ mod tests {
                 address: "%Q0.0".to_string(),
                 comment: None,
                 table_name: Some("My Table".to_string()),
+                hmi_writeable: None,
             },
         ];
 

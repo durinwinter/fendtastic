@@ -26,7 +26,7 @@ pub async fn set_authority_state(state: web::Data<AppState>, pea_id: web::Path<S
     state.authority_states.write().await.insert(pea_id.to_string(), authority.clone());
     state.authority_audit.write().await.push(audit);
 
-    let topic = format!("murph/habitat/pea/{}/authority", pea_id.as_str());
+    let topic = format!("entmoot/habitat/pea/{}/authority", pea_id.as_str());
     let _ = state.zenoh_session.put(&topic, serde_json::to_string(&authority).unwrap_or_else(|_| "{}".to_string())).await;
 
     HttpResponse::Ok().json(authority)

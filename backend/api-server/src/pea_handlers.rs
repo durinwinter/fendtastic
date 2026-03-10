@@ -1,4 +1,4 @@
-use crate::state::{AppState, SimulatorRun, SimulatorTask};
+use crate::state::AppState;
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Utc;
 use serde::Deserialize;
@@ -145,13 +145,6 @@ pub async fn undeploy_pea(state: web::Data<AppState>, pea_id: web::Path<String>)
         .put(&status_topic, status.to_string())
         .await;
 
-    {
-        let mut sims = state.running_sims.write().await;
-        if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.handle.abort();
-        }
-    }
-
     HttpResponse::Accepted().json(serde_json::json!({
         "status": "undeployed",
         "pea_id": pea_id_str,
@@ -225,29 +218,6 @@ pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) ->
         .put(&runtime_topic, cmd.to_string())
         .await;
 
-    // Start the built-in simulator
-    {
-        let mut sims = state.running_sims.write().await;
-        // Stop existing sim if any
-        if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.handle.abort();
-        }
-        let run = SimulatorRun {
-            scenario_id: "baseline_cycle".to_string(),
-            scenario_name: "Baseline Work Cycle".to_string(),
-            started_at: chrono::Utc::now().to_rfc3339(),
-            duration_s: u64::MAX,
-            tick_ms: 1000,
-            time_ratio: 128.0,
-        };
-        let handle = crate::simulator::spawn_simulator(
-            state.zenoh_session.clone(),
-            pea_id_str.clone(),
-            Some("baseline_cycle"),
-        );
-        sims.insert(pea_id_str.clone(), SimulatorTask { handle, run });
-    }
-
     // Publish running status directly
     {
         let configs = state.pea_configs.read().await;
@@ -273,14 +243,10 @@ pub async fn start_pea(state: web::Data<AppState>, pea_id: web::Path<String>) ->
         }
     }
 
-    info!(
-        "PEA started (with simulator): {} ({})",
-        config_name, pea_id_str
-    );
+    info!("PEA started: {} ({})", config_name, pea_id_str);
     HttpResponse::Accepted().json(serde_json::json!({
         "status": "running",
         "pea_id": &pea_id_str,
-        "simulator": true,
     }))
 }
 
@@ -294,15 +260,6 @@ pub async fn stop_pea(state: web::Data<AppState>, pea_id: web::Path<String>) -> 
         .zenoh_session
         .put(&runtime_topic, cmd.to_string())
         .await;
-
-    // Stop the simulator
-    {
-        let mut sims = state.running_sims.write().await;
-        if let Some(handle) = sims.remove(&pea_id_str) {
-            handle.handle.abort();
-            info!("Simulator stopped for PEA: {}", pea_id_str);
-        }
-    }
 
     // Publish idle status directly
     {

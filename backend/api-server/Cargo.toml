@@ -28,6 +28,7 @@ rust7.workspace = true
 quick-xml.workspace = true
 actix-multipart.workspace = true
 futures-util.workspace = true
+calamine.workspace = true
 
 shared = { path = "../shared" }
 

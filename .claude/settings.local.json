@@ -17,7 +17,17 @@
       "WebFetch(domain:api.github.com)",
       "Bash(flatpak-spawn --host docker compose -f /home/earthling/Documents/Focus/fendtastic/docker-compose.dev.yml up -d --wait)",
       "Bash(flatpak-spawn --host ss -tlnp)",
-      "Bash(flatpak-spawn --host kill 986916)"
+      "Bash(flatpak-spawn --host kill 986916)",
+      "Bash(flatpak-spawn --host pip3 install openpyxl --quiet)",
+      "Bash(flatpak-spawn --host python3 -c \":*)",
+      "Bash(flatpak-spawn --host bash -c 'cd /home/earthling/Documents/Focus/fendtastic/backend && cargo test --bin api-server -- tia_importer 2>&1')",
+      "Bash(flatpak-spawn --host df -h /home/earthling)",
+      "Bash(flatpak-spawn --host bash -c 'cd /home/earthling/Documents/Focus/fendtastic/backend && cargo clean 2>&1')",
+      "Bash(flatpak-spawn --host pkill -f \"target/debug/api-server\")",
+      "Bash(flatpak-spawn --host curl -s -X POST http://localhost:8080/api/v1/drivers/e667bbb0-5cd1-4e09-848c-be439af7b714/import -F \"file=@/home/earthling/Documents/Focus/fendtastic/docs/PLCTags.xlsx\")",
+      "Bash(flatpak-spawn --host curl -s -X POST http://localhost:8080/api/v1/drivers/e667bbb0-5cd1-4e09-848c-be439af7b714/read -H 'Content-Type: application/json' -d '{\"\"tag_id\"\":\"\"s1_di_0\"\"}')",
+      "Bash(flatpak-spawn --host curl -s -X POST http://localhost:8080/api/v1/drivers/e667bbb0-5cd1-4e09-848c-be439af7b714/read -H 'Content-Type: application/json' -d '{\"\"tag_id\"\":\"\"s1_ai_1_flash_tank_level\"\"}')",
+      "Bash(flatpak-spawn --host curl -s -X POST http://localhost:8080/api/v1/drivers/e667bbb0-5cd1-4e09-848c-be439af7b714/read -H 'Content-Type: application/json' -d '{\"\"tag_id\"\":\"\"s1_do_0\"\"}')"
     ]
   }
 }

@@ -79,9 +79,187 @@
           "attributes": {}
         }
       ]
+    },
+    {
+      "id": "cpu_io",
+      "name": "CPU_IO",
+      "description": null,
+      "tags": [
+        {
+          "id": "s1_di_0",
+          "name": "S1_DI_0",
+          "address": "I0.0",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_1",
+          "name": "S1_DI_1",
+          "address": "I0.1",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_2",
+          "name": "S1_DI_2",
+          "address": "I0.2",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_3",
+          "name": "S1_DI_3",
+          "address": "I0.3",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_4",
+          "name": "S1_DI_4",
+          "address": "I0.4",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_5",
+          "name": "S1_DI_5",
+          "address": "I0.5",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_6",
+          "name": "S1_DI_6",
+          "address": "I0.6",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_di_7",
+          "name": "S1_DI_7",
+          "address": "I0.7",
+          "data_type": "Bool",
+          "access": "Read",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_0",
+          "name": "S1_DO_0",
+          "address": "Q0.0",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_1",
+          "name": "S1_DO_1",
+          "address": "Q0.1",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_2",
+          "name": "S1_DO_2",
+          "address": "Q0.2",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_3",
+          "name": "S1_DO_3",
+          "address": "Q0.3",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_4",
+          "name": "S1_DO_4",
+          "address": "Q0.4",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_5",
+          "name": "S1_DO_5",
+          "address": "Q0.5",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_6",
+          "name": "S1_DO_6",
+          "address": "Q0.6",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_ai_1_flash_tank_level",
+          "name": "S1_AI_1(Flash_Tank_Level)",
+          "address": "MD1",
+          "data_type": "Float32",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_ai_2_mixer_tank_level",
+          "name": "S1_AI_2(Mixer_Tank_Level)",
+          "address": "MD3",
+          "data_type": "Float32",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_7_motor_pump_flash_tank",
+          "name": "S1_DO_7(Motor_Pump_Flash_Tank)",
+          "address": "Q0.7",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        },
+        {
+          "id": "s1_do_1_0_motor_pump_mixer_tank",
+          "name": "S1_DO_1.0(Motor_Pump_mixer_tank)",
+          "address": "Q1.0",
+          "data_type": "Bool",
+          "access": "ReadWrite",
+          "scan_ms": null,
+          "attributes": {}
+        }
+      ]
     }
   ],
   "last_error": null,
   "created_at": "2026-03-09T18:15:07.210262285Z",
-  "updated_at": "2026-03-09T18:17:13.830465090Z"
+  "updated_at": "2026-03-10T01:45:23.093979048Z"
 }

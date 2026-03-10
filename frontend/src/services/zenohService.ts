@@ -1,4 +1,4 @@
-// No literal "fendtastic" found in zenohService.ts, but standardizing on murph for any default prefixes if they were there.
+// Zenoh substrate topic roots are standardized on entmoot.
 // which relays subscribe/publish/unsubscribe messages to/from the Zenoh bus.
 
 export class ZenohService {

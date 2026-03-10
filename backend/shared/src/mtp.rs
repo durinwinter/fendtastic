@@ -525,16 +525,16 @@ pub mod topics {
     }
 
     pub fn pea_announce(pea_id: &str) -> String {
-        format!("murph/habitat/nodes/{}/pea/{}/announce", get_node_id(), pea_id)
+        format!("entmoot/habitat/nodes/{}/pea/{}/announce", get_node_id(), pea_id)
     }
 
     pub fn pea_status(pea_id: &str) -> String {
-        format!("murph/habitat/nodes/{}/pea/{}/status", get_node_id(), pea_id)
+        format!("entmoot/habitat/nodes/{}/pea/{}/status", get_node_id(), pea_id)
     }
 
     pub fn pea_service_state(pea_id: &str, service_tag: &str) -> String {
         format!(
-            "murph/habitat/nodes/{}/pea/{}/services/{}/state",
+            "entmoot/habitat/nodes/{}/pea/{}/services/{}/state",
             get_node_id(),
             pea_id,
             service_tag
@@ -543,7 +543,7 @@ pub mod topics {
 
     pub fn pea_service_command(pea_id: &str, service_tag: &str) -> String {
         format!(
-            "murph/habitat/nodes/{}/pea/{}/services/{}/command",
+            "entmoot/habitat/nodes/{}/pea/{}/services/{}/command",
             get_node_id(),
             pea_id,
             service_tag
@@ -552,7 +552,7 @@ pub mod topics {
 
     pub fn pea_data(pea_id: &str, data_tag: &str) -> String {
         format!(
-            "murph/habitat/nodes/{}/pea/{}/data/{}",
+            "entmoot/habitat/nodes/{}/pea/{}/data/{}",
             get_node_id(),
             pea_id,
             data_tag
@@ -560,22 +560,22 @@ pub mod topics {
     }
 
     pub fn pea_config(pea_id: &str) -> String {
-        format!("murph/habitat/nodes/{}/pea/{}/config", get_node_id(), pea_id)
+        format!("entmoot/habitat/nodes/{}/pea/{}/config", get_node_id(), pea_id)
     }
 
     pub fn runtime_pea_deploy(pea_id: &str) -> String {
-        format!("murph/runtime/nodes/{}/pea/{}/deploy", get_node_id(), pea_id)
+        format!("entmoot/runtime/nodes/{}/pea/{}/deploy", get_node_id(), pea_id)
     }
 
     pub fn runtime_pea_lifecycle(pea_id: &str) -> String {
-        format!("murph/runtime/nodes/{}/pea/{}/lifecycle", get_node_id(), pea_id)
+        format!("entmoot/runtime/nodes/{}/pea/{}/lifecycle", get_node_id(), pea_id)
     }
 
-    pub const PEA_ANNOUNCE_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/announce";
-    pub const PEA_STATUS_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/status";
-    pub const RUNTIME_PEA_DEPLOY_WILDCARD: &str = "murph/runtime/nodes/*/pea/*/deploy";
-    pub const RUNTIME_PEA_LIFECYCLE_WILDCARD: &str = "murph/runtime/nodes/*/pea/*/lifecycle";
-    pub const PEA_SERVICE_COMMAND_WILDCARD: &str = "murph/habitat/nodes/*/pea/*/services/*/command";
-    pub const POL_RECIPES_COMMAND: &str = "murph/pol/recipes/command";
-    pub const POL_RECIPES_STATUS: &str = "murph/pol/recipes/status";
+    pub const PEA_ANNOUNCE_WILDCARD: &str = "entmoot/habitat/nodes/*/pea/*/announce";
+    pub const PEA_STATUS_WILDCARD: &str = "entmoot/habitat/nodes/*/pea/*/status";
+    pub const RUNTIME_PEA_DEPLOY_WILDCARD: &str = "entmoot/runtime/nodes/*/pea/*/deploy";
+    pub const RUNTIME_PEA_LIFECYCLE_WILDCARD: &str = "entmoot/runtime/nodes/*/pea/*/lifecycle";
+    pub const PEA_SERVICE_COMMAND_WILDCARD: &str = "entmoot/habitat/nodes/*/pea/*/services/*/command";
+    pub const POL_RECIPES_COMMAND: &str = "entmoot/pol/recipes/command";
+    pub const POL_RECIPES_STATUS: &str = "entmoot/pol/recipes/status";
 }

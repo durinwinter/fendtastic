@@ -398,23 +398,23 @@ export function getStateColor(state: ServiceState): 'success' | 'warning' | 'err
 
 export const ZENOH_TOPICS = {
   peaAnnounce: (peaId: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/announce`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/announce`,
   peaStatus: (peaId: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/status`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/status`,
   peaServiceState: (peaId: string, svcTag: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/state`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/state`,
   peaServiceCommand: (peaId: string, svcTag: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/command`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/services/${svcTag}/command`,
   peaData: (peaId: string, dataTag: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/data/${dataTag}`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/data/${dataTag}`,
   peaConfig: (peaId: string, nodeId: string = '+') =>
-    `murph/habitat/nodes/${nodeId}/pea/${peaId}/config`,
+    `entmoot/habitat/nodes/${nodeId}/pea/${peaId}/config`,
 
-  peaDiscoveryWildcard: 'murph/habitat/nodes/+/pea/+/announce',
-  peaStatusWildcard: 'murph/habitat/nodes/+/pea/+/status',
-  polRecipesCommand: 'murph/pol/recipes/command',
-  polRecipesStatus: 'murph/pol/recipes/status',
-  statusRuntimeOrchestrator: 'murph/status/runtime-orchestrator',
+  peaDiscoveryWildcard: 'entmoot/habitat/nodes/+/pea/+/announce',
+  peaStatusWildcard: 'entmoot/habitat/nodes/+/pea/+/status',
+  polRecipesCommand: 'entmoot/pol/recipes/command',
+  polRecipesStatus: 'entmoot/pol/recipes/status',
+  statusRuntimeOrchestrator: 'entmoot/status/runtime-orchestrator',
 } as const
 
 // ─── Factory Helpers ─────────────────────────────────────────────────────────

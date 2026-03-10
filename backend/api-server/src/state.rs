@@ -144,21 +144,4 @@ pub struct AppState {
     pub authority_dir: String,
     pub timeseries_config_path: String,
     pub timeseries: Arc<RwLock<TimeSeriesStore>>,
-    /// Running simulator tasks keyed by simulator id
-    pub running_sims: Arc<RwLock<HashMap<String, SimulatorTask>>>,
-}
-
-#[derive(Clone, serde::Serialize)]
-pub struct SimulatorRun {
-    pub scenario_id: String,
-    pub scenario_name: String,
-    pub started_at: String,
-    pub duration_s: u64,
-    pub tick_ms: u64,
-    pub time_ratio: f64,
-}
-
-pub struct SimulatorTask {
-    pub handle: tokio::task::JoinHandle<()>,
-    pub run: SimulatorRun,
 }

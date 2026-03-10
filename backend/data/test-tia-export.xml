@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <SW.Tags.PlcTagTable ID="0">
+    <AttributeList>
+      <Name>Digital IO</Name>
+    </AttributeList>
+    <ObjectList>
+      <SW.Tags.PlcTag ID="1" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <LogicalAddress>%I0.0</LogicalAddress>
+          <Name>Start_Button</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Main start pushbutton</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="2" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <LogicalAddress>%I0.1</LogicalAddress>
+          <Name>Stop_Button</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Emergency stop</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="3" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <LogicalAddress>%I0.2</LogicalAddress>
+          <Name>Sensor_1</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Proximity sensor bay 1</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="4" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <LogicalAddress>%Q0.0</LogicalAddress>
+          <Name>Motor_Run</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Main motor contactor</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="5" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <LogicalAddress>%Q0.1</LogicalAddress>
+          <Name>Valve_Open</Name>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+    </ObjectList>
+  </SW.Tags.PlcTagTable>
+  <SW.Tags.PlcTagTable ID="1">
+    <AttributeList>
+      <Name>Analog Values</Name>
+    </AttributeList>
+    <ObjectList>
+      <SW.Tags.PlcTag ID="6" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <LogicalAddress>%MW0</LogicalAddress>
+          <Name>Motor_Speed</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Motor speed setpoint RPM</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="7" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <LogicalAddress>%MW2</LogicalAddress>
+          <Name>Temperature</Name>
+          <Comment>
+            <MultiLanguageText Lang="en-US">Process temperature x10</MultiLanguageText>
+          </Comment>
+        </AttributeList>
+      </SW.Tags.PlcTag>
+    </ObjectList>
+  </SW.Tags.PlcTagTable>
+</Document>

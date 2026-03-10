@@ -69,7 +69,7 @@ const Header: React.FC = () => {
       setZenohConnected(connected)
       if (!connected) setRuntimeOrchestratorOnline(false)
     })
-    const unsubscribeRuntime = zenohService.subscribe('murph/status/runtime-orchestrator', (data) => {
+    const unsubscribeRuntime = zenohService.subscribe('entmoot/status/runtime-orchestrator', (data) => {
       setRuntimeOrchestratorOnline(!!(data && data.online))
     })
     return () => {
@@ -148,7 +148,7 @@ const Header: React.FC = () => {
                 lineHeight: 1,
               }}
             >
-              MURPH Runtime Forge
+              Entmoot Runtime Forge
             </Typography>
           </Box>
         </Box>

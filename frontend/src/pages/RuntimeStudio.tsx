@@ -112,7 +112,7 @@ export default function RuntimeStudio() {
     }
 
     let cancelled = false
-    const topic = `murph/runtime/nodes/${selectedNode.id}/status`
+    const topic = `entmoot/runtime/nodes/${selectedNode.id}/status`
     const loadSnapshot = async () => {
       try {
         const snapshot = await apiService.getRuntimeNodeStatus(selectedNode.id)
@@ -169,7 +169,7 @@ export default function RuntimeStudio() {
     if (!selectedDriver) return
 
     let cancelled = false
-    const topic = `murph/runtime/nodes/${selectedDriver.runtime_node_id}/drivers/${selectedDriver.id}/status`
+    const topic = `entmoot/runtime/nodes/${selectedDriver.runtime_node_id}/drivers/${selectedDriver.id}/status`
     const refresh = async () => {
       try {
         const status = await apiService.getDriverStatus(selectedDriver.id)
@@ -209,7 +209,7 @@ export default function RuntimeStudio() {
     const readableMappings = selectedBinding.mappings.filter(
       (mapping) => mapping.direction === 'ReadFromDriver' || mapping.direction === 'Bidirectional'
     )
-    const topic = `murph/runtime/nodes/${selectedBinding.runtime_node_id}/pea/${selectedBinding.pea_id}/bindings/*/value`
+    const topic = `entmoot/runtime/nodes/${selectedBinding.runtime_node_id}/pea/${selectedBinding.pea_id}/bindings/*/value`
     setBindingValues({})
 
     const seedSnapshot = async () => {

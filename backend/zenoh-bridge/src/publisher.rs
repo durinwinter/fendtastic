@@ -28,7 +28,7 @@ async fn publish_telemetry(session: &Session) -> anyhow::Result<()> {
 
     session
         .put(
-            "fendtastic/machines/machine-001/state",
+            "entmoot/machines/machine-001/state",
             machine_state.to_string(),
         )
         .await
@@ -44,7 +44,7 @@ async fn publish_telemetry(session: &Session) -> anyhow::Result<()> {
 
     session
         .put(
-            "fendtastic/sensors/machine-001/temp-001",
+            "entmoot/sensors/machine-001/temp-001",
             sensor_data.to_string(),
         )
         .await

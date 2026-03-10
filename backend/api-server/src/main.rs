@@ -29,7 +29,6 @@ mod runtime_handlers;
 mod runtime_status;
 mod runtime_store;
 mod scenario_handlers;
-mod simulator;
 mod state;
 mod tia_importer;
 mod timeseries_handlers;
@@ -72,7 +71,7 @@ fn default_driver_status_snapshot(driver: &DriverInstance) -> DriverStatusSnapsh
 
 fn driver_status_topic(driver: &DriverInstance) -> String {
     format!(
-        "murph/runtime/nodes/{}/drivers/{}/status",
+        "entmoot/runtime/nodes/{}/drivers/{}/status",
         driver.runtime_node_id, driver.id
     )
 }
@@ -81,7 +80,7 @@ fn driver_status_topic(driver: &DriverInstance) -> String {
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
-    info!("Starting MURPH API Server");
+    info!("Starting Entmoot API Server");
 
     // Configure Zenoh session — use ZENOH_ROUTER env var if set
     let zenoh_session = {
@@ -112,7 +111,7 @@ async fn main() -> std::io::Result<()> {
     let timeseries_config_path = std::env::var("TIMESERIES_CONFIG_PATH")
         .unwrap_or_else(|_| "./data/timeseries/config.json".to_string());
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://murph:murph@localhost:5432/murph".to_string()
+        "postgres://entmoot:entmoot@localhost:5432/entmoot".to_string()
     });
 
     let db_client = db::connect_and_migrate(&database_url)
@@ -170,7 +169,6 @@ async fn main() -> std::io::Result<()> {
         authority_dir,
         timeseries_config_path,
         timeseries: timeseries.clone(),
-        running_sims: Arc::new(RwLock::new(HashMap::new())),
     });
 
     // Spawn background Zenoh subscriber to collect time-series data
@@ -178,13 +176,13 @@ async fn main() -> std::io::Result<()> {
         let session = app_state.zenoh_session.clone();
         let ts_store = timeseries.clone();
         tokio::spawn(async move {
-            // Subscribe to murph, durins-forge PEA, and standalone fendtastic simulator telemetry.
+            // Subscribe to the active PEA/substrate topic families.
             // Note: We need separate subscriptions since Zenoh doesn't support OR patterns.
-            let subscriber1 = match session.declare_subscriber("murph/**").await {
+            let subscriber1 = match session.declare_subscriber("entmoot/**").await {
                 Ok(sub) => Some(sub),
                 Err(e) => {
                     error!(
-                        "Failed to subscribe to murph/** for time-series: {}",
+                        "Failed to subscribe to entmoot/** for time-series: {}",
                         e
                     );
                     None
@@ -198,66 +196,32 @@ async fn main() -> std::io::Result<()> {
                     None
                 }
             };
-            let subscriber3 = match session.declare_subscriber("fendtastic/**").await {
-                Ok(sub) => Some(sub),
-                Err(e) => {
-                    error!(
-                        "Failed to subscribe to fendtastic/** for time-series: {}",
-                        e
-                    );
-                    None
-                }
-            };
 
-            if subscriber1.is_none() && subscriber2.is_none() && subscriber3.is_none() {
+            if subscriber1.is_none() && subscriber2.is_none() {
                 error!("Failed to subscribe to any telemetry topics");
                 return;
             }
 
-            info!("Time-series collector: subscribed to murph/**, pea/**, and fendtastic/**");
+            info!("Time-series collector: subscribed to entmoot/** and pea/**");
 
-            match (subscriber1, subscriber2, subscriber3) {
-                (Some(sub1), Some(sub2), Some(sub3)) => loop {
-                    tokio::select! {
-                        Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                        Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                    }
-                },
-                (Some(sub1), Some(sub2), None) => loop {
+            match (subscriber1, subscriber2) {
+                (Some(sub1), Some(sub2)) => loop {
                     tokio::select! {
                         Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
                         Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
                     }
                 },
-                (Some(sub1), None, Some(sub3)) => loop {
-                    tokio::select! {
-                        Ok(sample) = sub1.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                    }
-                },
-                (None, Some(sub2), Some(sub3)) => loop {
-                    tokio::select! {
-                        Ok(sample) = sub2.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                        Ok(sample) = sub3.recv_async() => ingest_timeseries_sample(sample, ts_store.clone()).await,
-                    }
-                },
-                (Some(sub1), None, None) => loop {
+                (Some(sub1), None) => loop {
                     if let Ok(sample) = sub1.recv_async().await {
                         ingest_timeseries_sample(sample, ts_store.clone()).await;
                     }
                 },
-                (None, Some(sub2), None) => loop {
+                (None, Some(sub2)) => loop {
                     if let Ok(sample) = sub2.recv_async().await {
                         ingest_timeseries_sample(sample, ts_store.clone()).await;
                     }
                 },
-                (None, None, Some(sub3)) => loop {
-                    if let Ok(sample) = sub3.recv_async().await {
-                        ingest_timeseries_sample(sample, ts_store.clone()).await;
-                    }
-                },
-                (None, None, None) => return,
+                (None, None) => return,
             }
         });
     }
@@ -277,7 +241,7 @@ async fn main() -> std::io::Result<()> {
 
                 let _ = session
                     .put(
-                        "murph/status/runtime-orchestrator",
+                        "entmoot/status/runtime-orchestrator",
                         control_plane_status::runtime_orchestrator_payload(
                             runtime_node_count,
                             driver_count,
@@ -319,7 +283,7 @@ async fn main() -> std::io::Result<()> {
                     let _ = state
                         .zenoh_session
                         .put(
-                            &format!("murph/runtime/nodes/{}/status", runtime_node.id),
+                            &format!("entmoot/runtime/nodes/{}/status", runtime_node.id),
                             serde_json::to_string(&snapshot)
                                 .unwrap_or_else(|_| "{}".to_string()),
                         )
@@ -477,32 +441,32 @@ async fn main() -> std::io::Result<()> {
         let pol_dir = app_state.pol_db_dir.clone();
         tokio::spawn(async move {
             let alarm_sub = match session
-                .declare_subscriber("murph/habitat/nodes/*/pea/*/swimlane/alarm")
+                .declare_subscriber("entmoot/habitat/nodes/*/pea/*/swimlane/alarm")
                 .await
             {
                 Ok(sub) => Some(sub),
                 Err(e) => {
                     error!(
-                        "Failed to subscribe to murph/habitat/nodes/*/pea/*/swimlane/alarm: {}",
+                        "Failed to subscribe to entmoot/habitat/nodes/*/pea/*/swimlane/alarm: {}",
                         e
                     );
                     None
                 }
             };
             let alarm_action_sub = match session
-                .declare_subscriber("murph/pol/alarm/action")
+                .declare_subscriber("entmoot/pol/alarm/action")
                 .await
             {
                 Ok(sub) => Some(sub),
                 Err(e) => {
-                    error!("Failed to subscribe to murph/pol/alarm/action: {}", e);
+                    error!("Failed to subscribe to entmoot/pol/alarm/action: {}", e);
                     None
                 }
             };
-            let topology_sub = match session.declare_subscriber("murph/pol/topology").await {
+            let topology_sub = match session.declare_subscriber("entmoot/pol/topology").await {
                 Ok(sub) => Some(sub),
                 Err(e) => {
-                    error!("Failed to subscribe to murph/pol/topology: {}", e);
+                    error!("Failed to subscribe to entmoot/pol/topology: {}", e);
                     None
                 }
             };
@@ -676,6 +640,6 @@ async fn main() -> std::io::Result<()> {
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "status": "healthy",
-        "service": "murph-api-server"
+        "service": "entmoot-api-server"
     }))
 }

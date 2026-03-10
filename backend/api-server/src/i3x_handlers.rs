@@ -130,7 +130,7 @@ pub struct BulkValueRequest {
 pub async fn get_namespaces(_state: web::Data<AppState>) -> impl Responder {
     let namespaces = vec![
         Namespace {
-            uri: "https://underhill.murph/ns/pea".to_string(),
+            uri: "https://underhill.entmoot/ns/pea".to_string(),
             display_name: "Underhill PEA Equipment".to_string(),
         },
         Namespace {
@@ -155,7 +155,7 @@ pub async fn get_object_types(
         ObjectType {
             element_id: "BaseEquipment".to_string(),
             display_name: "Base Equipment Type".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -170,7 +170,7 @@ pub async fn get_object_types(
         ObjectType {
             element_id: "PEAType".to_string(),
             display_name: "Process Equipment Asset".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -188,7 +188,7 @@ pub async fn get_object_types(
         ObjectType {
             element_id: "ServiceType".to_string(),
             display_name: "PEA Service".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -205,7 +205,7 @@ pub async fn get_object_types(
         ObjectType {
             element_id: "ProcedureType".to_string(),
             display_name: "Service Procedure".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -225,7 +225,7 @@ pub async fn get_object_types(
         types.push(ObjectType {
             element_id: format!("{}PEA", pea_type),
             display_name: format!("{} PEA", pea_type),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "extends": "PEAType",
@@ -262,7 +262,7 @@ pub async fn query_object_types(
             results.push(ObjectType {
                 element_id: "BaseEquipment".to_string(),
                 display_name: "Base Equipment Type".to_string(),
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 schema: json!({
                     "type": "object",
                     "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
@@ -272,7 +272,7 @@ pub async fn query_object_types(
             results.push(ObjectType {
                 element_id: "PEAType".to_string(),
                 display_name: "Process Equipment Asset".to_string(),
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 schema: json!({
                     "type": "object",
                     "properties": { "pea_id": { "type": "string" }, "services": { "type": "array" } }
@@ -282,7 +282,7 @@ pub async fn query_object_types(
             results.push(ObjectType {
                 element_id: "ServiceType".to_string(),
                 display_name: "PEA Service".to_string(),
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 schema: json!({
                     "type": "object",
                     "properties": { "service_tag": { "type": "string" }, "state": { "type": "string" } }
@@ -295,7 +295,7 @@ pub async fn query_object_types(
                     results.push(ObjectType {
                         element_id: type_id,
                         display_name: format!("{} PEA", config.name),
-                        namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                        namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                         schema: json!({
                             "type": "object",
                             "extends": "PEAType",
@@ -326,7 +326,7 @@ pub async fn get_object_type_by_id(
         return HttpResponse::Ok().json(ObjectType {
             element_id: "BaseEquipment".to_string(),
             display_name: "Base Equipment Type".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -341,7 +341,7 @@ pub async fn get_object_type_by_id(
         return HttpResponse::Ok().json(ObjectType {
             element_id: "PEAType".to_string(),
             display_name: "Process Equipment Asset".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -356,7 +356,7 @@ pub async fn get_object_type_by_id(
         return HttpResponse::Ok().json(ObjectType {
             element_id: "ServiceType".to_string(),
             display_name: "PEA Service".to_string(),
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             schema: json!({
                 "type": "object",
                 "properties": {
@@ -375,7 +375,7 @@ pub async fn get_object_type_by_id(
             return HttpResponse::Ok().json(ObjectType {
                 element_id: type_id.clone(),
                 display_name: format!("{} PEA", pea_type),
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 schema: json!({
                     "type": "object",
                     "extends": "PEAType",
@@ -628,7 +628,7 @@ pub async fn get_objects(
             type_id: "BaseEquipment".to_string(),
             parent_id: None,
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: if include_metadata {
                 compute_relationships("underhill-base", &pea_configs)
             } else {
@@ -646,7 +646,7 @@ pub async fn get_objects(
             type_id: format!("{}PEA", pea_type),
             parent_id: Some("underhill-base".to_string()),
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: if include_metadata {
                 compute_relationships(pea_id, &pea_configs)
             } else {
@@ -663,7 +663,7 @@ pub async fn get_objects(
                 type_id: "ServiceType".to_string(),
                 parent_id: Some(pea_id.clone()),
                 is_composition: true,
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 relationships: if include_metadata {
                     compute_relationships(&service_id, &pea_configs)
                 } else {
@@ -683,7 +683,7 @@ pub async fn get_objects(
                     type_id: "ProcedureType".to_string(),
                     parent_id: Some(format!("{}-{}", pea_id, service.tag)),
                     is_composition: false,
-                    namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                    namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                     relationships: if include_metadata {
                         compute_relationships(&proc_id, &pea_configs)
                     } else {
@@ -712,7 +712,7 @@ pub async fn get_objects_list(
                 type_id: "BaseEquipment".to_string(),
                 parent_id: None,
                 is_composition: true,
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 relationships: compute_relationships("underhill-base", &pea_configs),
             });
         } else if let Some(config) = pea_configs.get(element_id) {
@@ -722,7 +722,7 @@ pub async fn get_objects_list(
                 type_id: format!("{}PEA", config.name),
                 parent_id: Some("underhill-base".to_string()),
                 is_composition: true,
-                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                 relationships: compute_relationships(element_id, &pea_configs),
             });
         } else {
@@ -737,7 +737,7 @@ pub async fn get_objects_list(
                             type_id: "ServiceType".to_string(),
                             parent_id: Some(pea_id.clone()),
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: compute_relationships(&service_id, &pea_configs),
                         });
                         break 'outer;
@@ -751,7 +751,7 @@ pub async fn get_objects_list(
                                 type_id: "ProcedureType".to_string(),
                                 parent_id: Some(service_id.clone()),
                                 is_composition: false,
-                                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                                 relationships: compute_relationships(&proc_id, &pea_configs),
                             });
                             break 'outer;
@@ -784,7 +784,7 @@ pub async fn get_object_by_id(
             type_id: "BaseEquipment".to_string(),
             parent_id: None,
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: compute_relationships("underhill-base", &pea_map),
         });
     }
@@ -800,7 +800,7 @@ pub async fn get_object_by_id(
             type_id: format!("{}PEA", pea_type),
             parent_id: Some("underhill-base".to_string()),
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: compute_relationships(&element_id, &pea_configs),
         });
     }
@@ -816,7 +816,7 @@ pub async fn get_object_by_id(
                     type_id: "ServiceType".to_string(),
                     parent_id: Some(pea_id.clone()),
                     is_composition: true,
-                    namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                    namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                     relationships: compute_relationships(&service_id, &pea_configs),
                 });
             }
@@ -834,7 +834,7 @@ pub async fn get_object_by_id(
                         type_id: "ProcedureType".to_string(),
                         parent_id: Some(service_id.clone()),
                         is_composition: false,
-                        namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                        namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                         relationships: compute_relationships(&proc_id, &pea_configs),
                     });
                 }
@@ -871,7 +871,7 @@ pub async fn get_related_objects(
             type_id: "BaseEquipment".to_string(),
             parent_id: None,
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: None,
         })
     } else if let Some(config) = pea_configs.get(&element_id) {
@@ -882,7 +882,7 @@ pub async fn get_related_objects(
             type_id: format!("{}PEA", pea_type),
             parent_id: Some("underhill-base".to_string()),
             is_composition: true,
-            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
             relationships: None,
         })
     } else {
@@ -911,7 +911,7 @@ pub async fn get_related_objects(
                             type_id: format!("{}PEA", pea_type),
                             parent_id: Some("underhill-base".to_string()),
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: None,
                         },
                         subject: Some("underhill-base".to_string()),
@@ -930,7 +930,7 @@ pub async fn get_related_objects(
                         type_id: "ServiceType".to_string(),
                         parent_id: Some(element_id.clone()),
                         is_composition: true,
-                        namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                        namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                         relationships: None,
                     },
                     subject: Some(element_id.clone()),
@@ -981,7 +981,7 @@ pub async fn get_related_objects_bulk(
                                 type_id: format!("{}PEA", config.name),
                                 parent_id: Some("underhill-base".to_string()),
                                 is_composition: true,
-                                namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                                namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                                 relationships: None,
                             },
                             subject: Some("underhill-base".to_string()),
@@ -1000,7 +1000,7 @@ pub async fn get_related_objects_bulk(
                             type_id: "ServiceType".to_string(),
                             parent_id: Some(element_id.clone()),
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: None,
                         },
                         subject: Some(element_id.clone()),
@@ -1021,7 +1021,7 @@ pub async fn get_related_objects_bulk(
                                         type_id: "ProcedureType".to_string(),
                                         parent_id: Some(element_id.clone()),
                                         is_composition: false,
-                                        namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                                        namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                                         relationships: None,
                                     },
                                     subject: Some(element_id.clone()),
@@ -1060,7 +1060,7 @@ pub async fn get_related_objects_bulk(
                             type_id: "BaseEquipment".to_string(),
                             parent_id: None,
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: None,
                         }
                     } else if let Some(p_config) = pea_configs.get(&pid) {
@@ -1070,7 +1070,7 @@ pub async fn get_related_objects_bulk(
                             type_id: format!("{}PEA", p_config.name),
                             parent_id: Some("underhill-base".to_string()),
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: None,
                         }
                     } else {
@@ -1081,7 +1081,7 @@ pub async fn get_related_objects_bulk(
                             type_id: "ServiceType".to_string(),
                             parent_id: None, // Simplified
                             is_composition: true,
-                            namespace_uri: "https://underhill.murph/ns/pea".to_string(),
+                            namespace_uri: "https://underhill.entmoot/ns/pea".to_string(),
                             relationships: None,
                         }
                     };

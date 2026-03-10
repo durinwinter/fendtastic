@@ -53,7 +53,7 @@ const Coobie: React.FC = () => {
                 body: JSON.stringify({
                     model: 'local-model',
                     messages: [
-                        { role: 'system', content: 'You are Coobie, a helpful assistant for the MURPH Mars Habitat Control System.' },
+                        { role: 'system', content: 'You are Coobie, a helpful assistant for the Entmoot Mars Habitat Control System.' },
                         ...newChat
                     ],
                     temperature: 0.7,
