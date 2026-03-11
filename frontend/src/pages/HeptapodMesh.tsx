@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { Box, Tabs, Tab, Typography } from '@mui/material'
-import Header from '../components/Header'
 import NetworkOverview from '../components/mesh/NetworkOverview'
 import NamespaceBrowser from '../components/mesh/NamespaceBrowser'
 import NodeManager from '../components/mesh/NodeManager'
 import RouterConfig from '../components/mesh/RouterConfig'
+import EntShellScaffold from '../components/layout/EntShellScaffold'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -40,16 +40,8 @@ const HeptapodMesh: React.FC = () => {
   }
 
   return (
-    <Box sx={{
-      width: '100%',
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: 'background.default',
-      overflow: 'hidden',
-    }}>
-      <Header />
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <EntShellScaffold>
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, pt: 2 }}>
           <Typography variant="h5" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
             Heptapod Mesh — Zenoh Network Administration
@@ -76,7 +68,7 @@ const HeptapodMesh: React.FC = () => {
           </CustomTabPanel>
         </Box>
       </Box>
-    </Box>
+    </EntShellScaffold>
   )
 }
 

@@ -8,174 +8,154 @@
 </head>
 <body>
   <main class="prototype-page">
-    <section class="reference-note">
+    <section class="prototype-intro">
       <div>
-        <div class="eyebrow">Standalone prototype</div>
-        <h1>Ent Workshop Shell Study</h1>
+        <div class="eyebrow">Standalone shell prototype</div>
+        <h1>Ent Workshop Runtime Shell</h1>
         <p>
-          This page is a root-level visual prototype built from the structural ideas in
-          <code>desired-look.png</code>: organic frame outside, disciplined control-room interior inside.
+          This study now treats the exported artwork as the source of truth and reshapes the interface around the
+          carved openings, root flow, and medallion band.
         </p>
       </div>
-      <div class="reference-actions">
-        <span class="status-pill"><span class="dot moss"></span>Asset-driven shell</span>
-        <span class="status-pill"><span class="dot forge"></span>Calm panel interiors</span>
-        <span class="status-pill"><span class="dot ember"></span>No app dependency</span>
+      <div class="intro-pills" aria-label="Prototype notes">
+        <span class="status-pill"><span class="dot moss"></span>Segmented PNG shell</span>
+        <span class="status-pill"><span class="dot forge"></span>Mushroom pulse only</span>
+        <span class="status-pill"><span class="dot ember"></span>CSS supports, not imitates</span>
       </div>
     </section>
 
-    <section class="runtime-stage">
-      <div class="frame-overlay frame-back" aria-hidden="true"></div>
-      <div class="frame-overlay frame-front" aria-hidden="true"></div>
-
-      <header class="root-header">
-        <div class="header-brand">
-          <div class="badge-shell">
-            <img src="../frontend/ent_workshop_badge.png" alt="Ent Workshop badge" />
-          </div>
-          <div>
-            <div class="eyebrow">Ent Workshop</div>
-            <div class="brand-title">Murph Runtime Forge</div>
-          </div>
+    <section class="shell-stage" aria-label="Ent Workshop runtime shell prototype">
+      <div class="shell-artboard">
+        <div class="shell-layers" aria-hidden="true">
+          <img class="shell-layer layer-top top-left-cap" src="./top_left_cap.png" alt="" />
+          <img class="shell-layer layer-top top-left-repeat" src="./top_left_repeating.png" alt="" />
+          <img class="shell-layer layer-top top-center-medallion" src="./top_center_medallion.png" alt="" />
+          <img class="shell-layer layer-top top-right-repeat" src="./top_right_repeating.png" alt="" />
+          <img class="shell-layer layer-top top-right-cap" src="./top_right_cap.png" alt="" />
+          <img class="shell-layer layer-menu-area" src="./menu_area.png" alt="" />
+          <img class="shell-layer layer-column column-left-outer" src="./left_column.png" alt="" />
+          <img class="shell-layer layer-column column-inner-left" src="./inner_column_one.png" alt="" />
+          <img class="shell-layer layer-column column-center" src="./center_column.png" alt="" />
+          <img class="shell-layer layer-column column-inner-right" src="./inner_column_two.png" alt="" />
+          <img class="shell-layer layer-column column-right-outer" src="./right_column.png" alt="" />
+          <img class="shell-layer layer-bottom bottom-left-cap" src="./bottom_left_cap.png" alt="" />
+          <img class="shell-layer layer-bottom bottom-repeat" src="./bottom_repeating.png" alt="" />
+          <img class="shell-layer layer-bottom bottom-right-cap" src="./bottom_right_cap.png" alt="" />
         </div>
 
-        <nav class="header-nav" aria-label="Primary">
-          <button class="root-button active">Dashboard</button>
-          <button class="root-button">Process Monitor</button>
-          <button class="root-button">Runtime Studio</button>
-          <button class="root-button">Mesh Control</button>
-          <button class="root-button">Mars Habitat</button>
-        </nav>
-
-        <div class="header-status">
-          <span class="status-pill"><span class="dot moss"></span>Zenoh Connected</span>
-          <span class="status-pill"><span class="dot moss"></span>Orchestrator Online</span>
-          <span class="timestamp">3/9/2026 02:22:57 PM</span>
-        </div>
-      </header>
-
-      <section class="title-plaque">
-        <div class="eyebrow">Ent Workshop Runtime Forge</div>
-        <h2>Runtime Studio</h2>
-        <p>
-          ARM runtime nodes, southbound frontend adapters, bindings, and authority control with carved shell
-          surfaces held inside a sculpted root frame.
-        </p>
-      </section>
-
-      <section class="studio-grid">
-        <aside class="root-panel nav-panel">
-          <h3>Runtime Studio</h3>
-          <p>Carved workflow rail for nodes, drivers, bindings, and authority.</p>
-          <div class="nav-stack">
-            <button class="root-button active">PEAs</button>
-            <button class="root-button">Runtime Nodes</button>
-            <button class="root-button">Drivers</button>
-            <button class="root-button">Bindings</button>
-            <button class="root-button">Authority</button>
+        <div class="shell-overlay">
+          <div class="shell-skins" aria-hidden="true">
+            <div class="shell-skin shell-skin-band"></div>
+            <div class="shell-skin shell-skin-left"></div>
+            <div class="shell-skin shell-skin-center"></div>
+            <div class="shell-skin shell-skin-right"></div>
           </div>
-        </aside>
 
-        <section class="workspace-column">
-          <div class="workspace-grid-top">
-            <article class="root-panel bark-panel slim">
-              <h3>Runtime Nodes</h3>
-              <div class="tree-list-item selected">
-                <strong>local-neuron</strong>
-                <span>Amd64 | 127.0.0.1 | Online</span>
-              </div>
-              <p class="panel-note">Initial model: one ARM node per PEA.</p>
-            </article>
+          <header class="shell-topbar">
+            <nav class="shell-nav" aria-label="Primary">
+              <button class="shell-button active">Dashboard</button>
+              <button class="shell-button">Runtime Studio</button>
+              <button class="shell-button">Bindings</button>
+            </nav>
 
-            <article class="root-panel bark-panel editor-panel">
-              <h3>Runtime Node Editor</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Name</span>
-                  <div class="field-value">local-neuron</div>
-                </label>
-                <label class="field">
-                  <span>Host</span>
-                  <div class="field-value">127.0.0.1</div>
-                </label>
-                <label class="field">
-                  <span>Architecture</span>
-                  <div class="field-value">Amd64</div>
-                </label>
-                <label class="field">
-                  <span>Assigned PEA</span>
-                  <div class="field-value">S7-1200 Process Module</div>
-                </label>
-                <label class="field">
-                  <span>Frontend Endpoint</span>
-                  <div class="field-value">http://127.0.0.1:7000</div>
-                </label>
-                <label class="field">
-                  <span>Frontend User</span>
-                  <div class="field-value">admin</div>
-                </label>
-                <label class="field">
-                  <span>Password Ref</span>
-                  <div class="field-value">secret://runtime/local-neuron</div>
-                </label>
-                <label class="field">
-                  <span>Config Path</span>
-                  <div class="field-value">/opt/neuron/config</div>
-                </label>
-              </div>
-              <div class="action-row">
-                <button class="root-button active">Save Runtime Node</button>
-                <button class="root-button">Apply Defaults</button>
-              </div>
-            </article>
-
-            <article class="root-panel bark-panel side-panel">
-              <div class="panel-head-inline">
-                <h3>Runtime Health</h3>
-                <span class="status-pill compact"><span class="dot moss"></span>Online</span>
-              </div>
-              <div class="inspector-copy">
-                <div><strong>local-neuron</strong></div>
-                <div>Host: 127.0.0.1</div>
-                <div>Frontend Mode: Api</div>
-                <div>Checks: 4/4</div>
-                <div>Updated: 3/9/2026 02:22:25 PM</div>
-              </div>
-              <div class="health-stack">
-                <div class="health-item"><span class="check"></span>assigned_pea: Runtime node has an assigned PEA</div>
-                <div class="health-item"><span class="check"></span>auth: JWT login succeeded</div>
-                <div class="health-item"><span class="check"></span>system: Neuron system endpoint reachable</div>
-                <div class="health-item"><span class="check"></span>plugins: Neuron returned 53 plugins</div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <aside class="root-panel bark-panel inspector-panel">
-          <div class="panel-head-inline">
-            <div>
-              <div class="eyebrow">Forge Inspector</div>
-              <h3>Runtime Inspector</h3>
+            <div class="shell-status">
+              <span class="status-pill compact"><span class="dot moss"></span>Zenoh Connected</span>
+              <span class="status-pill compact"><span class="dot moss"></span>Orchestrator Online</span>
+              <span class="timestamp">03/10/2026 10:42 AM</span>
             </div>
-            <span class="status-pill compact"><span class="dot forge"></span>OK</span>
-          </div>
-          <div class="inspector-list">
-            <div class="inspector-line"><strong>Node:</strong> local-neuron</div>
-            <div class="inspector-line"><strong>Host:</strong> 127.0.0.1</div>
-            <div class="inspector-line"><strong>Architecture:</strong> Amd64</div>
-            <div class="inspector-line"><strong>Status:</strong> Online</div>
-            <div class="inspector-line"><strong>Assigned PEA:</strong> S7-1200 Process Module</div>
-            <div class="inspector-line"><strong>Checks:</strong> 4/4</div>
-            <div class="inspector-line"><strong>Driver:</strong> siemens-s7</div>
-            <div class="inspector-line"><strong>Binding:</strong> none</div>
-            <div class="inspector-line"><strong>Binding valid:</strong> n/a</div>
-            <div class="inspector-line"><strong>Remote running:</strong> true</div>
-          </div>
-          <div class="inspector-footer">
-            <button class="root-button small">Coobie Online</button>
-          </div>
-        </aside>
-      </section>
+          </header>
+
+          <section class="shell-story">
+            <div class="eyebrow">Shell Alignment Study</div>
+          </section>
+
+          <section class="shell-interior">
+            <aside class="shell-panel nav-panel">
+              <div class="panel-head">
+                <div class="eyebrow">Left rail</div>
+                <h3>Runtime Studio</h3>
+              </div>
+              <p class="panel-copy">
+                Navigation belongs in the narrow framed bay instead of sharing space with the main editor.
+              </p>
+              <div class="button-stack">
+                <button class="shell-button active">PEAs</button>
+                <button class="shell-button">Runtime Nodes</button>
+                <button class="shell-button">Drivers</button>
+              </div>
+            </aside>
+
+            <section class="shell-panel workspace-panel">
+              <div class="panel-head">
+                <div class="eyebrow">Center bay</div>
+                <h3>Runtime Node Editor</h3>
+              </div>
+
+              <div class="workspace-grid">
+                <article class="inner-card">
+                  <div class="card-label">Selected node</div>
+                  <div class="tree-list-item selected">
+                    <strong>local-neuron</strong>
+                    <span>Amd64 | 127.0.0.1 | Online</span>
+                  </div>
+                </article>
+
+                <article class="inner-card">
+                  <div class="card-label">Runtime fields</div>
+                  <div class="field-grid">
+                    <label class="field">
+                      <span>Name</span>
+                      <div class="field-value">local-neuron</div>
+                    </label>
+                    <label class="field">
+                      <span>Host</span>
+                      <div class="field-value">127.0.0.1</div>
+                    </label>
+                    <label class="field">
+                      <span>Architecture</span>
+                      <div class="field-value">Amd64</div>
+                    </label>
+                    <label class="field">
+                      <span>Assigned PEA</span>
+                      <div class="field-value">S7-1200 Process Module</div>
+                    </label>
+                  </div>
+                </article>
+              </div>
+
+              <div class="action-row">
+                <button class="shell-button active">Save Runtime Node</button>
+                <button class="shell-button">Apply Defaults</button>
+              </div>
+            </section>
+
+            <aside class="shell-panel inspector-panel">
+              <div class="panel-head panel-head-inline">
+                <div>
+                  <div class="eyebrow">Right bay</div>
+                  <h3>Forge Inspector</h3>
+                </div>
+                <span class="status-pill compact"><span class="dot forge"></span>Healthy</span>
+              </div>
+
+              <div class="inspector-list">
+                <div class="inspector-line"><strong>Node:</strong> local-neuron</div>
+                <div class="inspector-line"><strong>Driver:</strong> siemens-s7</div>
+                <div class="inspector-line"><strong>Binding:</strong> none</div>
+                <div class="inspector-line"><strong>Checks:</strong> 4/4</div>
+                <div class="inspector-line"><strong>Authority:</strong> operator</div>
+                <div class="inspector-line"><strong>Remote running:</strong> true</div>
+              </div>
+
+              <div class="health-stack">
+                <div class="health-item"><span class="check"></span>assigned_pea confirmed</div>
+                <div class="health-item"><span class="check"></span>JWT login succeeded</div>
+                <div class="health-item"><span class="check"></span>Neuron endpoint reachable</div>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </div>
     </section>
   </main>
 </body>

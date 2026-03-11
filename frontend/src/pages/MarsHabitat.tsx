@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Typography, Paper } from '@mui/material'
-import Header from '../components/Header'
 import zenohService from '../services/zenohService'
 import '../styles/openbridge-mars.css'
+import EntShellScaffold from '../components/layout/EntShellScaffold'
 
 interface HabitatMetrics {
   surfaceTemp: number | null
@@ -314,9 +314,9 @@ const MarsHabitat: React.FC = () => {
   const liveTagCount = useMemo(() => Object.values(metrics).filter((value) => value != null).length, [metrics])
 
   return (
-    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#0A0A0A', overflow: 'hidden' }}>
-      <Header />
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2.5, py: 0.5, borderBottom: SECTION_BORDER, backgroundColor: '#0B0B0B' }}>
+    <EntShellScaffold contentSx={{ overflow: 'auto' }}>
+      <Box sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5, py: 0.5, borderBottom: SECTION_BORDER, backgroundColor: '#0B0B0B', borderRadius: '18px' }}>
         <Typography sx={{ color: '#B7410E', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.12em', fontFamily: 'Rajdhani' }}>
           MARS BASE HABITAT CONTROL
         </Typography>
@@ -326,7 +326,7 @@ const MarsHabitat: React.FC = () => {
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1.2fr 0.6fr 0.5fr', gap: 1, p: 1, overflow: 'hidden' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1.2fr 0.6fr 0.5fr', gap: 1, py: 1, minHeight: 780, overflow: 'hidden' }}>
         <Paper sx={{ gridRow: '1', gridColumn: '1', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <SectionHeader title="SITE OVERVIEW" />
           <Box sx={{ flex: 1, background: 'radial-gradient(ellipse at 50% 90%, #1a0e05 0%, #0a0a0a 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 1 }}>
@@ -410,7 +410,8 @@ const MarsHabitat: React.FC = () => {
           </Box>
         </Paper>
       </Box>
-    </Box>
+      </Box>
+    </EntShellScaffold>
   )
 }
 

@@ -1,27 +1,18 @@
 import React from 'react'
 import { Alert, Box, Grid, Paper, Typography, Tabs, Tab } from '@mui/material'
-import Header from '../components/Header'
 import PEAList from '../components/heptapod/PEAList'
 import RecipeManager from '../components/heptapod/RecipeManager'
 import AlarmCenter from '../components/heptapod/AlarmCenter'
 import PeaConnectionsDesigner from '../components/heptapod/PeaConnectionsDesigner'
 import Coobie from '../components/Coobie'
+import EntShellScaffold from '../components/layout/EntShellScaffold'
 
 const Heptapod: React.FC = () => {
     const [tab, setTab] = React.useState(0)
 
     return (
-        <Box sx={{
-            width: '100%',
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: 'background.default',
-            overflow: 'hidden'
-        }}>
-            <Header />
-
-            <Box sx={{ p: 3, flex: 1, overflow: 'auto' }}>
+        <EntShellScaffold contentSx={{ overflow: 'auto' }}>
+            <Box sx={{ height: '100%', overflow: 'auto', pr: 1 }}>
                 <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 'bold' }}>
                     Entmoot Habitat Orchestration
                 </Typography>
@@ -98,10 +89,10 @@ const Heptapod: React.FC = () => {
                     </Box>
                 )}
             </Box>
-            <Box sx={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+            <Box sx={{ position: 'absolute', bottom: 12, right: 12, zIndex: 7 }}>
                 <Coobie />
             </Box>
-        </Box>
+        </EntShellScaffold>
     )
 }
 

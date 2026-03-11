@@ -15,10 +15,10 @@ import {
 import { Agriculture } from '@mui/icons-material'
 import SwimlaneDiagram from '../components/SwimlaneDiagram'
 import TimeSeriesChart from '../components/TimeSeriesChart'
-import Header from '../components/Header'
 import SpotValues from '../components/SpotValues'
 import Coobie from '../components/Coobie'
 import zenohService from '../services/zenohService'
+import EntShellScaffold from '../components/layout/EntShellScaffold'
 
 type LivePea = {
   id: string
@@ -93,76 +93,68 @@ const Dashboard: React.FC = () => {
   const activeOnline = activePea ? nowMs - activePea.lastSeen < 15_000 : false
 
   return (
-    <Box sx={{
-      width: '100%',
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: 'background.default',
-      overflow: 'hidden',
-      color: 'text.primary'
-    }}>
-      <Header />
-
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        px: 3,
-        py: 1,
-        borderBottom: '1px solid #333',
-        backgroundColor: '#0B0B0B'
-      }}>
-        <Agriculture sx={{ color: 'success.main', fontSize: 24 }} />
-        <Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: '0.05em' }}>
-          {activePea?.name || 'No live PEA context'}
-        </Typography>
-        <Chip
-          size="small"
-          label={activeOnline ? 'ONLINE' : 'AWAITING BUS'}
-          sx={{
-            height: 20,
-            fontSize: '0.65rem',
-            fontWeight: 800,
-            borderRadius: 1,
-            backgroundColor: activeOnline ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-            color: activeOnline ? 'success.main' : 'text.secondary',
-            border: `1px solid ${activeOnline ? '#2ECC71' : '#444'}`
-          }}
-        />
-        <Chip
-          size="small"
-          label={zenohConnected ? 'ZENOH BUS CONNECTED' : 'ZENOH BUS OFFLINE'}
-          sx={{
-            height: 20,
-            fontSize: '0.65rem',
-            fontWeight: 800,
-            borderRadius: 1,
-            backgroundColor: zenohConnected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-            color: zenohConnected ? 'success.main' : 'text.secondary',
-            border: `1px solid ${zenohConnected ? '#2ECC71' : '#444'}`
-          }}
-        />
-        <Chip size="small" label={`${peaList.length} PEAs discovered`} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }} />
-        <FormControl size="small" sx={{ minWidth: 240, ml: 'auto' }}>
-          <InputLabel id="pea-select-label">Active PEA</InputLabel>
-          <Select
-            labelId="pea-select-label"
-            value={activePea?.id || ''}
-            label="Active PEA"
-            onChange={(e) => setSelectedPeaId(String(e.target.value))}
+    <EntShellScaffold>
+      <Box sx={{ height: '100%', display: 'flex', gap: 2, overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
+          <Paper
+            sx={{
+              flex: '0 0 auto',
+              px: 2.5,
+              py: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+            }}
           >
-            {peaList.map((pea) => (
-              <MenuItem key={pea.id} value={pea.id}>
-                {pea.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+            <Agriculture sx={{ color: 'success.main', fontSize: 24 }} />
+            <Typography variant="body2" sx={{ fontWeight: 700, letterSpacing: '0.05em', color: 'secondary.light' }}>
+              {activePea?.name || 'No live PEA context'}
+            </Typography>
+            <Chip
+              size="small"
+              label={activeOnline ? 'ONLINE' : 'AWAITING BUS'}
+              sx={{
+                height: 22,
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                backgroundColor: activeOnline ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                color: activeOnline ? 'success.main' : 'text.secondary',
+                border: `1px solid ${activeOnline ? '#2ECC71' : '#444'}`,
+              }}
+            />
+            <Chip
+              size="small"
+              label={zenohConnected ? 'ZENOH BUS CONNECTED' : 'ZENOH BUS OFFLINE'}
+              sx={{
+                height: 22,
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                backgroundColor: zenohConnected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                color: zenohConnected ? 'success.main' : 'text.secondary',
+                border: `1px solid ${zenohConnected ? '#2ECC71' : '#444'}`,
+              }}
+            />
+            <Chip size="small" label={`${peaList.length} PEAs discovered`} sx={{ height: 22, fontSize: '0.65rem', fontWeight: 800 }} />
+            <FormControl size="small" sx={{ minWidth: 240, ml: 'auto' }}>
+              <InputLabel id="pea-select-label">Active PEA</InputLabel>
+              <Select
+                labelId="pea-select-label"
+                value={activePea?.id || ''}
+                label="Active PEA"
+                onChange={(e) => setSelectedPeaId(String(e.target.value))}
+              >
+                {peaList.map((pea) => (
+                  <MenuItem key={pea.id} value={pea.id}>
+                    {pea.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Paper>
 
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, gap: 2, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, display: 'flex', gap: 2, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
           <Paper sx={{ flex: '0 0 auto', p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Box sx={{ px: 2, py: 0.5, borderBottom: '1px solid #2A2A2A', display: 'flex', alignItems: 'center' }}>
               <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', letterSpacing: '0.1em', fontSize: '0.65rem' }}>
@@ -239,34 +231,36 @@ const Dashboard: React.FC = () => {
               </Paper>
             </Box>
           </Paper>
-        </Box>
+            </Box>
 
-        <Box sx={{
-          width: 300,
-          backgroundColor: '#0B0B0B',
-          borderLeft: '1px solid #333',
-          display: 'flex',
-          flexDirection: 'column',
-          p: 2,
-          overflow: 'hidden'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', color: 'primary.main' }}>
-              LIVE METRICS
-            </Typography>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: zenohConnected ? '#2ECC71' : '#555', boxShadow: zenohConnected ? '0 0 8px #2ECC71' : 'none' }} />
-          </Box>
+            <Paper
+              sx={{
+                width: 300,
+                display: 'flex',
+                flexDirection: 'column',
+                p: 2,
+                overflow: 'hidden',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', color: 'primary.main' }}>
+                  LIVE METRICS
+                </Typography>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: zenohConnected ? '#2ECC71' : '#555', boxShadow: zenohConnected ? '0 0 8px #2ECC71' : 'none' }} />
+              </Box>
 
-          <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
-            <SpotValues />
-          </Box>
+              <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+                <SpotValues />
+              </Box>
 
-          <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222' }}>
-            <Coobie />
+              <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222' }}>
+                <Coobie />
+              </Box>
+            </Paper>
           </Box>
         </Box>
       </Box>
-    </Box>
+    </EntShellScaffold>
   )
 }
 
